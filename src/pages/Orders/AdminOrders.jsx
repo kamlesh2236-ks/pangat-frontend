@@ -23,7 +23,7 @@ import {
 import toast from 'react-hot-toast';
 import { ordersAPI } from '../../utils/api';
 import { playNewOrderSound, unlockAudio } from '../../utils/notificationSound';
-import BillPrint from './Billprint';
+import BillPrint from './BillPrint';
 import './AdminOrders.css';
 
 const POLL_INTERVAL_MS = 15000;
