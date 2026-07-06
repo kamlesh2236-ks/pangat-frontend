@@ -1,0 +1,642 @@
+.combos-page {
+    padding: 20px;
+    font-family: 'Public Sans', sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-base);
+    height: 100vh;
+}
+
+.combos-page.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+}
+
+.combos-page .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--color-secondary);
+    border-radius: 50%;
+    animation: combos-spin 0.8s linear infinite;
+}
+
+@keyframes combos-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.combos-page .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.combos-page .section-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 4px;
+    color: var(--text-primary);
+}
+
+.combos-page .section-header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-light));
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.combos-controls {
+    margin-bottom: 18px;
+}
+
+.Combo-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text-muted);
+    max-width: 320px;
+}
+
+.Combo-search-box input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 0;
+    color: var(--text-muted);
+}
+
+/* ===== Combo Cards Grid ===== */
+.combos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.combo-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow 0.15s ease;
+}
+
+.combo-card:hover {
+    box-shadow: var(--shadow-glow);
+}
+
+.combo-card-img-wrap {
+    position: relative;
+    height: 130px;
+    background: var(--bg-surface);
+}
+
+.combo-card-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.combo-card-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-secondary-light);
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-surface));
+}
+
+.combo-save-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: var(--color-secondary);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.combo-status-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.combo-status-badge.available {
+    background: #e6f7ec;
+    color: #1e7d3c;
+}
+
+.combo-status-badge.unavailable {
+    background: #fdeaea;
+    color: #c23636;
+}
+
+.combo-card-body {
+    padding: 14px 16px;
+}
+
+.combo-card-body h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--text-primary);
+}
+
+.combo-items-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.combo-item-badge {
+    font-size: 11px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+}
+
+.combo-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.combo-original-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.combo-final-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--color-secondary);
+}
+
+.combo-savings-text {
+    font-size: 12px;
+    color: #1e7d3c;
+    margin: 4px 0 0;
+    font-weight: 600;
+}
+
+.combo-card-actions {
+    display: flex;
+    border-top: 1px solid var(--border-color);
+}
+
+.combo-card-actions button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    border: none;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-right: 1px solid var(--border-color);
+}
+
+.combo-card-actions button:last-child {
+    border-right: none;
+}
+
+.combo-card-actions button:hover {
+    background: var(--bg-surface);
+    color: var(--color-secondary);
+}
+
+.combo-card-actions button.danger:hover {
+    background: #fdeaea;
+    color: #c23636;
+}
+
+/* ===== Modal ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--bg-base);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 1;
+}
+
+.modal-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.close-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.combo-form {
+    padding: 20px 22px;
+}
+
+.form-section {
+    margin-bottom: 22px;
+}
+
+.form-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+}
+
+.comboform-group {
+    margin-bottom: 12px;
+}
+
+.comboform-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.comboform-group input[type="text"],
+.comboform-group input[type="number"],
+.comboform-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    outline: none;
+}
+
+.comboform-group input::placeholder,
+.comboform-group textarea::placeholder {
+    color: var(--placeholder-color);
+}
+
+.comboform-group input:focus,
+.comboform-group textarea:focus {
+    border-color: var(--color-secondary-light);
+}
+
+.comboform-group.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.comboform-group.checkbox label {
+    margin: 0;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.input-with-prefix {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.input-with-prefix .combo-prefix {
+    padding: 0 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.input-with-prefix input {
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+.Combo-image-upload-section {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.Combo-image-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 20px;
+    border: 1px dashed var(--color-secondary-light);
+    border-radius: 12px;
+    background: var(--bg-surface);
+    color: var(--color-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.image-preview {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.image-preview img {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.remove-image {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: #c23636;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* ===== Item Picker ===== */
+.combo-item-search {
+    max-width: none;
+    margin-bottom: 10px;
+}
+
+.combo-item-picker {
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.combo-item-picker-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.combo-item-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.combo-item-picker-row:last-child {
+    border-bottom: none;
+}
+
+.combo-item-picker-row:hover {
+    background: var(--bg-surface);
+}
+
+.combo-item-picker-row.selected {
+    background: var(--bg-surface);
+}
+
+.combo-item-picker-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--color-secondary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-secondary);
+    flex-shrink: 0;
+}
+
+.combo-item-picker-row.selected .combo-item-picker-check {
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: #fff;
+}
+
+.combo-item-picker-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.combo-item-picker-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.combo-selected-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.combo-selected-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border-radius: 8px;
+}
+
+.combo-selected-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.combo-selected-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.combo-selected-qty {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.combo-selected-qty button {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.combo-selected-qty span {
+    min-width: 14px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.combo-selected-subtotal {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ===== Price Summary ===== */
+.combo-price-summary {
+    background: var(--bg-surface);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.combo-price-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.combo-price-summary-row.savings {
+    color: #1e7d3c;
+    font-weight: 700;
+    margin-bottom: 0;
+    margin-top: 10px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+@media (max-width: 640px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .combo-selected-row {
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+    }
+}

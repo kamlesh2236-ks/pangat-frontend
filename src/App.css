@@ -1,0 +1,74 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Inter, sans-serif;
+    background: #f6f8fc;
+}
+
+.admin-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 220px;
+    margin-top: 70px;
+    padding: 20px;
+    transition: all 0.35s ease;
+    background: #f6f8fc;
+    overflow-y: auto;
+}
+
+/* When sidebar is closed */
+.sidebar.close ~ .main-content {
+    margin-left: 75px;
+}
+
+.content-wrapper {
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.content-wrapper h1 {
+    color: #222;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 75px;
+        margin-top: 70px;
+        padding: 12px;
+    }
+
+    .content-wrapper {
+        padding: 15px;
+    }
+}

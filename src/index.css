@@ -1,0 +1,238 @@
+:root {
+    /* ===== Brand Colors (same in both modes) ===== */
+    --color-primary: #7c3aed;
+    --color-primary-hover: #8b5cf6;
+    --color-secondary: #ff6b35;
+    --color-secondary-light: #ff914d;
+
+    --gradient-primary: linear-gradient(135deg, #7c3aed, #ff6b35);
+    --gradient-secondary: linear-gradient(135deg, #ff6b35, #7c3aed);
+    --gradient-warm: linear-gradient(135deg, #ff914d, #ff6b35);
+}
+
+/* ================= LIGHT MODE (default) ================= */
+:root,
+[data-theme="light"] {
+    --bg-base: #ffffff;
+    --bg-surface: #f8f8f8;
+    --bg-card: #ffffff;
+
+    --text-primary: #111111;
+    --text-secondary: #4a4a4a;
+    --text-muted: #7a7a7a;
+    --placeholder-color: #ccc;
+
+    --border-color: #e5e5e5;
+    --shadow-color: rgba(27, 112, 224, 0.5);
+    --shadow-glow: -6px 8px 20px rgba(255, 145, 77, 0.3),
+        6px 8px 20px rgba(53, 174, 255, 0.685);
+
+    --shadow-glow-hover: -10px 12px 30px rgba(255, 145, 77, 0.4),
+        10px 12px 30px rgba(255, 107, 53, 0.4);
+    --color-primary: #7c3aed;
+    --color-secondary: #ff6b35;
+    --color-secondary-light: #ff914d;
+}
+
+/* ================= DARK MODE ================= */
+[data-theme="dark"] {
+    --bg-base: #1b1b1b;
+    --bg-surface: #1a1a1a;
+    --bg-card: #212121;
+
+    --text-primary: #ffffff;
+    --text-secondary: #d4d4d4;
+    --text-muted: #9a9a9a;
+    --placeholder-color: #666;
+
+    --border-color: #333333;
+    --shadow-color: rgba(94, 48, 16, 0.5);
+    --shadow-glow: -6px 8px 20px rgba(255, 145, 77, 0.3),
+        6px 8px 20px rgba(255, 107, 53, 0.3);
+
+    --shadow-glow-hover: -10px 12px 30px rgba(255, 145, 77, 0.4),
+        10px 12px 30px rgba(255, 107, 53, 0.4);
+    /* thoda brighten kiya taaki dark bg pe pop kare */
+    --color-primary: #a78bfa;
+    --color-secondary: #ff8155;
+    --color-secondary-light: #ffa668;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #f6f8fc;
+    color: #333;
+    line-height: 1.6;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Main Layout */
+.main-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Links */
+a {
+    color: #ff6b35;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #ff914d;
+}
+
+/* Buttons */
+button {
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* Utilities */
+.flex {
+    display: flex;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.gap-10 {
+    gap: 10px;
+}
+
+.gap-15 {
+    gap: 15px;
+}
+
+.gap-20 {
+    gap: 20px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: #999;
+}
+
+/* Loading Animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Gradient Text */
+.gradient-text {
+    background: linear-gradient(135deg, #ff6b35, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+}
+
+
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}
+
+.main-content {
+    margin-top: 60px;
+    margin-left: 220px;
+    transition: margin-left 0.35s ease;
+}
+
+.main-content.sidebar-closed {
+    margin-left: 75px;
+}
+
+.modal-content::-webkit-scrollbar {
+  display: none;
+}

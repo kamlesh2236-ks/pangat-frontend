@@ -1,0 +1,271 @@
+.bill-print-root {
+  display: none;
+}
+
+.bill-paper {
+  width: 300px;
+  margin: 0 auto;
+  padding: 16px 14px;
+  border: 1px solid #333;
+  font-family: 'Courier New', Courier, monospace;
+  color: #111;
+  background: #fff;
+}
+
+.bill-header {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.bill-header h1 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #14532d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 2px;
+}
+
+.bill-header p {
+  font-size: 11px;
+  margin: 1px 0;
+}
+
+.bill-title {
+  text-align: center;
+  margin: 6px 0;
+}
+
+.bill-title h2 {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+
+.bill-title p {
+  font-size: 11px;
+  color: #b91c1c;
+  font-weight: 700;
+  margin: 0;
+}
+
+.bill-divider {
+  border-top: 1px dashed #999;
+  margin: 8px 0;
+}
+
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin: 3px 0;
+}
+
+.bill-row span:first-child {
+  font-weight: 700;
+}
+
+.bill-items-header,
+.bill-items-row {
+  display: flex;
+  font-size: 11px;
+  margin: 3px 0;
+}
+
+.bill-items-header {
+  font-weight: 800;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+}
+
+.col-item {
+  flex: 2.4;
+}
+
+.col-qty {
+  flex: 0.7;
+  text-align: center;
+}
+
+.col-price {
+  flex: 1;
+  text-align: right;
+}
+
+.col-total {
+  flex: 1;
+  text-align: right;
+}
+
+.bill-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 800;
+  color: #c2410c;
+  /* orange, matches screenshot */
+  margin: 4px 0 10px;
+}
+
+.bill-qr-box {
+  border: 1px solid #333;
+  padding: 10px;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.bill-qr-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1d4ed8;
+  margin-bottom: 8px;
+}
+
+.bill-qr-img {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 8px;
+  display: block;
+}
+
+.bill-qr-amount {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.bill-qr-upi {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.bill-qr-hint {
+  font-size: 10px;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.bill-pay-btn {
+  background: #111;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.bill-qr-apps {
+  font-size: 9px;
+  color: #555;
+}
+
+.bill-status-row {
+  text-align: center;
+  font-weight: 800;
+  font-size: 12px;
+  border: 1px solid #333;
+  padding: 6px;
+  margin: 10px 0;
+  letter-spacing: 1px;
+}
+
+.bill-footer {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.bill-footer p {
+  font-size: 11px;
+  margin: 2px 0;
+}
+
+.bill-footer-note {
+  font-size: 9px;
+  color: #666;
+}
+
+/* ---- PRINT RULES ---- */
+/* When printing, hide the whole app and show only the bill. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .bill-print-root,
+  .bill-print-root * {
+    visibility: visible;
+  }
+
+  .bill-print-root {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  .bill-paper {
+    border: none;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  @page {
+    margin: 8mm;
+  }
+}
+
+@media print {
+  .admin-orders>*:not(.bill-print-root) {
+    display: none !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .bill-print-root,
+  .bill-print-root * {
+    visibility: visible;
+  }
+
+  .bill-print-root {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  .bill-paper {
+    border: none;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  @page {
+    margin: 8mm;
+  }
+}
+
+.bill-item-block {
+  margin-bottom: 2px;
+}
+
+.bill-combo-row {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+  color: #555;
+  padding: 0 0 4px 12px;
+  font-style: italic;
+}
+
+.bill-combo-label {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.bill-combo-list {
+  word-break: break-word;
+}

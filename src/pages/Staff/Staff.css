@@ -1,0 +1,907 @@
+.staff-page {
+    padding: 24px;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+.staff-page.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 60vh;
+}
+
+.staff-page.loading .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: staff-spin 0.8s linear infinite;
+}
+
+@keyframes staff-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.staff-page.loading p {
+    color: var(--text-muted);
+}
+
+/* ===== Section Header ===== */
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.section-header h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.section-header h1 svg {
+    color: var(--color-primary);
+}
+
+.section-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+
+.staff-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.staff-month-picker {
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.staff-month-picker:focus {
+    border-color: var(--color-primary);
+}
+
+/* ===== Buttons ===== */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 10px;
+    background: var(--gradient-primary);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow-hover);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* ===== Payroll Stats Grid ===== */
+.staff-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.staff-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.staff-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-glow);
+}
+
+.staff-stat-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    color: #ffffff;
+}
+
+.staff-stat-card.ok .staff-stat-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.staff-stat-card.warning .staff-stat-icon {
+    background: var(--gradient-warm);
+}
+
+.staff-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.staff-stat-label {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ===== Generic Card ===== */
+.staff-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 24px;
+}
+
+.staff-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.staff-card-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.staff-card-header h3 svg {
+    color: var(--color-secondary);
+}
+
+.staff-mark-all-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--color-primary);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.staff-mark-all-btn:hover {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+/* ===== Attendance List ===== */
+.staff-attendance-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.staff-attendance-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.staff-attendance-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.staff-attendance-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.staff-attendance-role {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.staff-attendance-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.staff-attendance-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-attendance-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.staff-attendance-btn.present.active {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-attendance-btn.absent.active {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-attendance-btn.half-day.active {
+    background: var(--gradient-warm);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-attendance-btn.paid-leave.active {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-empty-text {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* ===== Staff Table ===== */
+.staff-table-wrapper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    overflow-x: auto;
+}
+
+.staff-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.staff-table thead th {
+    text-align: left;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-surface);
+}
+
+.staff-table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.staff-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.staff-table tbody tr:hover {
+    background: var(--bg-surface);
+}
+
+.staff-table tr.inactive-row {
+    opacity: 0.55;
+}
+
+.staff-name {
+    font-weight: 600;
+    margin: 0;
+}
+
+.staff-inactive-badge {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+.staff-role-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--color-primary);
+}
+
+.staff-due-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.staff-due-badge.pending {
+    background: rgba(255, 107, 53, 0.12);
+    color: var(--color-secondary);
+}
+
+.staff-due-badge.clear {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+}
+
+.staff-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.staff-row-actions button {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-row-actions button:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.staff-row-actions button.danger:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* ===== Modal ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-glow-hover);
+}
+
+.modal-content.large-modal {
+    max-width: 680px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 1;
+}
+
+.modal-header h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.staff-detail-role {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.close-btn:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+/* ===== Form ===== */
+.staff-form {
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.Staff-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.Staff-form-group.checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.Staff-form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.Staff-form-group input[type="text"],
+.Staff-form-group input[type="email"],
+.Staff-form-group input[type="number"],
+.Staff-form-group input[type="date"],
+.Staff-form-group select,
+.Staff-form-group textarea {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.Staff-form-group input::placeholder,
+.Staff-form-group textarea::placeholder {
+    color: var(--placeholder-color);
+}
+
+.Staff-form-group input:focus,
+.Staff-form-group select:focus,
+.Staff-form-group textarea:focus {
+    border-color: var(--color-primary);
+}
+
+.Staff-form-group textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.staff-radio-row {
+    display: flex;
+    gap: 20px;
+}
+
+.staff-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.staff-radio input {
+    accent-color: var(--color-primary);
+    width: 16px;
+    height: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+/* ===== Detail Modal Tabs ===== */
+.staff-detail-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 16px 22px 0;
+}
+
+.staff-detail-tabs button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px 10px 0 0;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: none;
+    transition: all 0.15s ease;
+}
+
+.staff-detail-tabs button.actives {
+    background: var(--bg-card);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    svg{
+        color: var(--color-primary);
+    }
+}
+
+.staff-detail-body {
+    padding: 20px 22px 22px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ===== Salary Summary ===== */
+.staff-salary-summary {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.staff-salary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.staff-salary-row+.staff-salary-row {
+    border-top: 1px dashed var(--border-color);
+}
+
+.staff-salary-row.plus span:last-child {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.staff-salary-row.minus span:last-child {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.staff-salary-row.net {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--color-primary);
+}
+
+.staff-salary-row.due span:last-child {
+    font-weight: 700;
+    color: var(--color-secondary);
+}
+
+.staff-salary-attendance-note {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    padding: 6px 0;
+    border-top: 1px dashed var(--border-color);
+}
+
+/* ===== Transaction Form ===== */
+.staff-txn-form {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.staff-txn-form h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.staff-txn-form .form-row {
+    grid-template-columns: 1fr 1fr;
+}
+
+.staff-txn-form select,
+.staff-txn-form input {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.staff-txn-form select:focus,
+.staff-txn-form input:focus {
+    border-color: var(--color-primary);
+}
+
+.staff-txn-form button {
+    align-self: flex-end;
+}
+
+/* ===== Transaction List ===== */
+.staff-txn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.staff-txn-row {
+    display: grid;
+    grid-template-columns: 100px 90px 1fr 30px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+}
+
+.staff-txn-type {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.staff-txn-type.payment {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+}
+
+.staff-txn-type.advance {
+    background: rgba(255, 107, 53, 0.12);
+    color: var(--color-secondary);
+}
+
+.staff-txn-type.bonus {
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--color-primary);
+}
+
+.staff-txn-type.deduction {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.staff-txn-amount {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.staff-txn-notes {
+    font-size: 13px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.staff-txn-row button {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-txn-row button:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+/* ===== Attendance History ===== */
+.staff-attendance-history {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.staff-attendance-history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.staff-attendance-status {
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.staff-attendance-status.present {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+}
+
+.staff-attendance-status.absent {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+.staff-attendance-status.half-day {
+    background: rgba(255, 145, 77, 0.15);
+    color: var(--color-secondary);
+}
+
+.staff-attendance-status.paid-leave {
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--color-primary);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .staff-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-row,
+    .staff-txn-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .staff-page {
+        padding: 16px;
+    }
+
+    .staff-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .staff-header-actions {
+        width: 100%;
+    }
+
+    .staff-month-picker {
+        flex: 1;
+    }
+
+    .staff-attendance-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .staff-txn-row {
+        grid-template-columns: 1fr;
+    }
+}
