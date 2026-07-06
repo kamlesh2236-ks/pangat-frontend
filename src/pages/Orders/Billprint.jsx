@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { restaurantAPI } from '../../utils/api';
-import './BillPrint.css';
+import './Billprint.css';
 
 // Fallback values used only if the API call fails (so printing never breaks)
 const FALLBACK_RESTAURANT = {
