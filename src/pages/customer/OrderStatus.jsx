@@ -131,7 +131,7 @@ const OrderStatus = () => {
 
             {/* Status Timeline */}
             <div className="status-timeline">
-                <div className={`timeline-item ${['Placed', 'Confirmed', 'Preparing', 'Ready', 'Served'].includes(order.orderStatus) ? 'actives' : ''}`}>
+                <div className={`timeline-item ${['Placed', 'Confirmed', 'Preparing', 'Ready', 'Served'].includes(order.orderStatus) ? 'active' : ''}`}>
                     <div className="timeline-icon" style={{ backgroundColor: '#ff6b35' }}>
                         <IconCheck size={20} color="white" />
                     </div>
@@ -141,7 +141,7 @@ const OrderStatus = () => {
                     </div>
                 </div>
 
-                <div className={`timeline-item ${['Confirmed', 'Preparing', 'Ready', 'Served'].includes(order.orderStatus) ? 'actives' : ''}`}>
+                <div className={`timeline-item ${['Confirmed', 'Preparing', 'Ready', 'Served'].includes(order.orderStatus) ? 'active' : ''}`}>
                     <div className="timeline-icon" style={{ backgroundColor: order.confirmedAt ? '#ff914d' : '#ddd' }}>
                         <IconCheck size={20} color="white" />
                     </div>
@@ -151,7 +151,7 @@ const OrderStatus = () => {
                     </div>
                 </div>
 
-                <div className={`timeline-item ${['Preparing', 'Ready', 'Served'].includes(order.orderStatus) ? 'actives' : ''}`}>
+                <div className={`timeline-item ${['Preparing', 'Ready', 'Served'].includes(order.orderStatus) ? 'active' : ''}`}>
                     <div className="timeline-icon" style={{ backgroundColor: order.preparationStartedAt ? '#ff914d' : '#ddd' }}>
                         <IconChefHat size={20} color="white" />
                     </div>
@@ -161,7 +161,7 @@ const OrderStatus = () => {
                     </div>
                 </div>
 
-                <div className={`timeline-item ${['Ready', 'Served'].includes(order.orderStatus) ? 'actives' : ''}`}>
+                <div className={`timeline-item ${['Ready', 'Served'].includes(order.orderStatus) ? 'active' : ''}`}>
                     <div className="timeline-icon" style={{ backgroundColor: order.readyAt ? '#4CAF50' : '#ddd' }}>
                         <IconTruck size={20} color="white" />
                     </div>
@@ -171,7 +171,7 @@ const OrderStatus = () => {
                     </div>
                 </div>
 
-                <div className={`timeline-item ${order.orderStatus === 'Served' ? 'actives' : ''}`}>
+                <div className={`timeline-item ${order.orderStatus === 'Served' ? 'active' : ''}`}>
                     <div className="timeline-icon" style={{ backgroundColor: order.servedAt ? '#2196F3' : '#ddd' }}>
                         <IconHome size={20} color="white" />
                     </div>

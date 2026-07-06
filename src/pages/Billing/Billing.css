@@ -432,7 +432,7 @@ min-height: 100vh;}
   cursor: pointer;
 }
 
-.billing-payment-btn.actives {
+.billing-payment-btn.active {
   border-color: #ff6b35;
   background: #ff6b35;
   color: var(--text-primary);

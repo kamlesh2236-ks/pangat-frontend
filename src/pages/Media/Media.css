@@ -184,7 +184,7 @@
     white-space: nowrap;
 }
 
-.media-status-badge.actives {
+.media-status-badge.active {
     background: color-mix(in srgb, #22c55e 18%, transparent);
     color: #22c55e;
 }

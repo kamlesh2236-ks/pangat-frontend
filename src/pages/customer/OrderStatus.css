@@ -127,12 +127,12 @@
     box-shadow: 0 0 0 4px var(--paper);
 }
 
-.timeline-item.actives .timeline-icon {
+.timeline-item.active .timeline-icon {
     transform: scale(1.12);
     box-shadow: 0 0 0 4px var(--paper), 0 4px 12px rgba(255, 107, 53, 0.35);
 }
 
-.timeline-item:not(.actives) .timeline-icon svg {
+.timeline-item:not(.active) .timeline-icon svg {
     opacity: 1;
 }
 
@@ -145,7 +145,7 @@
     letter-spacing: 0.04em;
 }
 
-.timeline-item.actives .timeline-label h3 {
+.timeline-item.active .timeline-label h3 {
     color: var(--charcoal);
 }
 
@@ -346,7 +346,7 @@
     box-shadow: 0 10px 24px rgba(255, 107, 53, 0.38);
 }
 
-.btn-refresh:actives {
+.btn-refresh:active {
     transform: translateY(0);
 }
 

@@ -564,13 +564,13 @@ const Staff = () => {
 
                         <div className="staff-detail-tabs">
                             <button
-                                className={detailTab === 'salary' ? 'actives' : ''}
+                                className={detailTab === 'salary' ? 'active' : ''}
                                 onClick={() => setDetailTab('salary')}
                             >
                                 <IconReceipt2 size={16} /> Salary
                             </button>
                             <button
-                                className={detailTab === 'attendance' ? 'actives' : ''}
+                                className={detailTab === 'attendance' ? 'active' : ''}
                                 onClick={() => setDetailTab('attendance')}
                             >
                                 <IconCalendarStats size={16} /> Attendance

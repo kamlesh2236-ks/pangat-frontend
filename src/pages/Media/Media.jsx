@@ -226,7 +226,7 @@ const Media = () => {
                                 </div>
                             </div>
 
-                            <span className={`media-status-badge ${banner.isActive ? 'actives' : 'inactive'}`}>
+                            <span className={`media-status-badge ${banner.isActive ? 'active' : 'inactive'}`}>
                                 {banner.isActive ? 'Live' : 'Hidden'}
                             </span>
 

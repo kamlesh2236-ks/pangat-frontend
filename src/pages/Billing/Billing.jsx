@@ -439,7 +439,7 @@ const Billing = () => {
           {PAYMENT_METHODS.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
-              className={`billing-payment-btn ${paymentMethod === value ? 'actives' : ''}`}
+              className={`billing-payment-btn ${paymentMethod === value ? 'active' : ''}`}
               onClick={() => setPaymentMethod(value)}
             >
               <Icon size={16} /> {label}

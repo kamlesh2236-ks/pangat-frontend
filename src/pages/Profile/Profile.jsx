@@ -296,7 +296,7 @@ const Profile = () => {
                                 </span>
                             )}
                             <span className={`profile-badge status ${profile?.isActive ? 'active' : 'inactive'}`}>
-                                {profile?.isActive ? 'Actives' : 'Inactive'}
+                                {profile?.isActive ? 'Active' : 'Inactive'}
                             </span>
                         </div>
                     </div>
@@ -366,7 +366,7 @@ const Profile = () => {
                                 <button
                                     type="button"
                                     key={c}
-                                    className={`profile-tag-chip ${formData.cuisine.includes(c) ? 'actives' : ''}`}
+                                    className={`profile-tag-chip ${formData.cuisine.includes(c) ? 'active' : ''}`}
                                     onClick={() => toggleCuisine(c)}
                                 >
                                     {c}
@@ -378,7 +378,7 @@ const Profile = () => {
                                     <button
                                         type="button"
                                         key={c}
-                                        className="profile-tag-chip actives"
+                                        className="profile-tag-chip active"
                                         onClick={() => toggleCuisine(c)}
                                     >
                                         {c} <IconX size={12} />
@@ -543,7 +543,7 @@ const Profile = () => {
                                 <button
                                     type="button"
                                     key={t.value}
-                                    className={`profile-theme-swatch ${formData.theme === t.value ? 'actives' : ''}`}
+                                    className={`profile-theme-swatch ${formData.theme === t.value ? 'active' : ''}`}
                                     style={{ background: t.color }}
                                     onClick={() => setFormData({ ...formData, theme: t.value })}
                                     title={t.label}
