@@ -5,7 +5,7 @@ const getAPIBaseURL = () => {
 
     if (VITE_API_URL) {
         console.log('📍 Using VITE_API_URL:', VITE_API_URL);
-        return VITE_API_URL;
+        return `${VITE_API_URL}/api`;
     }
 
     // Auto-detect based on current location
