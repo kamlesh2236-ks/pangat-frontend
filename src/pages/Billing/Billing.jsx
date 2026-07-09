@@ -18,7 +18,7 @@ import {
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { menuAPI, tablesAPI, ordersAPI } from '../../utils/api';
-import BillPrint from '../Orders/Billprint';
+import BillPrint from '../Orders/BillPrint';
 import './Billing.css';
 
 const PAYMENT_METHODS = [
