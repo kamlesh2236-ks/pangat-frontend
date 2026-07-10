@@ -1,5 +1,6 @@
 .bill-print-root {
   display: none;
+  overflow: hidden;
 }
 
 .bill-paper {
@@ -185,7 +186,6 @@
 }
 
 /* ---- PRINT RULES ---- */
-/* When printing, hide the whole app and show only the bill. */
 @media print {
   body * {
     visibility: hidden;
@@ -269,3 +269,5 @@
 .bill-combo-list {
   word-break: break-word;
 }
+
+

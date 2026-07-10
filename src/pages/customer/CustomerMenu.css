@@ -206,9 +206,7 @@
     }
 }
 
-/* ===== Header-integrated cart strip (mobile only) =====
-   Ye woh green bar hai jaisa screenshot mein tha — header ke andar hi,
-   full-width, cart mein item aate hi dikhta hai */
+
 .header-cart-strip {
     display: none;
 }
