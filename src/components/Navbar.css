@@ -156,16 +156,16 @@ body{
   transition: opacity 0.3s ease;
 }
 
-.active{
+.menu-group li.active{
     background:linear-gradient(135deg,#ff6b35,#ff914d);
     color:#fff !important;
     box-shadow:0 10px 20px rgba(255,107,53,.35);
 }
 
-.active svg{
+.menu-group li.active svg{
     color:#fff;
 }
 
-.active:hover{
+.menu-group li.active:hover{
     transform:translateX(6px);
 }
