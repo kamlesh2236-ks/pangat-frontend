@@ -132,8 +132,7 @@ const BillPrint = ({ order, onReady }) => {
     .toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
     .toUpperCase();
 
-  // Counter billing me walk-in orders ka tableNumber nahi hota (null) —
-  // is case me "Table No" row ki jagah "Walk-in Order" dikhayenge.
+
   const isWalkIn = order.tableNumber === null || order.tableNumber === undefined;
 
   return (
