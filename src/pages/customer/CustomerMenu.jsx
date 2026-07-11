@@ -143,7 +143,7 @@ const CustomerMenu = () => {
     };
 
     const addToCart = (item) => {
-        if (item.isOutOfStock === false) {
+        if (item.isOutOfStock === true) {
             toast.error(`${item.name} is out of stock`);
             return;
         }
