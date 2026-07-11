@@ -36,7 +36,31 @@ const TablesList = () => {
             setLoading(true);
             const response = await tablesAPI.getAll();
             if (response.data.success) {
-                setTables(response.data.data);
+                const fetchedTables = response.data.data;
+                setTables(fetchedTables);
+
+                // ✅ FIX: Table-list endpoint sirf qrCode flag deta hai, asli
+                // qrUrl nahi. Isliye jin tables ka QR pehle generate ho chuka
+                // hai unke liye yahin silently real qrUrl backfill kar lo,
+                // warna card grid ka QR galat/fake URL encode karta tha
+                // (bina modal khole scan karne par wrong destination aati thi).
+                const needsQrUrl = fetchedTables.filter((t) => t.qrCode && !t.qrUrl);
+                if (needsQrUrl.length > 0) {
+                    const results = await Promise.allSettled(
+                        needsQrUrl.map((t) => tablesAPI.generateQR(t.tableNumber))
+                    );
+
+                    setTables((prev) =>
+                        prev.map((t) => {
+                            const idx = needsQrUrl.findIndex((nt) => nt._id === t._id);
+                            if (idx === -1) return t;
+                            const res = results[idx];
+                            if (res.status !== 'fulfilled' || !res.value?.data?.success) return t;
+                            const data = res.value.data.data;
+                            return { ...t, qrCode: data.qrCode, qrUrl: data.qrUrl };
+                        })
+                    );
+                }
             }
         } catch (error) {
             console.error('Error fetching tables:', error);
@@ -172,15 +196,24 @@ const TablesList = () => {
         }
     };
 
+    // ✅ FIX: ab tables array bhi sync hota hai, sirf selectedTable nahi.
+    // Pehle sirf selectedTable update hota tha, isliye card grid ka
+    // table.qrCode / table.qrUrl kabhi update nahi hota tha aur
+    // download/print buttons show hi nahi hote the card pe.
     const handleGenerateQR = async (table) => {
         try {
             const response = await tablesAPI.generateQR(table.tableNumber);
             if (response.data.success) {
-                setSelectedTable({
+                const updatedTable = {
                     ...table,
                     qrCode: response.data.data.qrCode,
                     qrUrl: response.data.data.qrUrl,
-                });
+                };
+
+                setSelectedTable(updatedTable);
+                setTables((prev) =>
+                    prev.map((t) => (t._id === table._id ? { ...t, ...updatedTable } : t))
+                );
                 setShowQRModal(true);
             }
         } catch (error) {
@@ -189,7 +222,7 @@ const TablesList = () => {
         }
     };
 
-    // ✅ DOWNLOAD QR - Fixed
+    // ✅ DOWNLOAD QR - card grid wala (chhota QR, id = qr-<tableId>)
     const downloadQR = (tableId, tableNumber) => {
         const element = document.getElementById(`qr-${tableId}`);
         if (element) {
@@ -224,9 +257,13 @@ const TablesList = () => {
         }
     };
 
-    // ✅ PRINT QR - Fixed
-    const printQR = (tableId, tableNumber) => {
-        const element = document.getElementById(`qr-print-${tableId}`);
+    // ✅ FIX: printQR ab idPrefix leta hai.
+    // Card grid ka QR id = "qr-<id>", modal ka QR id = "qr-print-<id>".
+    // Pehle ye function hamesha "qr-print-<id>" hi dhundhta tha, isliye
+    // card pe (modal khole bina) Print button click karne par element
+    // milta hi nahi tha -> "QR code not found" error.
+    const printQR = (tableId, tableNumber, idPrefix = 'qr-print') => {
+        const element = document.getElementById(`${idPrefix}-${tableId}`);
         if (!element) {
             toast.error('QR code not found');
             return;
@@ -257,6 +294,8 @@ const TablesList = () => {
                         border: 2px solid #ddd;
                         padding: 20px;
                         background: white;
+                        width: 260px;
+                        height: 260px;
                     }
                     p {
                         margin-top: 20px;
@@ -288,7 +327,7 @@ const TablesList = () => {
         }, 250);
     };
 
-    // ✅ QR MODAL DOWNLOAD - Fixed
+
     const downloadQRFromModal = (tableId, tableNumber) => {
         const element = document.getElementById(`qr-print-${tableId}`);
         if (element) {
@@ -440,7 +479,7 @@ const TablesList = () => {
                                         </button>
                                         <button
                                             className="action-btn print-btn"
-                                            onClick={() => printQR(table._id, table.tableNumber)}
+                                            onClick={() => printQR(table._id, table.tableNumber, 'qr')}
                                             title="Print QR"
                                         >
                                             <IconPrinter size={18} />
@@ -706,7 +745,7 @@ const TablesList = () => {
                             </button>
                             <button
                                 className="btn-secondary"
-                                onClick={() => printQR(selectedTable._id, selectedTable.tableNumber)}
+                                onClick={() => printQR(selectedTable._id, selectedTable.tableNumber, 'qr-print')}
                             >
                                 <IconPrinter size={18} /> Print
                             </button>

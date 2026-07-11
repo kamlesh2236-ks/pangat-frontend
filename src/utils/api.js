@@ -61,6 +61,7 @@ apiClient.interceptors.response.use(
 );
 
 export const authAPI = {
+    login: (data) => apiClient.post('/auth/login', data),
     restaurantSignup: (data) => apiClient.post('/auth/restaurant/signup', data),
     restaurantLogin: (data) => apiClient.post('/auth/restaurant/login', data),
     adminLogin: (data) => apiClient.post('/auth/admin/login', data),
@@ -126,7 +127,7 @@ export const paymentsAPI = {
 };
 
 export const dashboardAPI = {
-    getStats: () => apiClient.get('/admin/dashboard/stats'),
+    getStats: (params) => apiClient.get('/admin/dashboard/stats', { params }),
     getDailyStats: (date) => apiClient.get(`/admin/dashboard/daily-stats`, { params: { date } }),
     getWeeklyStats: () => apiClient.get('/admin/dashboard/weekly-stats'),
     getMonthlyStats: () => apiClient.get('/admin/dashboard/monthly-stats'),
@@ -155,7 +156,7 @@ export const customerAPI = {
             params: { qrId: qrId }
         }),
 
-        getBanners: (restaurantId) =>
+    getBanners: (restaurantId) =>
         apiClient.get(`/customer/media/${restaurantId}`),
 };
 
@@ -242,6 +243,15 @@ export const searchAPI = {
 export const transactionsAPI = {
     getAll: (filters = {}) => apiClient.get('/admin/transactions', { params: filters }),
     getSummary: () => apiClient.get('/admin/transactions/summary'),
+};
+
+
+export const superAdminAPI = {
+    getAllRestaurants: () => apiClient.get('/superadmin/restaurants'),
+    getPlatformStats: () => apiClient.get('/superadmin/stats'),
+    getRestaurantOverview: (id) => apiClient.get(`/superadmin/restaurants/${id}/overview`),
+    getRestaurantOrders: (id, filters = {}) => apiClient.get(`/superadmin/restaurants/${id}/orders`, { params: filters }),
+    getRestaurantActivity: (id, filters = {}) => apiClient.get(`/superadmin/restaurants/${id}/activity`, { params: filters }),
 };
 
 export default apiClient;

@@ -32,9 +32,32 @@ import Reports from './pages/Reports/Reports';
 import Media from './pages/Media/Media';
 import Transactions from './pages/Transactions/Transactions';
 
+// ✅ Super Admin Pages
+import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
+import RestaurantDetail from './pages/SuperAdmin/RestaurantDetail';
+
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
   return token ? children : <Navigate to="/login" />;
+};
+
+// ✅ Sirf SuperAdmin role wale users ko allow karta hai
+const SuperAdminRoute = ({ children }) => {
+  const token = localStorage.getItem('adminToken');
+  const userStr = localStorage.getItem('adminUser');
+
+  if (!token) return <Navigate to="/login" />;
+
+  try {
+    const user = JSON.parse(userStr);
+    if (user?.role !== 'SuperAdmin') {
+      return <Navigate to="/dashboard" />;
+    }
+  } catch {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
 };
 
 const MainLayout = ({ children }) => {
@@ -67,6 +90,28 @@ export default function App() {
                   {/* Auth Routes */}
                   <Route path="/login" element={<RestaurantLogin />} />
                   <Route path="/signup" element={<RestaurantSignup />} />
+
+                  {/* ✅ Super Admin Routes — ab wahi MainLayout (Navbar+Topbar) reuse karte hai */}
+                  <Route
+                    path="/super-admin/dashboard"
+                    element={
+                      <SuperAdminRoute>
+                        <MainLayout>
+                          <SuperAdminDashboard />
+                        </MainLayout>
+                      </SuperAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/super-admin/restaurant/:id"
+                    element={
+                      <SuperAdminRoute>
+                        <MainLayout>
+                          <RestaurantDetail />
+                        </MainLayout>
+                      </SuperAdminRoute>
+                    }
+                  />
 
                   {/* Protected Routes */}
                   <Route

@@ -16,10 +16,11 @@ import {
   IconWallet,
   IconUserCircle,
   IconLogout,
-  IconArrowsExchange
+  IconArrowsExchange,
+  IconBuildingStore,
 } from "@tabler/icons-react";
 import { NavbarContext } from "../context/NavbarContext";
-import LogoutConfirmModal from "./LogoutConfirmModal"; // path apne project ke hisaab se adjust karo
+import LogoutConfirmModal from "./LogoutConfirmModal";
 
 export const menuGroups = [
   {
@@ -45,7 +46,7 @@ export const menuGroups = [
     heading: "Finance",
     items: [
       { title: "Reports", icon: <IconReport size={20} />, path: "/reports" },
-      { title: "Transactions", icon: <IconArrowsExchange  size={20} />, path: "/transactions" },
+      { title: "Transactions", icon: <IconArrowsExchange size={20} />, path: "/transactions" },
     ],
   },
   {
@@ -57,14 +58,30 @@ export const menuGroups = [
   },
 ];
 
+export const superAdminMenuGroups = [
+  {
+    heading: "Platform",
+    items: [
+      { title: "All Restaurants", icon: <IconBuildingStore size={20} />, path: "/super-admin/dashboard" },
+    ],
+  },
+  {
+    heading: "Account",
+    items: [
+      { title: "Logout", icon: <IconLogout size={20} />, action: "logout" },
+    ],
+  },
+];
+
 const Navbar = () => {
   const { isNavbarOpen } = useContext(NavbarContext);
   const { logout, user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 👇 Naya state — Logout click hone par seedha logout nahi,
-  // pehle confirm modal khulega
+  const isSuperAdmin = user?.role === "SuperAdmin";
+  const activeMenuGroups = isSuperAdmin ? superAdminMenuGroups : menuGroups;
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleItemClick = (item) => {
@@ -89,7 +106,7 @@ const Navbar = () => {
         <h2>{user?.name}</h2>
       </div>
 
-      {menuGroups.map((group) => (
+      {activeMenuGroups.map((group) => (
         <div className="menu-group" key={group.heading}>
           <h4>{group.heading}</h4>
           <ul>

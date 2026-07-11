@@ -34,18 +34,35 @@ const RestaurantLogin = () => {
     setLoading(true);
 
     try {
-      const response = await authAPI.restaurantLogin(formData);
+      // ✅ CHANGED: restaurantLogin ki jagah unified login
+      const response = await authAPI.login(formData);
 
       if (response.data.success) {
         toast.success('Login successful!');
-        login(response.data.data.token, {
-          restaurantId: response.data.data.restaurantId,
-          name: response.data.data.name,
-          email: response.data.data.email,
-          restaurantDbName: response.data.data.dbName,
-          logo: response.data.data.logo,
-        });
-        navigate('/dashboard');
+
+        const { role } = response.data.data;
+
+        if (role === 'SuperAdmin') {
+          // ✅ SUPER ADMIN LOGIN
+          login(response.data.data.token, {
+            _id: response.data.data._id,
+            name: response.data.data.name,
+            email: response.data.data.email,
+            role: 'SuperAdmin',
+          });
+          navigate('/super-admin/dashboard');
+        } else {
+          // ✅ NORMAL RESTAURANT OWNER LOGIN (existing flow, unchanged)
+          login(response.data.data.token, {
+            restaurantId: response.data.data.restaurantId,
+            name: response.data.data.name,
+            email: response.data.data.email,
+            restaurantDbName: response.data.data.dbName,
+            logo: response.data.data.logo,
+            role: 'Owner',
+          });
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
@@ -103,7 +120,7 @@ const RestaurantLogin = () => {
               <span className="auth-button-label">
                 {loading ? 'Logging in...' : 'Login'}
               </span>
-              
+
             </button>
           </form>
 

@@ -8,6 +8,12 @@ import {
     IconAlertCircle,
     IconChefHat,
     IconToolsKitchen2,
+    IconCurrencyRupee,
+    IconCircleCheck,
+    IconCircleX,
+    IconArrowUpRight,
+    IconArrowDownRight,
+    IconRefresh,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import {
@@ -25,20 +31,38 @@ import {
 } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
 import { dashboardAPI, ordersAPI } from '../utils/api';
-import { IconRefresh } from '@tabler/icons-react';
 import './Dashboard.css';
 
 const Dashboard = () => {
     const { user } = useContext(AuthContext);
+
+    // ---- Date range (defaults to today, like the screenshot) ----
+    const todayStr = new Date().toISOString().split('T')[0];
+    const [startDate, setStartDate] = useState(todayStr);
+    const [endDate, setEndDate] = useState(todayStr);
+
     const [stats, setStats] = useState({
         totalOrders: 0,
         totalRevenue: 0,
         todayRevenue: 0,
         pendingOrders: 0,
         completedToday: 0,
+        cancelledToday: 0,
         totalTables: 0,
         activeTables: 0,
     });
+
+    // Growth % vs the previous period. If your backend already returns
+    // a `growth` field (recommended: compare current range vs the same
+    // length range immediately before it), it will be picked up
+    // automatically below. Until then it safely defaults to 0.
+    const [growth, setGrowth] = useState({
+        revenue: 0,
+        orders: 0,
+        completed: 0,
+        cancelled: 0,
+    });
+
     const [orders, setOrders] = useState([]);
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -47,29 +71,38 @@ const Dashboard = () => {
     useEffect(() => {
         fetchDashboardData();
         fetchChartData();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [startDate, endDate]);
 
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
 
-            // Fetch stats
-            const statsResponse = await dashboardAPI.getStats();
+            // Pass the date range to the backend. Make sure
+            // dashboardAPI.getStats() forwards params -> GET /api/dashboard/stats?startDate=...&endDate=...
+            const statsResponse = await dashboardAPI.getStats({ startDate, endDate });
             if (statsResponse.data.success) {
                 const d = statsResponse.data.data;
-                // Backend returns a nested shape: { orders: {...}, revenue: {...}, tables: {...}, menu: {...} }
+
                 setStats({
                     totalOrders: d.orders?.total ?? 0,
                     totalRevenue: d.revenue?.total ?? 0,
                     todayRevenue: d.revenue?.today ?? 0,
                     pendingOrders: d.orders?.pending ?? 0,
                     completedToday: d.orders?.completedToday ?? 0,
+                    cancelledToday: d.orders?.cancelledToday ?? 0,
                     totalTables: d.tables?.total ?? 0,
                     activeTables: d.tables?.active ?? 0,
                 });
+
+                setGrowth({
+                    revenue: d.revenue?.growth ?? 0,
+                    orders: d.orders?.growth ?? 0,
+                    completed: d.orders?.completedGrowth ?? 0,
+                    cancelled: d.orders?.cancelledGrowth ?? 0,
+                });
             }
 
-            // Fetch recent orders
             const ordersResponse = await ordersAPI.getAll({ limit: 5, sort: '-createdAt' });
             if (ordersResponse.data.success) {
                 setOrders(ordersResponse.data.data);
@@ -107,18 +140,55 @@ const Dashboard = () => {
         fetchChartData();
     };
 
-    const StatCard = ({ icon: Icon, title, value, subtitle, color }) => (
-        <div className={`stat-card ${color}`}>
-            <div className="stat-icon">
-                <Icon size={28} />
+    const successRate = stats.totalOrders > 0
+        ? Number(((stats.completedToday / stats.totalOrders) * 100).toFixed(1))
+        : 0;
+
+    // ---- Small "growth" summary card (top row in screenshot) ----
+    const GrowthCard = ({ icon: Icon, label, value, iconColor }) => {
+        const isPositive = value >= 0;
+        return (
+            <div className="growth-card">
+                <div className="growth-card-text">
+                    <p className="growth-label">{label}</p>
+                    <span className={`growth-value ${isPositive ? 'up' : 'down'}`}>
+                        {isPositive ? <IconArrowUpRight size={14} /> : <IconArrowDownRight size={14} />}
+                        {isPositive ? '+' : ''}{value}%
+                    </span>
+                </div>
+                <div className="growth-icon" style={{ color: iconColor, background: `${iconColor}1a` }}>
+                    <Icon size={24} />
+                </div>
             </div>
-            <div className="stat-content">
-                <p className="stat-title">{title}</p>
-                <h3 className="stat-value">{value}</h3>
-                {subtitle && <p className="stat-subtitle">{subtitle}</p>}
+        );
+    };
+
+    // ---- Big gradient stat card (main row in screenshot) ----
+    const GradientStatCard = ({ icon: Icon, label, value, subtitle, growthValue, progress, variant }) => {
+        const isPositive = growthValue >= 0;
+        return (
+            <div className={`gradient-stat-card ${variant}`}>
+                <div className="gradient-stat-top">
+                    <div className="gradient-stat-icon">
+                        <Icon size={26} />
+                    </div>
+                    <span className={`gradient-stat-badge ${isPositive ? 'up' : 'down'}`}>
+                        {isPositive ? <IconArrowUpRight size={14} /> : <IconArrowDownRight size={14} />}
+                        {isPositive ? '+' : ''}{growthValue}%
+                    </span>
+                </div>
+                <p className="gradient-stat-label">{label}</p>
+                <h3 className="gradient-stat-value">{value}</h3>
+                <p className="gradient-stat-subtitle">{subtitle}</p>
+                <div className="gradient-stat-progress">
+                    <div
+                        className="gradient-stat-progress-fill"
+                        style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
+                    />
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const OrderRow = ({ order }) => (
         <tr className={`order-row status-${order.orderStatus?.toLowerCase()}`}>
@@ -150,47 +220,73 @@ const Dashboard = () => {
                     <h1>Dashboard</h1>
                     <p>Welcome back, {user?.name}!</p>
                 </div>
-                <button className="refresh-btn" onClick={handleRefresh} disabled={loading}>
-                    <IconRefresh size={17} stroke={2} /> {loading ? 'Refreshing...' : 'Refresh'}
-                </button>
+
+                <div className="header-right">
+                    <div className="date-range-picker">
+                        <input
+                            type="date"
+                            value={startDate}
+                            max={endDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                        <input
+                            type="date"
+                            value={endDate}
+                            min={startDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </div>
+                    <button className="refresh-btn" onClick={handleRefresh} disabled={loading}>
+                        <IconRefresh size={17} stroke={2} className={loading ? 'icon-spin' : ''} /> {loading ? 'Refreshing...' : 'Refresh'}
+                    </button>
+                </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="stats-grid">
-                <StatCard
+            {/* Growth Summary Row */}
+            <div className="growth-summary-grid">
+                <GrowthCard icon={IconCurrencyRupee} label="Revenue Growth" value={growth.revenue} iconColor="#10b981" />
+                <GrowthCard icon={IconShoppingCart} label="Orders Growth" value={growth.orders} iconColor="#3b82f6" />
+                <GrowthCard icon={IconCircleCheck} label="Completed Growth" value={growth.completed} iconColor="#7c3aed" />
+                <GrowthCard icon={IconCircleX} label="Cancelled Growth" value={growth.cancelled} iconColor="#ef4444" />
+            </div>
+
+            {/* Main Gradient Stats */}
+            <div className="gradient-stats-grid">
+                <GradientStatCard
+                    icon={IconCurrencyRupee}
+                    label="TOTAL REVENUE"
+                    value={`₹${stats.totalRevenue}`}
+                    subtitle="Total revenue generated"
+                    growthValue={growth.revenue}
+                    progress={stats.totalRevenue > 0 ? Math.max(Math.abs(growth.revenue), 60) : 0}
+                    variant="green"
+                />
+                <GradientStatCard
                     icon={IconShoppingCart}
-                    title="Total Orders"
+                    label="TOTAL ORDERS"
                     value={stats.totalOrders}
-                    subtitle="All time"
-                    color="orange"
+                    subtitle="All orders processed"
+                    growthValue={growth.orders}
+                    progress={stats.totalOrders > 0 ? Math.max(Math.abs(growth.orders), 60) : 0}
+                    variant="blue"
                 />
-                <StatCard
-                    icon={IconTrendingUp}
-                    title="Today Revenue"
-                    value={`₹${stats.todayRevenue}`}
-                    subtitle={`₹${stats.totalRevenue} all time`}
-                    color="green"
-                />
-                <StatCard
-                    icon={IconAlertCircle}
-                    title="Pending Orders"
-                    value={stats.pendingOrders}
-                    subtitle="Waiting preparation"
-                    color="red"
-                />
-                <StatCard
-                    icon={IconCheck}
-                    title="Completed Today"
+                <GradientStatCard
+                    icon={IconCircleCheck}
+                    label="COMPLETED ORDERS"
                     value={stats.completedToday}
-                    subtitle="Successfully served"
-                    color="blue"
+                    subtitle="Successfully delivered"
+                    growthValue={growth.completed}
+                    progress={stats.completedToday > 0 ? Math.max(Math.abs(growth.completed), 60) : 0}
+                    variant="purple"
                 />
-                <StatCard
-                    icon={IconToolsKitchen2}
-                    title="Total Tables"
-                    value={stats.totalTables}
-                    subtitle={`${stats.activeTables} currently occupied`}
-                    color="purple"
+                <GradientStatCard
+                    icon={IconTrendingUp}
+                    label="SUCCESS RATE"
+                    value={`${successRate}%`}
+                    subtitle="Order completion rate"
+                    growthValue={growth.completed}
+                    progress={successRate}
+                    variant="orange"
                 />
             </div>
 

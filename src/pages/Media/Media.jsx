@@ -189,9 +189,9 @@ const Media = () => {
             {banners.length === 0 ? (
                 <div className="empty-state">
                     <IconPhoto size={40} />
-                    <p>Koi banner nahi hai abhi tak</p>
+                    <p>Not found any banner yet</p>
                     <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-                        <IconPlus size={18} /> Pehla Banner Add Karo
+                        <IconPlus size={18} /> Add first banner
                     </button>
                 </div>
             ) : (

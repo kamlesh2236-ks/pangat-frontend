@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     IconPlus,
     IconEdit,
@@ -12,11 +12,44 @@ import {
     IconEyeOff,
     IconPackage,
     IconPackageOff,
+    IconFileSpreadsheet,
+    IconLoader2,
 
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import { menuAPI } from '../../utils/api';
 import './Menu.css';
+
+// ---------- Excel helpers ----------
+// Excel se aaye row ke keys (headers) ko lowercase/trim karke normalize karta hai,
+// taaki "Item Name", "item name", " Item Name " sab match ho jaayein.
+const normalizeRow = (row) => {
+    const normalized = {};
+    Object.keys(row).forEach((key) => {
+        normalized[key.toString().trim().toLowerCase()] = row[key];
+    });
+    return normalized;
+};
+
+// Normalized row me se pehla non-empty matching column value nikalta hai.
+// Multiple possible header names de sakte ho (e.g. 'discount price', 'discountprice').
+const pick = (row, keys, fallback = '') => {
+    for (const k of keys) {
+        const val = row[k];
+        if (val !== undefined && val !== null && val.toString().trim() !== '') {
+            return val;
+        }
+    }
+    return fallback;
+};
+
+// "Yes/No", "True/False", "1/0" jaisi values ko boolean me convert karta hai.
+const parseBool = (val, defaultVal = false) => {
+    if (val === undefined || val === null || val.toString().trim() === '') return defaultVal;
+    const s = val.toString().trim().toLowerCase();
+    return ['yes', 'y', 'true', '1'].includes(s);
+};
 
 const MenuManagement = () => {
     const [menuItems, setMenuItems] = useState([]);
@@ -28,6 +61,10 @@ const MenuManagement = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [imagePreview, setImagePreview] = useState(null);
     const [uploading, setUploading] = useState(false);
+
+    // 👇 Excel import ke liye
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = useRef(null);
 
     const categories = [
         'All',
@@ -228,6 +265,133 @@ const MenuManagement = () => {
         }
     };
 
+    // 👇 Excel se ek saath bahut saare menu items import karna
+    // Har row ko parse karke, wahi handleAddItem wala API call (menuAPI.create) use hota hai,
+    // isliye har item exactly wahi jagah save hota hai jahan manually add karne se hota.
+    const handleExcelFileSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setImporting(true);
+        try {
+            const buffer = await file.arrayBuffer();
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+            if (rows.length === 0) {
+                toast.error('Excel file me koi data nahi mila');
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+            const failedRows = [];
+            const addedItems = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = normalizeRow(rows[i]);
+
+                const name = pick(row, ['item name', 'name']);
+                const priceRaw = pick(row, ['price']);
+
+                // Name aur valid price zaroori hai, warna row skip
+                if (!name || priceRaw === '' || isNaN(parseFloat(priceRaw))) {
+                    failCount++;
+                    failedRows.push(i + 2); // +2 = header row + 1-index
+                    continue;
+                }
+
+                const discountRaw = pick(row, ['discount price', 'discountprice']);
+                const quantityRaw = pick(row, ['quantity', 'stock', 'qty']);
+                const tagsRaw = pick(row, ['tags']);
+                const ingredientsRaw = pick(row, ['ingredients']);
+                const allergensRaw = pick(row, ['allergens']);
+
+                const data = {
+                    name: name.toString().trim(),
+                    description: pick(row, ['description']).toString(),
+                    price: parseFloat(priceRaw),
+                    discountPrice: discountRaw !== '' && !isNaN(parseFloat(discountRaw))
+                        ? parseFloat(discountRaw)
+                        : null,
+                    category: pick(row, ['category'], 'Main Course').toString(),
+                    image: '',
+                    quantity: quantityRaw !== '' && !isNaN(parseInt(quantityRaw))
+                        ? parseInt(quantityRaw)
+                        : null,
+                    isAvailable: parseBool(pick(row, ['available', 'isavailable']), true),
+                    isOutOfStock: parseBool(pick(row, ['out of stock', 'isoutofstock']), false),
+                    tags: tagsRaw ? tagsRaw.toString().split(',').map(t => t.trim()).filter(t => t) : [],
+                    preparationTime: parseInt(pick(row, ['preparation time', 'preparationtime'], '15')) || 15,
+                    rating: parseFloat(pick(row, ['rating'], '0')) || 0,
+                    ingredients: ingredientsRaw ? ingredientsRaw.toString().split(',').map(i => i.trim()).filter(i => i) : [],
+                    allergens: allergensRaw ? allergensRaw.toString().split(',').map(a => a.trim()).filter(a => a) : [],
+                    isFeatured: parseBool(pick(row, ['featured', 'isfeatured']), false),
+                    customizations: [],
+                };
+
+                try {
+                    const response = await menuAPI.create(data);
+                    if (response.data.success) {
+                        successCount++;
+                        addedItems.push(response.data.data);
+                    } else {
+                        failCount++;
+                        failedRows.push(i + 2);
+                    }
+                } catch (err) {
+                    failCount++;
+                    failedRows.push(i + 2);
+                }
+            }
+
+            if (addedItems.length > 0) {
+                setMenuItems(prev => [...prev, ...addedItems]);
+            }
+
+            if (successCount > 0) {
+                toast.success(`${successCount} item(s) menu me import ho gaye`);
+            }
+            if (failCount > 0) {
+                toast.error(`${failCount} row(s) skip ho gaye (row: ${failedRows.join(', ')})`);
+            }
+        } catch (error) {
+            console.error('Error importing excel:', error);
+            toast.error('Excel file read nahi ho payi. Format check karke dobara try karo.');
+        } finally {
+            setImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    // 👇 Sample template download — user ko pata chale ki columns kaunse chahiye
+    const downloadMenuTemplate = () => {
+        const sampleData = [
+            {
+                'Item Name': 'Chicken Biryani',
+                'Category': 'Main Course',
+                'Description': 'Aromatic basmati rice cooked with tender chicken and spices',
+                'Price': 250,
+                'Discount Price': 220,
+                'Quantity': 50,
+                'Available': 'Yes',
+                'Out Of Stock': 'No',
+                'Tags': 'Non-Veg, Bestseller',
+                'Preparation Time': 20,
+                'Rating': 4.5,
+                'Ingredients': 'Chicken, Rice, Spices',
+                'Allergens': '',
+                'Featured': 'Yes',
+            },
+        ];
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Menu Items');
+        XLSX.writeFile(wb, 'menu_items_template.xlsx');
+    };
+
     const handleEditClick = (item) => {
         setSelectedItem(item);
         setFormData({
@@ -299,9 +463,30 @@ const MenuManagement = () => {
                     <h1>Menu Management</h1>
                     <p>Add, edit, and manage your restaurant menu items</p>
                 </div>
-                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-                    <IconPlus size={18} /> Add New Item
-                </button>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button className="btn-secondary" type="button" onClick={downloadMenuTemplate}>
+                        <IconFileSpreadsheet size={18} /> Sample Template
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={importing}
+                    >
+                        {importing ? <IconLoader2 size={18} /> : <IconUpload size={18} />}
+                        {importing ? 'Importing...' : 'Import Excel'}
+                    </button>
+                    <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        ref={fileInputRef}
+                        onChange={handleExcelFileSelect}
+                        style={{ display: 'none' }}
+                    />
+                    <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+                        <IconPlus size={18} /> Add New Item
+                    </button>
+                </div>
             </div>
 
             {/* Search & Filter */}

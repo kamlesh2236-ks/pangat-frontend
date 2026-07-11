@@ -367,7 +367,7 @@ const Billing = () => {
         <div className="billing-cart-items">
           {cart.length === 0 ? (
             <div className="billing-cart-empty">
-             Select items from the menu — your cart will appear here
+              Select items from the menu — your cart will appear here
             </div>
           ) : (
             cart.map((item) => (
@@ -440,14 +440,17 @@ const Billing = () => {
             <button
               key={value}
               className={`billing-payment-btn ${paymentMethod === value ? 'active' : ''}`}
-              onClick={() => setPaymentMethod(value)}
+              onClick={() => {
+                setPaymentMethod(value);
+                setPaymentStatus(value === 'UPI' ? 'Pending' : 'Completed');
+              }}
             >
               <Icon size={16} /> {label}
             </button>
           ))}
         </div>
 
-        <div className="billing-payment-status">
+        {/* <div className="billing-payment-status">
           <label>
             <input
               type="radio"
@@ -464,7 +467,7 @@ const Billing = () => {
             />
             Pay later
           </label>
-        </div>
+        </div> */}
 
         <button
           className="billing-generate-btn"

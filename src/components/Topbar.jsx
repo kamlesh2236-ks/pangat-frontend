@@ -50,6 +50,9 @@ const Topbar = () => {
     const [loadingProfile, setLoadingProfile] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+
+    const isSuperAdmin = user?.role === 'SuperAdmin';
+
     // ===== Notifications dropdown =====
     const notificationsRef = useRef(null);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -73,6 +76,8 @@ const Topbar = () => {
 
     // Debounced backend search
     useEffect(() => {
+        if (isSuperAdmin) return;
+
         const q = searchQuery.trim();
 
         if (!q) {
@@ -99,12 +104,12 @@ const Topbar = () => {
         }, 400);
 
         return () => clearTimeout(debounceRef.current);
-    }, [searchQuery]);
+    }, [searchQuery, isSuperAdmin]);
 
     const matchedNavItems = searchQuery.trim()
         ? flatNavItems.filter((item) =>
-              item.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
-          )
+            item.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+        )
         : [];
 
     const buildResultGroup = (key, icon, listPath, titleField, subtitleFn) => {
@@ -212,22 +217,31 @@ const Topbar = () => {
         setShowDropdown(willShow);
         setShowNotifications(false);
 
-        if (willShow && !profile) {
-            try {
-                setLoadingProfile(true);
-                const response = await profileAPI.getProfile();
-                if (response.data.success) {
-                    setProfile(response.data.data);
-                }
-            } catch (error) {
-                console.error('Error fetching profile preview:', error);
-            } finally {
-                setLoadingProfile(false);
+        if (!willShow || profile) return;
+
+        if (isSuperAdmin) {
+            setProfile({
+                name: user?.name,
+                email: user?.email,
+                isSuperAdmin: true,
+            });
+            return;
+        }
+
+        try {
+            setLoadingProfile(true);
+            const response = await profileAPI.getProfile();
+            if (response.data.success) {
+                setProfile(response.data.data);
             }
+        } catch (error) {
+            console.error('Error fetching profile preview:', error);
+        } finally {
+            setLoadingProfile(false);
         }
     };
 
-    // Bahar click karne par dropdowns band ho jaye
+
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -315,48 +329,51 @@ const Topbar = () => {
                 <span>{time.toLocaleString('en-IN')}</span>
             </div>
 
-            <div className="search-cont" ref={searchRef}>
-                <IconListSearch size={24} stroke={2} />
-                <input
-                    type="text"
-                    placeholder='Search anything... (orders, staff, menu, tables)'
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onKeyDown={handleSearchKeyDown}
-                    onFocus={() => setShowSearchResults(true)}
-                />
+            {/* ✅ NEW: Super Admin ke liye restaurant search bar nahi dikhega */}
+            {!isSuperAdmin && (
+                <div className="search-cont" ref={searchRef}>
+                    <IconListSearch size={24} stroke={2} />
+                    <input
+                        type="text"
+                        placeholder='Search anything... (orders, staff, menu, tables)'
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        onKeyDown={handleSearchKeyDown}
+                        onFocus={() => setShowSearchResults(true)}
+                    />
 
-                {showSearchResults && searchQuery.trim() && (
-                    <div className="search-results-dropdown">
-                        {searchLoading && (
-                            <div className="search-results-loading">Searching...</div>
-                        )}
+                    {showSearchResults && searchQuery.trim() && (
+                        <div className="search-results-dropdown">
+                            {searchLoading && (
+                                <div className="search-results-loading">Searching...</div>
+                            )}
 
-                        {!searchLoading && flatAllResults.length === 0 && (
-                            <div className="search-results-empty">No results found</div>
-                        )}
+                            {!searchLoading && flatAllResults.length === 0 && (
+                                <div className="search-results-empty">No results found</div>
+                            )}
 
-                        {resultGroups.map((group) => (
-                            <div key={group.label} className="search-results-group">
-                                <p className="search-results-group-label">{group.label}</p>
-                                {group.items.map((item) => (
-                                    <div
-                                        key={`${item.type}-${item.id}`}
-                                        className="search-results-item"
-                                        onClick={() => goToResult(item)}
-                                    >
-                                        {item.icon}
-                                        <div className="search-results-item-text">
-                                            <span className="search-results-item-title">{item.title}</span>
-                                            <span className="search-results-item-group">{item.subtitle}</span>
+                            {resultGroups.map((group) => (
+                                <div key={group.label} className="search-results-group">
+                                    <p className="search-results-group-label">{group.label}</p>
+                                    {group.items.map((item) => (
+                                        <div
+                                            key={`${item.type}-${item.id}`}
+                                            className="search-results-item"
+                                            onClick={() => goToResult(item)}
+                                        >
+                                            {item.icon}
+                                            <div className="search-results-item-text">
+                                                <span className="search-results-item-title">{item.title}</span>
+                                                <span className="search-results-item-group">{item.subtitle}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="left-func">
                 <div className="theme" onClick={toggleTheme}>
@@ -366,7 +383,6 @@ const Topbar = () => {
                         <IconSunHigh size={21} stroke={1} />
                     )}
                 </div>
-
                 <div className="notifications-dropdown-wrap" ref={notificationsRef}>
                     <div className="notifications" onClick={handleNotificationsClick}>
                         <IconBellStar size={21} stroke={1} />
@@ -429,6 +445,34 @@ const Topbar = () => {
                         <div className="profile-dropdown">
                             {loadingProfile ? (
                                 <div className="profile-dropdown-loading">Loading...</div>
+                            ) : profile?.isSuperAdmin ? (
+
+                                <>
+                                    <div className="profile-dropdown-header">
+                                        <div className="profile-dropdown-logo profile-dropdown-logo-placeholder">
+                                            <IconCrown size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="profile-dropdown-name">{profile.name}</p>
+                                            <div className="profile-dropdown-badges">
+                                                <span className="profile-dropdown-badge plan">
+                                                    <IconCrown size={11} /> Super Admin
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="profile-dropdown-info">
+                                        <IconMail size={14} />
+                                        <span>{profile.email}</span>
+                                    </div>
+
+                                    <div className="profile-dropdown-divider" />
+
+                                    <button className="profile-dropdown-logout-btn" onClick={requestLogout}>
+                                        <IconLogout size={16} /> Logout
+                                    </button>
+                                </>
                             ) : profile ? (
                                 <>
                                     <div className="profile-dropdown-header">
