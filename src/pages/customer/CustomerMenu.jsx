@@ -4,7 +4,7 @@ import {
     IconShoppingCart, IconMinus, IconPlus, IconX,
     IconLeaf, IconReceipt2, IconUser, IconPhone,
     IconShoppingBagCheck, IconMoodEmpty, IconChevronUp, IconMail, IconCash, IconCreditCard,
-    IconChevronRight, IconArrowLeft
+    IconChevronRight, IconArrowLeft, IconStarFilled
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
@@ -28,7 +28,7 @@ const CustomerMenu = () => {
     const [customerEmail, setCustomerEmail] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [tableNotFound, setTableNotFound] = useState(false);
-    const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart' -> items review, 'details' -> customer info + place order
+    const [checkoutStep, setCheckoutStep] = useState('cart');
 
     const bannerTimerRef = useRef(null);
 
@@ -41,10 +41,6 @@ const CustomerMenu = () => {
         fetchMenuItems();
     }, [restaurantId, tableNumber]);
 
-    // ---------- Keep menu/banners fresh without a manual page refresh ----------
-    // 1) Poll every 30s in the background (no loading spinner, no error toast)
-    // 2) Refetch immediately when the customer's phone screen/tab becomes active
-    //    again (they may have had it locked/backgrounded for a while)
     useEffect(() => {
         if (!restaurantId || !tableNumber || tableNotFound) return;
 
@@ -59,13 +55,14 @@ const CustomerMenu = () => {
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
+
         return () => {
             clearInterval(pollInterval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [restaurantId, tableNumber, tableNotFound]);
 
-    // ---------- Banner auto-advance ----------
+    // ---------- Banner auto-slide ----------
     useEffect(() => {
         if (banners.length <= 1) return;
 
@@ -91,21 +88,16 @@ const CustomerMenu = () => {
                 setRestaurantInfo(response.data.data.restaurant || null);
             }
 
-            // Banners aa jayein toh accha, na aayein toh menu load hone se rokna nahi hai —
-            // isliye alag try/catch mein, silently fail karta hai.
             fetchBanners(qrId);
         } catch (error) {
             console.error('Error fetching menu:', error);
 
-            // ✅ Table not found ko alag handle karo
             if (error.response?.status === 404 &&
                 error.response?.data?.message?.toLowerCase().includes('table')) {
                 setTableNotFound(true);
                 return;
             }
 
-            // Background refresh fail ho jaye toh customer ko error dikhane ki zaroorat nahi —
-            // unka existing menu already screen pe hai.
             if (!isSilent) {
                 const errorMsg =
                     error.response?.data?.message ||
@@ -127,12 +119,10 @@ const CustomerMenu = () => {
                 setBanners(response.data.data || []);
             }
         } catch (error) {
-            // Banners optional hain — menu ka experience block nahi hona chahiye
             console.error('Error fetching banners:', error);
         }
     };
 
-    // ---------- Banner click → scroll to linked category ----------
     const handleBannerClick = (banner) => {
         if (!banner.linkedCategory) return;
 
@@ -144,7 +134,6 @@ const CustomerMenu = () => {
 
     const goToBanner = (index) => {
         setActiveBanner(index);
-        // restart the auto-advance timer so it doesn't jump right after a manual click
         clearInterval(bannerTimerRef.current);
         if (banners.length > 1) {
             bannerTimerRef.current = setInterval(() => {
@@ -153,8 +142,11 @@ const CustomerMenu = () => {
         }
     };
 
-    // ... rest of the component remains same
     const addToCart = (item) => {
+        if (item.isOutOfStock === false) {
+            toast.error(`${item.name} is out of stock`);
+            return;
+        }
         const existingItem = cart.find(c => c._id === item._id);
 
         if (existingItem) {
@@ -184,6 +176,12 @@ const CustomerMenu = () => {
         toast.success('Item removed from cart');
     };
 
+    //card ke Add button ko +/- stepper mein switch karne ke liye
+    const getCartQuantity = (itemId) => {
+        const item = cart.find(c => c._id === itemId);
+        return item ? item.quantity : 0;
+    };
+
     const calculateTotal = () => {
         return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     };
@@ -192,8 +190,6 @@ const CustomerMenu = () => {
         return cart.reduce((sum, item) => sum + item.quantity, 0);
     };
 
-    // Cart ko hamesha 'items review' step se khulna chahiye, chahe pehle kabhi
-    // 'details' step pe chhoda ho
     const openCart = () => {
         setCheckoutStep('cart');
         setShowCart(true);
@@ -239,8 +235,6 @@ const CustomerMenu = () => {
                 })),
                 paymentMethod,
             };
-
-            console.log('📤 Placing order:', orderData);
 
             const response = await customerAPI.placeOrder(orderData);
 
@@ -288,8 +282,6 @@ const CustomerMenu = () => {
         );
     }
 
-    // Group menu items by category so banner clicks can jump to a section.
-    // Items without a category fall into "Other".
     const groupedMenu = menuItems.reduce((groups, item) => {
         const key = item.category || 'Other';
         if (!groups[key]) groups[key] = [];
@@ -298,6 +290,8 @@ const CustomerMenu = () => {
     }, {});
     const categoryNames = Object.keys(groupedMenu);
     const hasCategories = categoryNames.length > 1 || (categoryNames.length === 1 && categoryNames[0] !== 'Other');
+
+    
 
     return (
         <div className="customer-menu">
@@ -317,6 +311,10 @@ const CustomerMenu = () => {
                         )}
                         <div className="restaurant-text">
                             <h1>{restaurantInfo?.name || 'Restaurant Menu'}</h1>
+                            {restaurantInfo?.address && (
+                                <p className="restaurant-address">{restaurantInfo.address}</p>
+                                
+                            )}
                             <div className="header-meta">
                                 <span className="table-info">Table {tableNumber}</span>
                                 {restaurantInfo?.cuisine?.length > 0 && (
@@ -386,57 +384,99 @@ const CustomerMenu = () => {
                                     </h2>
                                 )}
                                 <div className="menu-grid">
-                                    {groupedMenu[category].map((item, idx) => (
-                                        <div
-                                            key={item._id}
-                                            className="menu-item"
-                                            style={{ animationDelay: `${idx * 0.05}s` }}
-                                        >
-                                            {item.image && (
-                                                <div className="item-image">
-                                                    <img src={item.image} alt={item.name} loading="lazy" />
-                                                </div>
-                                            )}
-                                            <div className="item-content">
-                                                <div className="item-header">
-                                                    <h3>{item.name}</h3>
-                                                    {item.tags?.includes('Veg') && (
-                                                        <span className="veg-badge">
-                                                            <IconLeaf size={14} stroke={2.5} />
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {item.description && <p className="item-desc">{item.description}</p>}
-                                                {item.isCombo && item.comboItems?.length > 0 && (
-                                                    <div className="combo-items-preview">
-                                                        {item.comboItems.map((ci, i) => (
-                                                            <span key={i} className="combo-item-chip">
-                                                                {ci.quantity}× {ci.itemName}
-                                                            </span>
-                                                        ))}
+                                    {groupedMenu[category].map((item, idx) => {
+                                        const outOfStock = item.isOutOfStock === true;
+                                        const qtyInCart = getCartQuantity(item._id);
+
+                                        return (
+                                            <div
+                                                key={item._id}
+                                                className={`menu-item ${outOfStock ? 'out-of-stock' : ''}`}
+                                                style={{ animationDelay: `${idx * 0.05}s` }}
+                                            >
+                                                {item.image && (
+                                                    <div className="item-image">
+                                                        <img src={item.image} alt={item.name} loading="lazy" />
+                                                        {outOfStock && (
+                                                            <div className="out-of-stock-overlay">
+                                                                <span>Out of Stock</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
-                                                <div className="item-footer">
-                                                    <span className="price">
-                                                        {item.isCombo && item.originalTotalPrice > item.price && (
-                                                            <span className="price-original">₹{item.originalTotalPrice}</span>
+                                                <div className="item-content">
+                                                    <div className="item-header">
+                                                        <h3>{item.name}</h3>
+                                                        {item.tags?.includes('Veg') && (
+                                                            <span className="veg-badge">
+                                                                <IconLeaf size={14} stroke={2.5} />
+                                                            </span>
                                                         )}
-                                                        ₹{item.price}
-                                                    </span>
-                                                    <button className="add-btn" onClick={() => addToCart(item)}>
-                                                        <IconPlus size={16} stroke={2.5} /> Add
-                                                    </button>
+                                                    </div>
+
+                                                    {/* ⭐ Rating */}
+                                                    {item.rating > 0 && (
+                                                        <div className="item-rating">
+                                                            <IconStarFilled size={12} />
+                                                            <span>{item.rating.toFixed(1)}</span>
+                                                            {item.ratingCount > 0 && (
+                                                                <span className="rating-count">({item.ratingCount})</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {item.description && <p className="item-desc">{item.description}</p>}
+                                                    {item.isCombo && item.comboItems?.length > 0 && (
+                                                        <div className="combo-items-preview">
+                                                            {item.comboItems.map((ci, i) => (
+                                                                <span key={i} className="combo-item-chip">
+                                                                    {ci.quantity}× {ci.itemName}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <div className="item-footer">
+                                                        <span className="price">
+                                                            {item.isCombo && item.originalTotalPrice > item.price && (
+                                                                <span className="price-original">₹{item.originalTotalPrice}</span>
+                                                            )}
+                                                            ₹{item.price}
+                                                        </span>
+
+                                                        {outOfStock ? (
+                                                            <span className="out-of-stock-badge">Out of Stock</span>
+                                                        ) : qtyInCart > 0 ? (
+                                                            <div className="item-qty-control">
+                                                                <button
+                                                                    onClick={() => updateQuantity(item._id, qtyInCart - 1)}
+                                                                    aria-label="Decrease quantity"
+                                                                >
+                                                                    <IconMinus size={14} stroke={2.5} />
+                                                                </button>
+                                                                <span>{qtyInCart}</span>
+                                                                <button
+                                                                    onClick={() => updateQuantity(item._id, qtyInCart + 1)}
+                                                                    aria-label="Increase quantity"
+                                                                >
+                                                                    <IconPlus size={14} stroke={2.5} />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button className="add-btn" onClick={() => addToCart(item)}>
+                                                                <IconPlus size={16} stroke={2.5} /> Add
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))
                     )}
                 </div>
 
-                {/* Backdrop for mobile cart */}
                 {showCart && <div className="cart-backdrop" onClick={() => setShowCart(false)} />}
 
                 <div className={`cart-sidebar ${showCart ? 'open' : ''}`}>
@@ -515,7 +555,6 @@ const CustomerMenu = () => {
                             </div>
                         </>
                     ) : (
-                        /* ===== STEP 2: naam/phone/email + payment + Place Order ===== */
                         <>
                             <div className="cart-scrollable-body">
                                 <div className="customer-details">
@@ -550,7 +589,6 @@ const CustomerMenu = () => {
                                         />
                                     </div>
 
-                                    {/*  Payment Method */}
                                     <div className="payment-method-group">
                                         <span className="payment-label">Payment Method</span>
                                         <div className="payment-options">
@@ -601,7 +639,6 @@ const CustomerMenu = () => {
                 </div>
             </div>
 
-            {/* Floating "View Cart" bar*/}
             {cart.length > 0 && !showCart && (
                 <button className="mobile-cart-bar" onClick={openCart}>
                     <span className="mobile-cart-bar-left">
