@@ -22,8 +22,7 @@ import { menuAPI } from '../../utils/api';
 import './Menu.css';
 
 // ---------- Excel helpers ----------
-// Excel se aaye row ke keys (headers) ko lowercase/trim karke normalize karta hai,
-// taaki "Item Name", "item name", " Item Name " sab match ho jaayein.
+
 const normalizeRow = (row) => {
     const normalized = {};
     Object.keys(row).forEach((key) => {
@@ -32,8 +31,6 @@ const normalizeRow = (row) => {
     return normalized;
 };
 
-// Normalized row me se pehla non-empty matching column value nikalta hai.
-// Multiple possible header names de sakte ho (e.g. 'discount price', 'discountprice').
 const pick = (row, keys, fallback = '') => {
     for (const k of keys) {
         const val = row[k];
@@ -105,8 +102,6 @@ const MenuManagement = () => {
     const fetchMenuItems = async () => {
         try {
             setLoading(true);
-            // NOTE: admin route ab available + unavailable dono items deta hai,
-            // isliye item ko "Unavailable" mark karne par wo list se gayab nahi hoga.
             const response = await menuAPI.getAll();
             if (response.data.success) {
                 setMenuItems(response.data.data);
@@ -161,7 +156,7 @@ const MenuManagement = () => {
                 isOutOfStock: formData.isOutOfStock,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
-                rating: formData.rating ? parseFloat(formData.rating) || 0 : 0,
+                rating: formData.rating ? Math.min(5, Math.max(0, parseFloat(formData.rating) || 0)) : 0,
                 ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(i => i),
                 allergens: formData.allergens.split(',').map(a => a.trim()).filter(a => a),
                 isFeatured: formData.isFeatured,
@@ -198,7 +193,7 @@ const MenuManagement = () => {
                 isOutOfStock: formData.isOutOfStock,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
-                rating: formData.rating ? parseFloat(formData.rating) || 0 : 0,
+                rating: formData.rating ? Math.min(5, Math.max(0, parseFloat(formData.rating) || 0)) : 0,
                 ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(i => i),
                 allergens: formData.allergens.split(',').map(a => a.trim()).filter(a => a),
                 isFeatured: formData.isFeatured,
@@ -236,8 +231,7 @@ const MenuManagement = () => {
         }
     };
 
-    // 👇 Quick toggle — list se item gayab kiye bina, ek click me
-    // Available/Unavailable badal do (koi confirm dialog nahi, delete nahi hota)
+
     const handleToggleAvailability = async (item) => {
         try {
             const response = await menuAPI.toggleAvailability(item._id, !item.isAvailable);
@@ -265,9 +259,7 @@ const MenuManagement = () => {
         }
     };
 
-    // 👇 Excel se ek saath bahut saare menu items import karna
-    // Har row ko parse karke, wahi handleAddItem wala API call (menuAPI.create) use hota hai,
-    // isliye har item exactly wahi jagah save hota hai jahan manually add karne se hota.
+
     const handleExcelFileSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -299,7 +291,7 @@ const MenuManagement = () => {
                 // Name aur valid price zaroori hai, warna row skip
                 if (!name || priceRaw === '' || isNaN(parseFloat(priceRaw))) {
                     failCount++;
-                    failedRows.push(i + 2); // +2 = header row + 1-index
+                    failedRows.push(i + 2); 
                     continue;
                 }
 
@@ -325,7 +317,7 @@ const MenuManagement = () => {
                     isOutOfStock: parseBool(pick(row, ['out of stock', 'isoutofstock']), false),
                     tags: tagsRaw ? tagsRaw.toString().split(',').map(t => t.trim()).filter(t => t) : [],
                     preparationTime: parseInt(pick(row, ['preparation time', 'preparationtime'], '15')) || 15,
-                    rating: parseFloat(pick(row, ['rating'], '0')) || 0,
+                    rating: Math.min(5, Math.max(0, parseFloat(pick(row, ['rating'], '0')) || 0)),
                     ingredients: ingredientsRaw ? ingredientsRaw.toString().split(',').map(i => i.trim()).filter(i => i) : [],
                     allergens: allergensRaw ? allergensRaw.toString().split(',').map(a => a.trim()).filter(a => a) : [],
                     isFeatured: parseBool(pick(row, ['featured', 'isfeatured']), false),
@@ -346,6 +338,8 @@ const MenuManagement = () => {
                     failedRows.push(i + 2);
                 }
             }
+
+
 
             if (addedItems.length > 0) {
                 setMenuItems(prev => [...prev, ...addedItems]);
@@ -779,7 +773,7 @@ const MenuManagement = () => {
                                     </div>
                                 </div>
 
-                                {/* 👇 NAYA: Out of Stock checkbox — pehle sirf state me tha, UI me nahi tha */}
+                                {/* Out of Stock checkbox */}
                                 <div className="form-row">
                                     <div className="menu-form-group checkbox">
                                         <input
