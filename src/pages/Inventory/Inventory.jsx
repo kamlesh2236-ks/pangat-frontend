@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     IconPlus,
     IconEdit,
@@ -10,11 +10,15 @@ import {
     IconArrowUpRight,
     IconArrowDownRight,
     IconHistory,
+    IconUpload,
+    IconFileSpreadsheet,
+    IconLoader2,
     IconBuildingWarehouse,
     IconCurrencyRupee,
     IconExclamationCircle,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 import { inventoryAPI } from '../../utils/api';
 import './Inventory.css';
 
@@ -39,6 +43,32 @@ const emptyForm = {
     supplierContact: '',
     expiryDate: '',
     notes: '',
+};
+
+// ---------- Excel helpers ----------
+const normalizeRow = (row) => {
+    const normalized = {};
+    Object.keys(row).forEach((key) => {
+        normalized[key.toString().trim().toLowerCase()] = row[key];
+    });
+    return normalized;
+};
+
+const pick = (row, keys, fallback = '') => {
+    for (const k of keys) {
+        const val = row[k];
+        if (val !== undefined && val !== null && val.toString().trim() !== '') {
+            return val;
+        }
+    }
+    return fallback;
+};
+
+// Category/Unit ko case-insensitive match karta hai; na mile toh fallback deta hai
+const matchFromList = (value, list, fallback) => {
+    if (!value) return fallback;
+    const found = list.find((item) => item.toLowerCase() === value.toString().trim().toLowerCase());
+    return found || fallback;
 };
 
 const Inventory = () => {
@@ -69,6 +99,9 @@ const Inventory = () => {
     const [historyItem, setHistoryItem] = useState(null);
     const [historyTransactions, setHistoryTransactions] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    // 👇 Excel import ke liye
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         fetchData();
@@ -270,6 +303,119 @@ const Inventory = () => {
         );
     }
 
+    // 👇 Excel se ek saath bahut saare inventory items import karna
+    const handleExcelFileSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setImporting(true);
+        try {
+            const buffer = await file.arrayBuffer();
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+            if (rows.length === 0) {
+                toast.error('Excel file me koi data nahi mila');
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+            const failedRows = [];
+            const addedItems = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = normalizeRow(rows[i]);
+
+                const name = pick(row, ['item name', 'name']);
+                const stockRaw = pick(row, ['starting stock', 'current stock', 'stock']);
+
+                // Name zaroori hai; stock number honi chahiye (0 bhi valid hai)
+                if (!name || (stockRaw !== '' && isNaN(parseFloat(stockRaw)))) {
+                    failCount++;
+                    failedRows.push(i + 2);
+                    console.warn(`Row ${i + 2} skipped`, { rawRow: rows[i], normalizedRow: row });
+                    continue;
+                }
+
+                const minStockRaw = pick(row, ['min stock level', 'minstocklevel', 'min stock'], '5');
+                const costRaw = pick(row, ['cost per unit', 'costperunit', 'cost']);
+                const categoryRaw = pick(row, ['category']);
+                const unitRaw = pick(row, ['unit']);
+                const expiryRaw = pick(row, ['expiry date', 'expirydate']);
+
+                const data = {
+                    name: name.toString().trim(),
+                    category: matchFromList(categoryRaw, CATEGORIES, 'Other'),
+                    unit: matchFromList(unitRaw, UNITS, 'piece'),
+                    currentStock: stockRaw !== '' ? Math.max(0, parseFloat(stockRaw) || 0) : 0,
+                    minStockLevel: Math.max(0, parseFloat(minStockRaw) || 5),
+                    costPerUnit: costRaw !== '' ? Math.max(0, parseFloat(costRaw) || 0) : 0,
+                    supplierName: pick(row, ['supplier name', 'suppliername']).toString(),
+                    supplierContact: pick(row, ['supplier contact', 'suppliercontact']).toString(),
+                    expiryDate: expiryRaw ? expiryRaw.toString() : null,
+                    notes: pick(row, ['notes']).toString(),
+                };
+
+                try {
+                    const response = await inventoryAPI.create(data);
+                    if (response.data.success) {
+                        successCount++;
+                        addedItems.push(response.data.data);
+                    } else {
+                        failCount++;
+                        failedRows.push(i + 2);
+                    }
+                } catch (err) {
+                    failCount++;
+                    failedRows.push(i + 2);
+                    console.error(`Row ${i + 2} API error:`, err.response?.data || err.message);
+                }
+            }
+
+            if (addedItems.length > 0) {
+                fetchData(); // stats bhi refresh ho jayein, isliye items ko manually merge karne ke bajaye poora refetch
+            }
+
+            if (successCount > 0) {
+                toast.success(`${successCount} item(s) inventory me import ho gaye`);
+            }
+            if (failCount > 0) {
+                toast.error(`${failCount} row(s) skip ho gaye (row: ${failedRows.join(', ')})`);
+            }
+        } catch (error) {
+            console.error('Error importing excel:', error);
+            toast.error('Excel file read nahi ho payi. Format check karke dobara try karo.');
+        } finally {
+            setImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    // 👇 Sample template download
+    const downloadInventoryTemplate = () => {
+        const sampleData = [
+            {
+                'Item Name': 'Basmati Rice',
+                'Category': 'Grains & Flour',
+                'Unit': 'kg',
+                'Starting Stock': 50,
+                'Min Stock Level': 10,
+                'Cost Per Unit': 85,
+                'Supplier Name': 'ABC Traders',
+                'Supplier Contact': '9876543210',
+                'Expiry Date': '',
+                'Notes': '',
+            },
+        ];
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventory Items');
+        XLSX.writeFile(wb, 'inventory_items_template.xlsx');
+    };
+
     return (
         <div className="inventory-page">
             <div className="section-header">
@@ -277,9 +423,30 @@ const Inventory = () => {
                     <h1><IconBuildingWarehouse size={24} /> Inventory Management</h1>
                     <p>Track raw materials and stock; log restocking and usage</p>
                 </div>
-                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-                    <IconPlus size={18} /> Add New Item
-                </button>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button className="btn-secondary" type="button" onClick={downloadInventoryTemplate}>
+                        <IconFileSpreadsheet size={18} /> Sample Template
+                    </button>
+                    <button
+                        className="btn-secondary"
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={importing}
+                    >
+                        {importing ? <IconLoader2 size={18} /> : <IconUpload size={18} />}
+                        {importing ? 'Importing...' : 'Import Excel'}
+                    </button>
+                    <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        ref={fileInputRef}
+                        onChange={handleExcelFileSelect}
+                        style={{ display: 'none' }}
+                    />
+                    <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+                        <IconPlus size={18} /> Add New Item
+                    </button>
+                </div>
             </div>
 
             {/* ===== Stats Cards ===== */}
