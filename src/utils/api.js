@@ -69,6 +69,8 @@ export const authAPI = {
     restaurantSignup: (data) => apiClient.post('/auth/restaurant/signup', data),
     restaurantLogin: (data) => apiClient.post('/auth/restaurant/login', data),
     adminLogin: (data) => apiClient.post('/auth/admin/login', data),
+    forgotPassword: (data) => apiClient.post('/auth/forgot-password', data),
+    resetPassword: (data) => apiClient.post('/auth/reset-password', data),
 };
 
 export const subscriptionAPI = {

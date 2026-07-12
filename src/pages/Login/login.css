@@ -53,21 +53,32 @@
 }
 
 @keyframes float-up {
-  0% { opacity: 0; transform: translateY(0) translateX(0); }
-  10% { opacity: 0.8; }
-  90% { opacity: 0.5; }
-  100% { opacity: 0; transform: translateY(-110vh) translateX(20px); }
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0);
+  }
+
+  10% {
+    opacity: 0.8;
+  }
+
+  90% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-110vh) translateX(20px);
+  }
 }
 
 .image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(26, 20, 16, 0.15) 0%,
-    rgba(26, 20, 16, 0.05) 45%,
-    rgba(26, 20, 16, 0.85) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(26, 20, 16, 0.15) 0%,
+      rgba(26, 20, 16, 0.05) 45%,
+      rgba(26, 20, 16, 0.85) 100%);
 }
 
 .image-caption {
@@ -101,13 +112,25 @@
 }
 
 @keyframes slow-zoom {
-  0% { transform: scale(1.02) translate(0, 0); }
-  100% { transform: scale(1.06) translate(-0.5%, -0.5%); }
+  0% {
+    transform: scale(1.02) translate(0, 0);
+  }
+
+  100% {
+    transform: scale(1.06) translate(-0.5%, -0.5%);
+  }
 }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(18px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ====================================================
@@ -154,13 +177,27 @@
 }
 
 @keyframes drift-a {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-30px, 30px) scale(1.15); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-30px, 30px) scale(1.15);
+  }
 }
 
 @keyframes drift-b {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(25px, -25px) scale(1.1); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(25px, -25px) scale(1.1);
+  }
 }
 
 .login-card {
@@ -182,23 +219,30 @@
   left: -150%;
   width: 80%;
   height: 100%;
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.12) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(100deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 50%,
+      transparent 100%);
   animation: shimmer-sweep 1.3s 0.9s ease-out forwards;
   pointer-events: none;
 }
 
 @keyframes shimmer-sweep {
-  to { left: 150%; }
+  to {
+    left: 150%;
+  }
 }
 
 @keyframes card-in {
-  from { opacity: 0; transform: translateY(24px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ====================================================
@@ -225,8 +269,15 @@
 }
 
 @keyframes gradient-drift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .login-head h1::after {
@@ -243,7 +294,9 @@
 }
 
 @keyframes underline-grow {
-  to { width: 64px; }
+  to {
+    width: 64px;
+  }
 }
 
 .login-head p {
@@ -272,12 +325,24 @@
   animation: field-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.loginForm-group:nth-of-type(1) { animation-delay: 0.35s; }
-.loginForm-group:nth-of-type(2) { animation-delay: 0.45s; }
+.loginForm-group:nth-of-type(1) {
+  animation-delay: 0.35s;
+}
+
+.loginForm-group:nth-of-type(2) {
+  animation-delay: 0.45s;
+}
 
 @keyframes field-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .loginForm-group label {
@@ -369,7 +434,55 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 44px;
+  /* space for icon */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: #8a8a8a;
+}
+
+.password-toggle-btn:hover {
+  color: #333;
+}
+
+.forgot-password-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
+
+.forgot-password-link {
+  font-size: 0.85rem;
+  color: #d97706;
+  /* apne theme color se match kar lena */
+  text-decoration: none;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
 }
 
 /* ====================================================
@@ -438,6 +551,7 @@
    Reduced motion
 ==================================================== */
 @media (prefers-reduced-motion: reduce) {
+
   .image-container img,
   .login::before,
   .login::after,

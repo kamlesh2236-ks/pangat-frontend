@@ -32,6 +32,7 @@ import Staff from './pages/Staff/Staff';
 import Reports from './pages/Reports/Reports';
 import Media from './pages/Media/Media';
 import Transactions from './pages/Transactions/Transactions';
+import ForgotPassword from './pages/Login/ForgotPassword';
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
@@ -92,8 +93,9 @@ export default function App() {
                   {/* Auth Routes */}
                   <Route path="/login" element={<RestaurantLogin />} />
                   <Route path="/signup" element={<RestaurantSignup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
 
-                  {/* ✅ Super Admin Routes — ab wahi MainLayout (Navbar+Topbar) reuse karte hai */}
+                  {/* Super Admin Routes — */}
                   <Route
                     path="/super-admin/dashboard"
                     element={
