@@ -570,7 +570,6 @@ const CustomerMenu = () => {
             </div>
 
             {/* ===== Search Bar ===== */}
-            {/* ===== Search Bar ===== */}
             <div className="customer-search-bar">
                 <div className="search-input-wrapper">
                     <IconSearch size={18} stroke={2} />
