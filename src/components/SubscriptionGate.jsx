@@ -94,7 +94,7 @@ const SubscriptionGate = () => {
                         Uske baad continue karne ke liye subscription lena hoga.
                     </p>
                     <button className="sub-primary-btn" onClick={dismissTrialPopup}>
-                        <IconCheck size={16} /> Samajh gaya, continue karo
+                        <IconCheck size={16} />Continue
                     </button>
                 </div>
             </div>
