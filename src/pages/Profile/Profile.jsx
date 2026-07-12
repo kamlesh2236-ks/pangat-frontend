@@ -19,7 +19,8 @@ import {
     IconCopy,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
-import { profileAPI } from '../../utils/api';
+import { profileAPI, subscriptionAPI } from '../../utils/api';
+import { useSubscriptionPayment } from '../../hooks/useSubscriptionPayment';
 import './Profile.css';
 
 const DAYS = [
@@ -55,6 +56,17 @@ const emptyOperatingHours = () =>
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);
+    const [subscription, setSubscription] = useState(null);
+    const { pay, payingPlan } = useSubscriptionPayment(() => fetchSubscription());
+
+    const fetchSubscription = async () => {
+        try {
+            const res = await subscriptionAPI.getMySubscription();
+            if (res.data.success) setSubscription(res.data.data);
+        } catch (error) {
+            console.error('Subscription fetch error:', error);
+        }
+    };
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
@@ -88,6 +100,7 @@ const Profile = () => {
 
     useEffect(() => {
         fetchProfile();
+        fetchSubscription();
     }, []);
 
     const fetchProfile = async () => {
@@ -326,6 +339,44 @@ const Profile = () => {
                         <IconCopy size={14} className="copy-icon" />
                     </div>
                 </div>
+            </div>
+
+            {/* ===== Subscription Info ===== */}
+            <div className="profile-card readonly-card">
+                <h3><IconClock size={18} /> Subscription</h3>
+                {subscription ? (
+                    <>
+                        <p className="profile-card-sub">
+                            Current Plan: <strong>{subscription.plan}</strong> &middot; Status:{' '}
+                            <strong>{subscription.status}</strong>
+                        </p>
+                        {subscription.status === 'trial' && (
+                            <p className="profile-card-sub">
+                                Demo ke <strong>{subscription.daysLeft} din</strong> bache hain.
+                            </p>
+                        )}
+                        {subscription.expiry && (
+                            <p className="profile-card-sub">
+                                Expiry: {new Date(subscription.expiry).toLocaleDateString('en-IN')}
+                            </p>
+                        )}
+                        <div className="profile-hero-badges" style={{ marginTop: 12 }}>
+                            {['weekly', 'monthly', 'yearly'].map((p) => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    className="profile-tag-chip"
+                                    disabled={payingPlan === p}
+                                    onClick={() => pay(p, p.charAt(0).toUpperCase() + p.slice(1))}
+                                >
+                                    {payingPlan === p ? 'Processing...' : `Buy ${p}`}
+                                </button>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <p className="profile-card-sub">Loading subscription info...</p>
+                )}
             </div>
 
             <form onSubmit={handleSaveProfile}>

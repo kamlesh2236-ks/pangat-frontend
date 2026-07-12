@@ -960,7 +960,7 @@
     font-weight: 700;
     color: #b3261e;
     background: #fdecea;
-    padding: 6px 10px;
+    padding: 6px 5px;
     border-radius: 8px;
     white-space: nowrap;
 }
@@ -972,7 +972,7 @@
     background: var(--cream);
     border: 1.5px solid var(--orange);
     border-radius: 9px;
-    padding: 5px 8px;
+    padding: 5px 4px;
 }
 
 .item-qty-control button {
@@ -1743,7 +1743,7 @@
     }
 
     .item-content {
-        padding: 10px 11px 11px;
+        padding: 10px 11px 11px 5px;
     }
 
     .item-header h3 {
@@ -1755,7 +1755,7 @@
     }
 
     .price {
-        font-size: 14px;
+        font-size: 12px;
     }
 
     .add-btn {

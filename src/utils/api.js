@@ -51,10 +51,14 @@ apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Token expired or invalid
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminUser');
             window.location.href = '/login';
+        }
+        // ✅ NEW: subscription expired hone par global event fire karo,
+        // SubscriptionGate component isse sunke turant blocking popup dikhayega
+        if (error.response?.status === 403 && error.response?.data?.code === 'SUBSCRIPTION_EXPIRED') {
+            window.dispatchEvent(new CustomEvent('subscription-expired'));
         }
         return Promise.reject(error);
     }
@@ -65,6 +69,13 @@ export const authAPI = {
     restaurantSignup: (data) => apiClient.post('/auth/restaurant/signup', data),
     restaurantLogin: (data) => apiClient.post('/auth/restaurant/login', data),
     adminLogin: (data) => apiClient.post('/auth/admin/login', data),
+};
+
+export const subscriptionAPI = {
+    getPlans: () => apiClient.get('/admin/subscription/plans'),
+    getMySubscription: () => apiClient.get('/admin/subscription/me'),
+    createOrder: (plan) => apiClient.post('/admin/subscription/create-order', { plan }),
+    verifyPayment: (data) => apiClient.post('/admin/subscription/verify-payment', data),
 };
 
 export const menuAPI = {

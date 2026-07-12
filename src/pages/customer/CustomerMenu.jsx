@@ -119,7 +119,7 @@ const CustomerMenu = () => {
 
     const restaurantStatus = useMemo(
         () => getRestaurantStatus(restaurantInfo),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
         [restaurantInfo, statusTick]
     );
 

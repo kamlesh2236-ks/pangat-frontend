@@ -13,6 +13,7 @@ import { NotificationProvider } from './context/NotificationContext';
 // Layout
 import Navbar from './components/Navbar';
 import Topbar from './components/Topbar';
+import SubscriptionGate from './components/SubscriptionGate';
 
 // Pages
 import RestaurantLogin from './pages/Login/RestaurantLogin';
@@ -32,7 +33,7 @@ import Reports from './pages/Reports/Reports';
 import Media from './pages/Media/Media';
 import Transactions from './pages/Transactions/Transactions';
 
-// ✅ Super Admin Pages
+// Super Admin Pages
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
 import RestaurantDetail from './pages/SuperAdmin/RestaurantDetail';
 
@@ -41,7 +42,7 @@ const ProtectedRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" />;
 };
 
-// ✅ Sirf SuperAdmin role wale users ko allow karta hai
+// Sirf SuperAdmin role wale users ko allow karta hai
 const SuperAdminRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
   const userStr = localStorage.getItem('adminUser');
@@ -71,6 +72,7 @@ const MainLayout = ({ children }) => {
       <main className={`main-content ${!isNavbarOpen ? 'sidebar-closed' : ''}`}>
         {children}
       </main>
+      <SubscriptionGate />
     </div>
   );
 };
