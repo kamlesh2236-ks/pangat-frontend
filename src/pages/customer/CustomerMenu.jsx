@@ -10,6 +10,62 @@ import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
 import './CustomerMenu.css';
 
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+const getISTNow = () => {
+    const istString = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    return new Date(istString);
+};
+
+const toMinutes = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+};
+
+const formatTime12h = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${period}`;
+};
+
+// Restaurant abhi open hai ya band — IST time + operatingHours ke hisaab se
+const getRestaurantStatus = (restaurantInfo) => {
+    if (!restaurantInfo) return { isOpen: null, detailText: null };
+
+    if (restaurantInfo.isTemporarilyClosed) {
+        return { isOpen: false, detailText: 'Temporarily closed' };
+    }
+
+    const hours = restaurantInfo.operatingHours;
+    if (!hours) return { isOpen: null, detailText: null };
+
+    const istNow = getISTNow();
+    const todayName = DAY_NAMES[istNow.getDay()];
+    const today = hours[todayName];
+
+    if (!today || today.isClosed || !today.open || !today.close) {
+        return { isOpen: false, detailText: 'Closed today' };
+    }
+
+    const nowMin = istNow.getHours() * 60 + istNow.getMinutes();
+    const openMin = toMinutes(today.open);
+    const closeMin = toMinutes(today.close);
+
+    let isOpen;
+    if (closeMin > openMin) {
+        isOpen = nowMin >= openMin && nowMin < closeMin;
+    } else {
+        // Overnight hours, e.g. 18:00 - 02:00
+        isOpen = nowMin >= openMin || nowMin < closeMin;
+    }
+
+    return {
+        isOpen,
+        detailText: isOpen ? `Closes ${formatTime12h(today.close)}` : `Opens ${formatTime12h(today.open)}`,
+    };
+};
+
 
 const CustomerMenu = () => {
     const { restaurantId, tableNumber } = useParams();
@@ -38,6 +94,7 @@ const CustomerMenu = () => {
     const [sortBy, setSortBy] = useState('default');
 
     const bannerTimerRef = useRef(null);
+
     const categoryRefs = useRef({});
     const isClickScrolling = useRef(false);
     const scrollResumeTimer = useRef(null);
@@ -52,6 +109,19 @@ const CustomerMenu = () => {
     ];
 
     const filterTagOptions = ['Bestseller', 'New', 'Spicy', 'Trending'];
+
+    // 👇 Naya: har minute open/closed status refresh ho jaye
+    const [statusTick, setStatusTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setStatusTick(t => t + 1), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const restaurantStatus = useMemo(
+        () => getRestaurantStatus(restaurantInfo),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [restaurantInfo, statusTick]
+    );
 
     useEffect(() => {
         if (!restaurantId || !tableNumber) {
@@ -160,6 +230,16 @@ const CustomerMenu = () => {
     };
 
     const addToCart = (item) => {
+
+        if (restaurantStatus.isOpen === false) {
+            toast.error('Restaurant is currently closed. Please try again during business hours.');
+            return;
+        }
+        if (item.isOutOfStock === true) {
+            toast.error(`${item.name} is out of stock`);
+            return;
+        }
+        
         if (item.isOutOfStock === true) {
             toast.error(`${item.name} is out of stock`);
             return;
@@ -553,6 +633,15 @@ const CustomerMenu = () => {
                                 <p className="restaurant-address">{restaurantInfo.address}</p>
                             )}
                             <div className="header-meta">
+                                {restaurantStatus.isOpen !== null && (
+                                    <span className={`open-status-badge ${restaurantStatus.isOpen ? 'open' : 'closed'}`}>
+                                        <span className="status-dot" />
+                                        {restaurantStatus.isOpen ? 'Open now' : 'Closed'}
+                                    </span>
+                                )}
+                                {restaurantStatus.detailText && (
+                                    <span className="status-detail">{restaurantStatus.detailText}</span>
+                                )}
                                 <span className="table-info">Table {tableNumber}</span>
                                 {restaurantInfo?.cuisine?.length > 0 && (
                                     <span className="cuisine-tag">
@@ -712,6 +801,13 @@ const CustomerMenu = () => {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            {restaurantStatus.isOpen === false && (
+                <div className="closed-notice-bar">
+                    <IconClock size={16} stroke={2} />
+                    Restaurant is currently closed{restaurantStatus.detailText ? ` · ${restaurantStatus.detailText}` : ''}. You can browse the menu, but ordering is disabled right now.
                 </div>
             )}
 
