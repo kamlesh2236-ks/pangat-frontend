@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     IconShoppingCart, IconMinus, IconPlus, IconX,
     IconLeaf, IconReceipt2, IconUser, IconPhone,
     IconShoppingBagCheck, IconMoodEmpty, IconChevronUp, IconMail, IconCash, IconCreditCard,
-    IconChevronRight, IconArrowLeft, IconStarFilled
+    IconChevronRight, IconArrowLeft, IconStarFilled, IconSearch, IconClock, IconAdjustmentsHorizontal, IconCheck
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
@@ -29,8 +29,29 @@ const CustomerMenu = () => {
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [tableNotFound, setTableNotFound] = useState(false);
     const [checkoutStep, setCheckoutStep] = useState('cart');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [activeCategory, setActiveCategory] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [filterVeg, setFilterVeg] = useState('All');
+    const [filterTags, setFilterTags] = useState([]);
+    const [priceBucket, setPriceBucket] = useState(0);
+    const [sortBy, setSortBy] = useState('default');
 
     const bannerTimerRef = useRef(null);
+    const categoryRefs = useRef({});
+    const isClickScrolling = useRef(false);
+    const scrollResumeTimer = useRef(null);
+    const menuPanelRef = useRef(null);
+
+    const priceBuckets = [
+        { label: 'All Prices', min: 0, max: Infinity },
+        { label: 'Under ₹100', min: 0, max: 100 },
+        { label: '₹100 - ₹300', min: 100, max: 300 },
+        { label: '₹300 - ₹500', min: 300, max: 500 },
+        { label: 'Above ₹500', min: 500, max: Infinity },
+    ];
+
+    const filterTagOptions = ['Bestseller', 'New', 'Spicy', 'Trending'];
 
     useEffect(() => {
         if (!restaurantId || !tableNumber) {
@@ -125,11 +146,7 @@ const CustomerMenu = () => {
 
     const handleBannerClick = (banner) => {
         if (!banner.linkedCategory) return;
-
-        const target = document.getElementById(`category-${banner.linkedCategory}`);
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        goToCategory(banner.linkedCategory);
     };
 
     const goToBanner = (index) => {
@@ -176,7 +193,6 @@ const CustomerMenu = () => {
         toast.success('Item removed from cart');
     };
 
-    //card ke Add button ko +/- stepper mein switch karne ke liye
     const getCartQuantity = (itemId) => {
         const item = cart.find(c => c._id === itemId);
         return item ? item.quantity : 0;
@@ -261,6 +277,139 @@ const CustomerMenu = () => {
         }
     };
 
+    // ---------- Category icon (first item's image per category, unfiltered) ----------
+    const categoryIcons = useMemo(() => {
+        const map = {};
+        menuItems.forEach(item => {
+            const cat = item.category || 'Other';
+            if (!map[cat] && item.image) map[cat] = item.image;
+        });
+        return map;
+    }, [menuItems]);
+
+    // ---------- Filter + sort logic ----------
+    const filterItems = useCallback((items) => {
+        let out = items;
+
+        if (filterVeg !== 'All') {
+            out = out.filter(item => item.tags?.includes(filterVeg));
+        }
+
+        if (filterTags.length > 0) {
+            out = out.filter(item => filterTags.every(t => item.tags?.includes(t)));
+        }
+
+        const bucket = priceBuckets[priceBucket];
+        out = out.filter(item => {
+            const effectivePrice = item.discountPrice || item.price;
+            return effectivePrice >= bucket.min && effectivePrice <= bucket.max;
+        });
+
+        if (sortBy === 'price-asc') {
+            out = [...out].sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+        } else if (sortBy === 'price-desc') {
+            out = [...out].sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+        } else if (sortBy === 'rating') {
+            out = [...out].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        }
+
+        return out;
+    }, [filterVeg, filterTags, priceBucket, sortBy]);
+
+    const activeFilterCount =
+        (filterVeg !== 'All' ? 1 : 0) +
+        filterTags.length +
+        (priceBucket !== 0 ? 1 : 0) +
+        (sortBy !== 'default' ? 1 : 0);
+
+    const clearFilters = () => {
+        setFilterVeg('All');
+        setFilterTags([]);
+        setPriceBucket(0);
+        setSortBy('default');
+    };
+
+    const toggleFilterTag = (tag) => {
+        setFilterTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+    };
+
+    // ---------- Category grouping (filtered) ----------
+    const filteredMenuItems = useMemo(() => filterItems(menuItems), [menuItems, filterItems]);
+
+    const groupedMenu = useMemo(() => {
+        return filteredMenuItems.reduce((groups, item) => {
+            const key = item.category || 'Other';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+            return groups;
+        }, {});
+    }, [filteredMenuItems]);
+
+    const categoryNames = useMemo(() => Object.keys(groupedMenu), [groupedMenu]);
+    const hasCategories = categoryNames.length > 1 || (categoryNames.length === 1 && categoryNames[0] !== 'Other');
+
+    // First category ko default active bana do jab data aaye
+    useEffect(() => {
+        if (categoryNames.length > 0 && !activeCategory) {
+            setActiveCategory(categoryNames[0]);
+        }
+    }, [categoryNames, activeCategory]);
+
+    // ---------- Search ----------
+    const isSearching = searchTerm.trim().length > 0;
+
+    const searchResults = useMemo(() => {
+        if (!isSearching) return [];
+        const q = searchTerm.trim().toLowerCase();
+        const matched = menuItems.filter(item =>
+            item.name?.toLowerCase().includes(q) ||
+            item.description?.toLowerCase().includes(q) ||
+            item.category?.toLowerCase().includes(q)
+        );
+        return filterItems(matched);
+    }, [isSearching, searchTerm, menuItems, filterItems]);
+
+    // ---------- Sidebar click -> scroll to category ----------
+    const goToCategory = useCallback((category) => {
+        setSearchTerm('');
+        setActiveCategory(category);
+        const target = categoryRefs.current[category];
+        if (target) {
+            isClickScrolling.current = true;
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            clearTimeout(scrollResumeTimer.current);
+            scrollResumeTimer.current = setTimeout(() => {
+                isClickScrolling.current = false;
+            }, 700);
+        }
+    }, []);
+
+    // ---------- Scroll-spy: sidebar auto-highlight on scroll ----------
+    useEffect(() => {
+        if (isSearching || categoryNames.length === 0) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (isClickScrolling.current) return;
+                const visible = entries
+                    .filter(e => e.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+                if (visible.length > 0) {
+                    const category = visible[0].target.getAttribute('data-category');
+                    if (category) setActiveCategory(category);
+                }
+            },
+            { rootMargin: '-120px 0px -70% 0px', threshold: 0 }
+        );
+
+        categoryNames.forEach((cat) => {
+            const el = categoryRefs.current[cat];
+            if (el) observer.observe(el);
+        });
+
+        return () => observer.disconnect();
+    }, [categoryNames, isSearching]);
+
     if (loading) {
         return (
             <div className="customer-menu loading-state">
@@ -282,16 +431,105 @@ const CustomerMenu = () => {
         );
     }
 
-    const groupedMenu = menuItems.reduce((groups, item) => {
-        const key = item.category || 'Other';
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(item);
-        return groups;
-    }, {});
-    const categoryNames = Object.keys(groupedMenu);
-    const hasCategories = categoryNames.length > 1 || (categoryNames.length === 1 && categoryNames[0] !== 'Other');
+    const renderMenuItemCard = (item, idx) => {
+        const outOfStock = item.isOutOfStock === true;
+        const qtyInCart = getCartQuantity(item._id);
+        const optionsCount = item.customizations?.length || 0;
 
-    
+        return (
+            <div
+                key={item._id}
+                className={`menu-item ${outOfStock ? 'out-of-stock' : ''}`}
+                style={{ animationDelay: `${idx * 0.05}s` }}
+            >
+                <div className="item-image">
+                    {item.image ? (
+                        <img src={item.image} alt={item.name} loading="lazy" />
+                    ) : (
+                        <div className="item-image-fallback">{item.name.charAt(0)}</div>
+                    )}
+                    {item.preparationTime > 0 && (
+                        <span className="item-prep-badge">
+                            <IconClock size={11} stroke={2} /> {item.preparationTime} MINS
+                        </span>
+                    )}
+                    {outOfStock && (
+                        <div className="out-of-stock-overlay">
+                            <span>Out of Stock</span>
+                        </div>
+                    )}
+                </div>
+                <div className="item-content">
+                    <div className="item-header">
+                        {item.tags?.includes('Veg') && (
+                            <span className="veg-badge">
+                                <IconLeaf size={14} stroke={2.5} />
+                            </span>
+                        )}
+                        <h3>{item.name}</h3>
+                    </div>
+
+                    {item.rating > 0 && (
+                        <div className="item-rating">
+                            <IconStarFilled size={12} />
+                            <span>{item.rating.toFixed(1)}</span>
+                            {item.ratingCount > 0 && (
+                                <span className="rating-count">({item.ratingCount})</span>
+                            )}
+                        </div>
+                    )}
+
+                    {item.description && <p className="item-desc">{item.description}</p>}
+                    {item.isCombo && item.comboItems?.length > 0 && (
+                        <div className="combo-items-preview">
+                            {item.comboItems.map((ci, i) => (
+                                <span key={i} className="combo-item-chip">
+                                    {ci.quantity}× {ci.itemName}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    <div className="item-footer">
+                        <span className="price">
+                            {item.isCombo && item.originalTotalPrice > item.price && (
+                                <span className="price-original">₹{item.originalTotalPrice}</span>
+                            )}
+                            ₹{item.price}
+                        </span>
+
+                        <div className="item-add-zone">
+                            {outOfStock ? (
+                                <span className="out-of-stock-badge">Out of Stock</span>
+                            ) : qtyInCart > 0 ? (
+                                <div className="item-qty-control">
+                                    <button
+                                        onClick={() => updateQuantity(item._id, qtyInCart - 1)}
+                                        aria-label="Decrease quantity"
+                                    >
+                                        <IconMinus size={14} stroke={2.5} />
+                                    </button>
+                                    <span>{qtyInCart}</span>
+                                    <button
+                                        onClick={() => updateQuantity(item._id, qtyInCart + 1)}
+                                        aria-label="Increase quantity"
+                                    >
+                                        <IconPlus size={14} stroke={2.5} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button className="add-btn" onClick={() => addToCart(item)}>
+                                    ADD
+                                </button>
+                            )}
+                            {optionsCount > 0 && !outOfStock && (
+                                <span className="options-count">{optionsCount} option{optionsCount > 1 ? 's' : ''}</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="customer-menu">
@@ -313,7 +551,6 @@ const CustomerMenu = () => {
                             <h1>{restaurantInfo?.name || 'Restaurant Menu'}</h1>
                             {restaurantInfo?.address && (
                                 <p className="restaurant-address">{restaurantInfo.address}</p>
-                                
                             )}
                             <div className="header-meta">
                                 <span className="table-info">Table {tableNumber}</span>
@@ -332,8 +569,119 @@ const CustomerMenu = () => {
                 </div>
             </div>
 
+            {/* ===== Search Bar ===== */}
+            {/* ===== Search Bar ===== */}
+            <div className="customer-search-bar">
+                <div className="search-input-wrapper">
+                    <IconSearch size={18} stroke={2} />
+                    <input
+                        type="text"
+                        placeholder="Search for dishes..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                        <button className="search-clear-btn" onClick={() => setSearchTerm('')} aria-label="Clear search">
+                            <IconX size={16} />
+                        </button>
+                    )}
+                </div>
+
+                <button
+                    className={`filter-toggle-btn ${activeFilterCount > 0 ? 'active' : ''}`}
+                    onClick={() => setShowFilters(!showFilters)}
+                >
+                    <IconAdjustmentsHorizontal size={18} stroke={2} />
+                    Filters
+                    {activeFilterCount > 0 && <span className="filter-count-badge">{activeFilterCount}</span>}
+                </button>
+            </div>
+
+            {/* ===== Filter Panel ===== */}
+            {showFilters && (
+                <div className="filter-panel">
+                    <div className="filter-group">
+                        <span className="filter-group-label">Sort by</span>
+                        <div className="filter-chip-row">
+                            {[
+                                { key: 'default', label: 'Relevance' },
+                                { key: 'price-asc', label: 'Price: Low to High' },
+                                { key: 'price-desc', label: 'Price: High to Low' },
+                                { key: 'rating', label: 'Rating' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.key}
+                                    className={`filter-chip ${sortBy === opt.key ? 'active' : ''}`}
+                                    onClick={() => setSortBy(opt.key)}
+                                >
+                                    {sortBy === opt.key && <IconCheck size={13} stroke={3} />}
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="filter-group">
+                        <span className="filter-group-label">Food type</span>
+                        <div className="filter-chip-row">
+                            {['All', 'Veg', 'Non-Veg'].map(opt => (
+                                <button
+                                    key={opt}
+                                    className={`filter-chip ${filterVeg === opt ? 'active' : ''}`}
+                                    onClick={() => setFilterVeg(opt)}
+                                >
+                                    {filterVeg === opt && <IconCheck size={13} stroke={3} />}
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="filter-group">
+                        <span className="filter-group-label">Price</span>
+                        <div className="filter-chip-row">
+                            {priceBuckets.map((bucket, idx) => (
+                                <button
+                                    key={bucket.label}
+                                    className={`filter-chip ${priceBucket === idx ? 'active' : ''}`}
+                                    onClick={() => setPriceBucket(idx)}
+                                >
+                                    {priceBucket === idx && <IconCheck size={13} stroke={3} />}
+                                    {bucket.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="filter-group">
+                        <span className="filter-group-label">Tags</span>
+                        <div className="filter-chip-row">
+                            {filterTagOptions.map(tag => (
+                                <button
+                                    key={tag}
+                                    className={`filter-chip ${filterTags.includes(tag) ? 'active' : ''}`}
+                                    onClick={() => toggleFilterTag(tag)}
+                                >
+                                    {filterTags.includes(tag) && <IconCheck size={13} stroke={3} />}
+                                    {tag}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="filter-panel-actions">
+                        <button className="filter-clear-btn" onClick={clearFilters}>
+                            Clear all
+                        </button>
+                        <button className="filter-apply-btn" onClick={() => setShowFilters(false)}>
+                            Show results
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* ===== Offer Banner Slider ===== */}
-            {banners.length > 0 && (
+            {banners.length > 0 && !isSearching && (
                 <div className="offer-banner-slider">
                     <div
                         className="offer-banner-track"
@@ -369,113 +717,73 @@ const CustomerMenu = () => {
             )}
 
             <div className={`menu-content ${showCart ? 'cart-open' : ''}`}>
-                <div className="menu-section">
-                    {menuItems.length === 0 ? (
-                        <div className="empty-menu">
-                            <IconMoodEmpty size={48} stroke={1.5} />
-                            <p>No items available at the moment</p>
-                        </div>
-                    ) : (
-                        categoryNames.map((category) => (
-                            <div key={category} className="menu-category-block">
-                                {hasCategories && (
-                                    <h2 id={`category-${category}`} className="menu-category-heading">
-                                        {category}
-                                    </h2>
-                                )}
-                                <div className="menu-grid">
-                                    {groupedMenu[category].map((item, idx) => {
-                                        const outOfStock = item.isOutOfStock === true;
-                                        const qtyInCart = getCartQuantity(item._id);
 
-                                        return (
-                                            <div
-                                                key={item._id}
-                                                className={`menu-item ${outOfStock ? 'out-of-stock' : ''}`}
-                                                style={{ animationDelay: `${idx * 0.05}s` }}
-                                            >
-                                                {item.image && (
-                                                    <div className="item-image">
-                                                        <img src={item.image} alt={item.name} loading="lazy" />
-                                                        {outOfStock && (
-                                                            <div className="out-of-stock-overlay">
-                                                                <span>Out of Stock</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                <div className="item-content">
-                                                    <div className="item-header">
-                                                        <h3>{item.name}</h3>
-                                                        {item.tags?.includes('Veg') && (
-                                                            <span className="veg-badge">
-                                                                <IconLeaf size={14} stroke={2.5} />
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {/* ⭐ Rating */}
-                                                    {item.rating > 0 && (
-                                                        <div className="item-rating">
-                                                            <IconStarFilled size={12} />
-                                                            <span>{item.rating.toFixed(1)}</span>
-                                                            {item.ratingCount > 0 && (
-                                                                <span className="rating-count">({item.ratingCount})</span>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {item.description && <p className="item-desc">{item.description}</p>}
-                                                    {item.isCombo && item.comboItems?.length > 0 && (
-                                                        <div className="combo-items-preview">
-                                                            {item.comboItems.map((ci, i) => (
-                                                                <span key={i} className="combo-item-chip">
-                                                                    {ci.quantity}× {ci.itemName}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    <div className="item-footer">
-                                                        <span className="price">
-                                                            {item.isCombo && item.originalTotalPrice > item.price && (
-                                                                <span className="price-original">₹{item.originalTotalPrice}</span>
-                                                            )}
-                                                            ₹{item.price}
-                                                        </span>
-
-                                                        {outOfStock ? (
-                                                            <span className="out-of-stock-badge">Out of Stock</span>
-                                                        ) : qtyInCart > 0 ? (
-                                                            <div className="item-qty-control">
-                                                                <button
-                                                                    onClick={() => updateQuantity(item._id, qtyInCart - 1)}
-                                                                    aria-label="Decrease quantity"
-                                                                >
-                                                                    <IconMinus size={14} stroke={2.5} />
-                                                                </button>
-                                                                <span>{qtyInCart}</span>
-                                                                <button
-                                                                    onClick={() => updateQuantity(item._id, qtyInCart + 1)}
-                                                                    aria-label="Increase quantity"
-                                                                >
-                                                                    <IconPlus size={14} stroke={2.5} />
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <button className="add-btn" onClick={() => addToCart(item)}>
-                                                                <IconPlus size={16} stroke={2.5} /> Add
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                {menuItems.length === 0 ? (
+                    <div className="empty-menu">
+                        <IconMoodEmpty size={48} stroke={1.5} />
+                        <p>No items available at the moment</p>
+                    </div>
+                ) : isSearching ? (
+                    /* ===== Search results view (no sidebar) ===== */
+                    <div className="menu-section search-mode">
+                        <p className="search-results-heading">
+                            {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
+                        </p>
+                        {searchResults.length === 0 ? (
+                            <div className="empty-menu">
+                                <IconMoodEmpty size={40} stroke={1.5} />
+                                <p>No dishes match your search</p>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ) : (
+                            <div className="menu-grid">
+                                {searchResults.map((item, idx) => renderMenuItemCard(item, idx))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* ===== Blinkit-style: sidebar + categorized items ===== */
+                    <div className="menu-body">
+                        {hasCategories && (
+                            <div className="category-sidebar">
+                                {categoryNames.map((category) => (
+                                    <button
+                                        key={category}
+                                        className={`category-sidebar-item ${activeCategory === category ? 'active' : ''}`}
+                                        onClick={() => goToCategory(category)}
+                                    >
+                                        <span className="category-sidebar-icon">
+                                            {categoryIcons[category] ? (
+                                                <img src={categoryIcons[category]} alt={category} />
+                                            ) : (
+                                                category.charAt(0).toUpperCase()
+                                            )}
+                                        </span>
+                                        <span className="category-sidebar-label">{category}</span>
+                                        <span className="category-sidebar-count">{groupedMenu[category].length}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="menu-items-panel" ref={menuPanelRef}>
+                            {categoryNames.map((category) => (
+                                <div
+                                    key={category}
+                                    className="menu-category-block"
+                                    data-category={category}
+                                    ref={(el) => { categoryRefs.current[category] = el; }}
+                                >
+                                    {hasCategories && (
+                                        <h2 className="menu-category-heading">{category}</h2>
+                                    )}
+                                    <div className="menu-grid">
+                                        {groupedMenu[category].map((item, idx) => renderMenuItemCard(item, idx))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {showCart && <div className="cart-backdrop" onClick={() => setShowCart(false)} />}
 

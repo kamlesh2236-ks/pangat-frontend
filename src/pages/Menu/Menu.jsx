@@ -63,16 +63,7 @@ const MenuManagement = () => {
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef(null);
 
-    const categories = [
-        'All',
-        'Appetizers',
-        'Main Course',
-        'Desserts',
-        'Beverages',
-        'Combo',
-        'Side Dishes',
-        'Other'
-    ];
+    const categories = ['All', ...new Set(menuItems.map(item => item.category).filter(Boolean))];
 
     const tags = ['Veg', 'Non-Veg', 'Spicy', 'New', 'Bestseller', 'Trending'];
 
@@ -291,7 +282,7 @@ const MenuManagement = () => {
                 // Name aur valid price zaroori hai, warna row skip
                 if (!name || priceRaw === '' || isNaN(parseFloat(priceRaw))) {
                     failCount++;
-                    failedRows.push(i + 2); 
+                    failedRows.push(i + 2);
                     continue;
                 }
 
@@ -365,7 +356,7 @@ const MenuManagement = () => {
         const sampleData = [
             {
                 'Item Name': 'Chicken Biryani',
-                'Category': 'Main Course',
+                'Category': 'Biriyani',
                 'Description': 'Aromatic basmati rice cooked with tender chicken and spices',
                 'Price': 250,
                 'Discount Price': 220,
@@ -688,15 +679,19 @@ const MenuManagement = () => {
 
                                     <div className="menu-form-group">
                                         <label>Category *</label>
-                                        <select
+                                        <input
+                                            type="text"
+                                            list="category-suggestions"
                                             value={formData.category}
                                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            placeholder="e.g., Biryani, Roti, Dal, Rice"
                                             required
-                                        >
-                                            {categories.filter(c => c !== 'All').map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
+                                        />
+                                        <datalist id="category-suggestions">
+                                            {[...new Set(menuItems.map(item => item.category).filter(Boolean))].map(cat => (
+                                                <option key={cat} value={cat} />
                                             ))}
-                                        </select>
+                                        </datalist>
                                     </div>
                                 </div>
 
