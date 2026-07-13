@@ -161,6 +161,44 @@ const CustomerMenu = () => {
     }, [activeCategory]);
 
     useEffect(() => {
+        if (showCart) {
+            window.history.pushState({ menuLayer: 'cart' }, '');
+        }
+    }, [showCart]);
+
+    useEffect(() => {
+        if (checkoutStep === 'details') {
+            window.history.pushState({ menuLayer: 'checkout' }, '');
+        }
+    }, [checkoutStep]);
+
+    useEffect(() => {
+        if (selectedMainCategory) {
+            window.history.pushState({ menuLayer: 'category' }, '');
+        }
+    }, [selectedMainCategory]);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            if (checkoutStep === 'details') {
+                setCheckoutStep('cart');
+                return;
+            }
+            if (showCart) {
+                setShowCart(false);
+                return;
+            }
+            if (selectedMainCategory) {
+                setSelectedMainCategory(null);
+                return;
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [showCart, checkoutStep, selectedMainCategory]);
+
+    useEffect(() => {
         if (!restaurantId || !tableNumber) {
             toast.error('Invalid QR code');
             navigate('/');
@@ -337,7 +375,7 @@ const CustomerMenu = () => {
     };
 
     const goBackToCartStep = () => {
-        setCheckoutStep('cart');
+        window.history.back();
     };
 
     const placeOrder = async () => {
@@ -460,7 +498,7 @@ const CustomerMenu = () => {
     };
 
     const goBackToLanding = () => {
-        setSelectedMainCategory(null);
+        window.history.back();
     };
 
 
@@ -755,7 +793,7 @@ const CustomerMenu = () => {
                             </div>
                         </div>
                     </div>
-                    <button className="cart-button" onClick={() => (showCart ? setShowCart(false) : openCart())}>
+                    <button className="cart-button" onClick={() => (showCart ? window.history.back() : openCart())}>
                         <IconShoppingCart size={22} stroke={2} />
                         {cart.length > 0 && <span className="cart-badge">{cart.length}</span>}
                     </button>
@@ -1004,10 +1042,10 @@ const CustomerMenu = () => {
                     </div>
                 )}
 
-                {showCart && <div className="cart-backdrop" onClick={() => setShowCart(false)} />}
+                {showCart && <div className="cart-backdrop" onClick={() => window.history.back()} />}
 
                 <div className={`cart-sidebar ${showCart ? 'open' : ''}`}>
-                    <div className="cart-drag-handle" onClick={() => setShowCart(false)}>
+                    <div className="cart-drag-handle" onClick={() => window.history.back()}>
                         <IconChevronUp size={20} />
                     </div>
                     <div className="cart-header">
@@ -1025,7 +1063,7 @@ const CustomerMenu = () => {
                             <IconReceipt2 size={20} />
                             {checkoutStep === 'details' ? 'Your Details' : 'Your Cart'}
                         </h2>
-                        <button className="close-cart" onClick={() => setShowCart(false)}>
+                        <button className="close-cart" onClick={() => window.history.back()}>
                             <IconX size={20} />
                         </button>
                     </div>
