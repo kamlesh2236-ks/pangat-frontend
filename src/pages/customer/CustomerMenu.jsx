@@ -586,7 +586,7 @@ const CustomerMenu = () => {
                 </div>
 
                 <div className="category-landing">
-                    <h2 className="category-landing-title">Aap kya khayenge?</h2>
+                    <h2 className="category-landing-title">Welcome! Aaj Aap kya khana Chahenge?</h2>
                     <p className="category-landing-subtitle">Category choose karein, hum aapke liye menu open kar dete hain</p>
 
                     <div className="category-landing-grid">
