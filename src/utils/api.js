@@ -4,7 +4,7 @@ const getAPIBaseURL = () => {
     const VITE_API_URL = import.meta.env.VITE_API_URL;
 
     if (VITE_API_URL) {
-        console.log('📍 Using VITE_API_URL:', VITE_API_URL);
+        console.log('Using VITE_API_URL:', VITE_API_URL);
         return `${VITE_API_URL}/api`;
     }
 
@@ -22,7 +22,7 @@ const getAPIBaseURL = () => {
 
 const API_BASE_URL = getAPIBaseURL();
 
-console.log('🌐 API Base URL:', API_BASE_URL);
+console.log('API Base URL:', API_BASE_URL);
 
 // Create axios instance
 const apiClient = axios.create({
@@ -46,20 +46,23 @@ apiClient.interceptors.request.use(
     }
 );
 
-// Handle responses
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const isAuthRequest = error.config?.url?.includes('/login') ||
+            error.config?.url?.includes('/signup') ||
+            error.config?.url?.includes('/register');
+
+        if (error.response?.status === 401 && !isAuthRequest) {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminUser');
             window.location.href = '/login';
         }
-        // ✅ NEW: subscription expired hone par global event fire karo,
-        // SubscriptionGate component isse sunke turant blocking popup dikhayega
+
         if (error.response?.status === 403 && error.response?.data?.code === 'SUBSCRIPTION_EXPIRED') {
             window.dispatchEvent(new CustomEvent('subscription-expired'));
         }
+
         return Promise.reject(error);
     }
 );

@@ -10,7 +10,7 @@ const RestaurantLogin = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // ✅ NEW
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,6 +25,7 @@ const RestaurantLogin = () => {
   };
 
   const handleSubmit = async (e) => {
+    console.log('form submitted, preventing default');
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -139,7 +140,7 @@ const RestaurantLogin = () => {
               </div>
             </div>
 
-            {/* ✅ NEW: Forgot password link */}
+
             <div className="forgot-password-row">
               <Link to="/forgot-password" className="forgot-password-link">
                 Forgot password?
