@@ -13,7 +13,7 @@ import './CustomerMenu.css';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-// Ye landing-categories seedhe MenuItem schema ke `tags` enum se match karte hain
+// landing-categories
 const MAIN_CATEGORIES = [
     { key: 'Veg', label: 'Veg', icon: IconLeaf, tag: 'Veg' },
     { key: 'NonVeg', label: 'Non-Veg', icon: IconMeat, tag: 'Non-Veg' },
@@ -587,7 +587,7 @@ const CustomerMenu = () => {
 
                 <div className="category-landing">
                     <h2 className="category-landing-title">Aap kya khayenge?</h2>
-                    <p className="category-landing-subtitle">Category choose karein, hum aapke liye menu khol dete hain</p>
+                    <p className="category-landing-subtitle">Category choose karein, hum aapke liye menu open kar dete hain</p>
 
                     <div className="category-landing-grid">
                         {MAIN_CATEGORIES.map(cat => {
