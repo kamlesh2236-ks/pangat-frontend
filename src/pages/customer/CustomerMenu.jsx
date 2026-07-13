@@ -4,13 +4,34 @@ import {
     IconShoppingCart, IconMinus, IconPlus, IconX,
     IconLeaf, IconReceipt2, IconUser, IconPhone,
     IconShoppingBagCheck, IconMoodEmpty, IconChevronUp, IconMail, IconCash, IconCreditCard,
-    IconChevronRight, IconArrowLeft, IconStarFilled, IconSearch, IconClock, IconAdjustmentsHorizontal, IconCheck
+    IconChevronRight, IconArrowLeft, IconStarFilled, IconSearch, IconClock, IconAdjustmentsHorizontal, IconCheck,
+    IconMeat, IconFlame, IconCoffee, IconGlassCocktail, IconSnowflake, IconIceCream, IconBurger
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
 import './CustomerMenu.css';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+// Ye landing-categories seedhe MenuItem schema ke `tags` enum se match karte hain
+const MAIN_CATEGORIES = [
+    { key: 'Veg', label: 'Veg', icon: IconLeaf, tag: 'Veg' },
+    { key: 'NonVeg', label: 'Non-Veg', icon: IconMeat, tag: 'Non-Veg' },
+    { key: 'Spicy', label: 'Spicy', icon: IconFlame, tag: 'Spicy' },
+    { key: 'FastFood', label: 'Fast Food', icon: IconBurger, tag: 'Fast Food' },
+    { key: 'Coffee', label: 'Coffee', icon: IconCoffee, tag: 'Coffee' },
+    { key: 'ShakeMojito', label: 'Shakes & Mojitos', icon: IconGlassCocktail, tag: 'Shakes & Mojitos' },
+    { key: 'IceCrusher', label: 'Ice Crusher', icon: IconSnowflake, tag: 'Ice Crusher' },
+    { key: 'Desserts', label: 'Desserts', icon: IconIceCream, tag: 'Desserts' },
+];
+
+// Item ye check karta hai ki wo selected landing-category (tag) se match karta hai ya nahi
+const itemMatchesMainCategory = (item, mainCat) => {
+    if (!mainCat || mainCat === 'ALL') return true;
+    const config = MAIN_CATEGORIES.find(c => c.key === mainCat);
+    if (!config) return true;
+    return item.tags?.includes(config.tag);
+};
 
 const getISTNow = () => {
     const istString = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
@@ -92,6 +113,7 @@ const CustomerMenu = () => {
     const [filterTags, setFilterTags] = useState([]);
     const [priceBucket, setPriceBucket] = useState(0);
     const [sortBy, setSortBy] = useState('default');
+    const [selectedMainCategory, setSelectedMainCategory] = useState(null);
 
     const bannerTimerRef = useRef(null);
 
@@ -99,6 +121,7 @@ const CustomerMenu = () => {
     const isClickScrolling = useRef(false);
     const scrollResumeTimer = useRef(null);
     const menuPanelRef = useRef(null);
+    const sidebarItemRefs = useRef({});
 
     const priceBuckets = [
         { label: 'All Prices', min: 0, max: Infinity },
@@ -110,7 +133,13 @@ const CustomerMenu = () => {
 
     const filterTagOptions = ['Bestseller', 'New', 'Spicy', 'Trending'];
 
-    // 👇 Naya: har minute open/closed status refresh ho jaye
+    // restro har minute open/closed status refresh ho jaye
+    // Landing category badalte hi active category/search reset
+    useEffect(() => {
+        setActiveCategory('');
+        setSearchTerm('');
+    }, [selectedMainCategory]);
+
     const [statusTick, setStatusTick] = useState(0);
     useEffect(() => {
         const timer = setInterval(() => setStatusTick(t => t + 1), 60000);
@@ -122,6 +151,14 @@ const CustomerMenu = () => {
 
         [restaurantInfo, statusTick]
     );
+
+    // Sidebar ko andar hi andar scroll karo taaki active category hamesha dikhe
+    useEffect(() => {
+        const el = sidebarItemRefs.current[activeCategory];
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [activeCategory]);
 
     useEffect(() => {
         if (!restaurantId || !tableNumber) {
@@ -239,7 +276,7 @@ const CustomerMenu = () => {
             toast.error(`${item.name} is out of stock`);
             return;
         }
-        
+
         if (item.isOutOfStock === true) {
             toast.error(`${item.name} is out of stock`);
             return;
@@ -409,12 +446,23 @@ const CustomerMenu = () => {
         setSortBy('default');
     };
 
-    const toggleFilterTag = (tag) => {
-        setFilterTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
-    };
+    // ---------- Main category (landing screen) filter ----------
+    const mainCategoryItems = useMemo(
+        () => menuItems.filter(item => itemMatchesMainCategory(item, selectedMainCategory)),
+        [menuItems, selectedMainCategory]
+    );
 
     // ---------- Category grouping (filtered) ----------
-    const filteredMenuItems = useMemo(() => filterItems(menuItems), [menuItems, filterItems]);
+    const filteredMenuItems = useMemo(() => filterItems(mainCategoryItems), [mainCategoryItems, filterItems]);
+
+    const selectMainCategory = (key) => {
+        setSelectedMainCategory(key);
+    };
+
+    const goBackToLanding = () => {
+        setSelectedMainCategory(null);
+    };
+
 
     const groupedMenu = useMemo(() => {
         return filteredMenuItems.reduce((groups, item) => {
@@ -441,13 +489,13 @@ const CustomerMenu = () => {
     const searchResults = useMemo(() => {
         if (!isSearching) return [];
         const q = searchTerm.trim().toLowerCase();
-        const matched = menuItems.filter(item =>
+        const matched = mainCategoryItems.filter(item =>
             item.name?.toLowerCase().includes(q) ||
             item.description?.toLowerCase().includes(q) ||
             item.category?.toLowerCase().includes(q)
         );
         return filterItems(matched);
-    }, [isSearching, searchTerm, menuItems, filterItems]);
+    }, [isSearching, searchTerm, mainCategoryItems, filterItems]);
 
     // ---------- Sidebar click -> scroll to category ----------
     const goToCategory = useCallback((category) => {
@@ -507,6 +555,62 @@ const CustomerMenu = () => {
                 <IconMoodEmpty size={56} stroke={1.5} />
                 <h2>Table Not Found</h2>
                 <p>Table {tableNumber} doesn't exist for this restaurant. Please scan a valid QR code.</p>
+            </div>
+        );
+    }
+
+    // ===== Category chooser landing screen (menu se pehle) =====
+    if (!selectedMainCategory) {
+        return (
+            <div className="customer-menu category-landing-page">
+                <div className="landing-mini-header">
+                    {restaurantInfo?.logo ? (
+                        <img src={restaurantInfo.logo} alt={restaurantInfo.name} className="restaurant-logo" />
+                    ) : (
+                        <div className="restaurant-logo-fallback">
+                            {(restaurantInfo?.name || 'R').charAt(0).toUpperCase()}
+                        </div>
+                    )}
+                    <div>
+                        <h1>{restaurantInfo?.name || 'Restaurant Menu'}</h1>
+                        <div className="header-meta">
+                            {restaurantStatus.isOpen !== null && (
+                                <span className={`open-status-badge ${restaurantStatus.isOpen ? 'open' : 'closed'}`}>
+                                    <span className="status-dot" />
+                                    {restaurantStatus.isOpen ? 'Open now' : 'Closed'}
+                                </span>
+                            )}
+                            <span className="table-info">Table {tableNumber}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="category-landing">
+                    <h2 className="category-landing-title">Aap kya khayenge?</h2>
+                    <p className="category-landing-subtitle">Category choose karein, hum aapke liye menu khol dete hain</p>
+
+                    <div className="category-landing-grid">
+                        {MAIN_CATEGORIES.map(cat => {
+                            const Icon = cat.icon;
+                            return (
+                                <button
+                                    key={cat.key}
+                                    className="category-landing-card"
+                                    onClick={() => selectMainCategory(cat.key)}
+                                >
+                                    <span className="category-landing-icon">
+                                        <Icon size={26} stroke={1.8} />
+                                    </span>
+                                    <span className="category-landing-label">{cat.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <button className="category-landing-skip" onClick={() => selectMainCategory('ALL')}>
+                        Pura menu dekhein <IconChevronRight size={16} stroke={2.5} />
+                    </button>
+                </div>
             </div>
         );
     }
@@ -657,6 +761,17 @@ const CustomerMenu = () => {
                     </button>
                 </div>
             </div>
+
+            {selectedMainCategory && (
+                <div className="selected-category-bar">
+                    <button className="change-category-btn" onClick={goBackToLanding}>
+                        <IconArrowLeft size={15} stroke={2.5} /> Change
+                    </button>
+                    <span className="selected-category-label">
+                        Showing: <strong>{selectedMainCategory === 'ALL' ? 'Full Menu' : MAIN_CATEGORIES.find(c => c.key === selectedMainCategory)?.label}</strong>
+                    </span>
+                </div>
+            )}
 
             {/* ===== Search Bar ===== */}
             <div className="customer-search-bar">
@@ -818,6 +933,14 @@ const CustomerMenu = () => {
                         <IconMoodEmpty size={48} stroke={1.5} />
                         <p>No items available at the moment</p>
                     </div>
+                ) : filteredMenuItems.length === 0 && !isSearching ? (
+                    <div className="empty-menu">
+                        <IconMoodEmpty size={48} stroke={1.5} />
+                        <p>Is category mein abhi koi item nahi hai</p>
+                        <button className="category-landing-skip" onClick={goBackToLanding}>
+                            Category badlein
+                        </button>
+                    </div>
                 ) : isSearching ? (
                     /* ===== Search results view (no sidebar) ===== */
                     <div className="menu-section search-mode">
@@ -843,6 +966,7 @@ const CustomerMenu = () => {
                                 {categoryNames.map((category) => (
                                     <button
                                         key={category}
+                                        ref={(el) => { sidebarItemRefs.current[category] = el; }}
                                         className={`category-sidebar-item ${activeCategory === category ? 'active' : ''}`}
                                         onClick={() => goToCategory(category)}
                                     >

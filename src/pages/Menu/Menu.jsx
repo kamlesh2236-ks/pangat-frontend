@@ -14,7 +14,8 @@ import {
     IconPackageOff,
     IconFileSpreadsheet,
     IconLoader2,
-
+    IconChevronLeft,
+    IconChevronRight,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -59,13 +60,16 @@ const MenuManagement = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [uploading, setUploading] = useState(false);
 
-    // 👇 Excel import ke liye
+    //  Excel import ke liye
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef(null);
+    //  Pagination ke liye
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const categories = ['All', ...new Set(menuItems.map(item => item.category).filter(Boolean))];
 
-    const tags = ['Veg', 'Non-Veg', 'Spicy', 'New', 'Bestseller', 'Trending'];
+    const tags = ['Veg', 'Non-Veg', 'Spicy', 'Fast Food', 'Coffee', 'Shakes & Mojitos', 'Ice Crusher', 'Desserts'];
 
     const [formData, setFormData] = useState({
         name: '',
@@ -89,6 +93,11 @@ const MenuManagement = () => {
     useEffect(() => {
         fetchMenuItems();
     }, []);
+
+    // Search ya category filter badalte hi pehle page par wapas
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterCategory, itemsPerPage]);
 
     const fetchMenuItems = async () => {
         try {
@@ -363,7 +372,7 @@ const MenuManagement = () => {
                 'Quantity': 50,
                 'Available': 'Yes',
                 'Out Of Stock': 'No',
-                'Tags': 'Non-Veg, Bestseller',
+                'Tags': 'Non-Veg Spicy',
                 'Preparation Time': 20,
                 'Rating': 4.5,
                 'Ingredients': 'Chicken, Rice, Spices',
@@ -431,6 +440,17 @@ const MenuManagement = () => {
         return matchesSearch && matchesCategory;
     });
 
+    // 👇 Pagination slice
+    const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+    const paginatedItems = filteredItems.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const goToPage = (page) => {
+        setCurrentPage(Math.min(Math.max(1, page), totalPages));
+    };
+
     const toggleTag = (tag) => {
         setFormData(prev => ({
             ...prev,
@@ -486,16 +506,18 @@ const MenuManagement = () => {
                     />
                 </div>
 
-                <div className="category-filter">
-                    {categories.map(cat => (
-                        <button
-                            key={cat}
-                            className={`filter-btn ${filterCategory === cat ? 'active' : ''}`}
-                            onClick={() => setFilterCategory(cat)}
-                        >
-                            {cat}
-                        </button>
-                    ))}
+                <div className="category-filter-scroll">
+                    <div className="category-filter">
+                        {categories.map(cat => (
+                            <button
+                                key={cat}
+                                className={`filter-btn ${filterCategory === cat ? 'active' : ''}`}
+                                onClick={() => setFilterCategory(cat)}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -528,7 +550,7 @@ const MenuManagement = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredItems.map(item => (
+                            {paginatedItems.map(item => (
                                 <tr key={item._id}>
                                     <td className="item-name">
                                         {item.image && (
@@ -635,6 +657,64 @@ const MenuManagement = () => {
                             ))}
                         </tbody>
                     </table>
+                    {totalPages > 1 && (
+                        <div className="pagination-bar">
+                            <div className="pagination-info">
+                                Showing {(currentPage - 1) * itemsPerPage + 1}
+                                –{Math.min(currentPage * itemsPerPage, filteredItems.length)} of {filteredItems.length} items
+                            </div>
+
+                            <div className="pagination-controls">
+                                <button
+                                    className="pagination-btn"
+                                    onClick={() => goToPage(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                >
+                                    <IconChevronLeft size={16} />
+                                </button>
+
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                    .reduce((acc, p, idx, arr) => {
+                                        if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((p, idx) =>
+                                        p === '...' ? (
+                                            <span key={`dots-${idx}`} className="pagination-dots">…</span>
+                                        ) : (
+                                            <button
+                                                key={p}
+                                                className={`pagination-btn ${currentPage === p ? 'active' : ''}`}
+                                                onClick={() => goToPage(p)}
+                                            >
+                                                {p}
+                                            </button>
+                                        )
+                                    )}
+
+                                <button
+                                    className="pagination-btn"
+                                    onClick={() => goToPage(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <IconChevronRight size={16} />
+                                </button>
+                            </div>
+
+                            <select
+                                className="pagination-page-size"
+                                value={itemsPerPage}
+                                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                            >
+                                <option value={10}>10 / page</option>
+                                <option value={25}>25 / page</option>
+                                <option value={50}>50 / page</option>
+                                <option value={100}>100 / page</option>
+                            </select>
+                        </div>
+                    )}
                 </div>
             )}
 

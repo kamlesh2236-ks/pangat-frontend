@@ -22,24 +22,19 @@
 
 .customer-menu {
     min-height: 100vh;
-    background: var(--cream);
-    background-image:
-        radial-gradient(circle at 10% 0%, rgba(255, 145, 77, 0.10), transparent 40%),
-        radial-gradient(circle at 100% 20%, rgba(255, 107, 53, 0.07), transparent 35%);
+    background: var(--bg-base);
     display: flex;
     flex-direction: column;
     font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--charcoal);
 }
 
-/* ============================================================
-   Header
-   ============================================================ */
+
 .menu-header {
     background: var(--paper);
     border-bottom: 1px solid var(--line);
     padding: 16px 20px;
-    position: sticky;
+    /* position: sticky; */
     top: 0;
     z-index: 100;
     box-shadow: 0 8px 24px rgba(42, 33, 28, 0.05);
@@ -114,6 +109,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: capitalize;
 }
 
 .restaurant-address {
@@ -456,9 +452,6 @@
 }
 
 
-/* ============================================================
-   Offer Banner Slider
-   ============================================================ */
 .offer-banner-slider {
     position: relative;
     width: calc(100% - 40px);
@@ -561,6 +554,189 @@
 }
 
 /* ===== category sidebar + items panel ===== */
+
+/* ============================================================
+   Category Landing Screen (menu se pehle "kya khayenge" screen)
+   ============================================================ */
+.category-landing-page {
+    align-items: center;
+}
+
+.landing-mini-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 6px;
+    width: 100%;
+    max-width: 640px;
+}
+
+.landing-mini-header h1 {
+    margin: 0 0 6px 0;
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--charcoal);
+    text-transform: capitalize;
+}
+
+.category-landing {
+    flex: 1;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.category-landing-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(22px, 5vw, 28px);
+    font-weight: 600;
+    color: var(--charcoal);
+    margin: 12px 0 6px;
+}
+
+.category-landing-subtitle {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin: 0 0 28px;
+}
+
+.category-landing-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.category-landing-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 8px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+.category-landing-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--orange);
+    box-shadow: 0 12px 26px rgba(255, 107, 53, 0.2);
+}
+
+.category-landing-card:active {
+    transform: scale(0.96);
+}
+
+.category-landing-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--orange-soft);
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-landing-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--charcoal);
+    line-height: 1.25;
+}
+
+.category-landing-skip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 30px;
+    padding: 8px 14px;
+    border-radius: 100px;
+    transition: all 0.2s ease;
+}
+
+.category-landing-skip:hover {
+    color: var(--orange);
+    background: var(--orange-soft);
+}
+
+/* ===== Selected-category bar (menu ke andar, header ke turant neeche) ===== */
+.selected-category-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    background: var(--orange-soft);
+    border-bottom: 1px solid var(--line);
+}
+
+.change-category-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 100px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--charcoal);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.change-category-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+}
+
+.selected-category-label {
+    font-size: 13px;
+    color: var(--charcoal);
+}
+
+.selected-category-label strong {
+    color: var(--orange);
+}
+
+@media (max-width: 640px) {
+    .category-landing-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .category-landing-icon {
+        width: 46px;
+        height: 46px;
+    }
+}
+
+@media (max-width: 400px) {
+    .category-landing-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 .menu-body {
     display: flex;
     align-items: flex-start;
@@ -574,13 +750,33 @@
     flex-shrink: 0;
     position: sticky;
     top: 158px;
-    max-height: calc(100vh - 170px);
+    height: calc(100vh - 158px);
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 4px;
     padding: 4px 2px;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+}
+
+/* Chrome, Edge, Safari */
+.category-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.category-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.category-sidebar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.category-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #888;
 }
 
 .category-sidebar::-webkit-scrollbar {
@@ -1006,10 +1202,6 @@
     text-align: center;
     color: var(--charcoal);
 }
-
-/* ============================================================
-   Cart sidebar (desktop) — receipt styled
-   ============================================================ */
 
 /* ===== Open/Closed status ===== */
 .open-status-badge {
@@ -1699,7 +1891,7 @@
 
     .customer-search-bar {
         padding: 10px 16px;
-        top: 78px;
+        top: 0px;
     }
 
     .offer-banner-slider {
@@ -1708,7 +1900,7 @@
     }
 
     .menu-content {
-        padding: 14px 9px 90px 0px;
+        padding: 14px 9px 14px 0px;
         gap: 10px;
     }
 
@@ -1718,7 +1910,7 @@
 
     .category-sidebar {
         width: 70px;
-        top: 140px;
+        top: 59px;
     }
 
     .category-sidebar-icon {
