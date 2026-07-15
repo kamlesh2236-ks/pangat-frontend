@@ -6,7 +6,8 @@
   font-family: 'Public Sans', sans-serif;
   color: var(--text-primary);
   background: var(--bg-base);
-min-height: 100vh;}
+  min-height: 100vh;
+}
 
 .billing-page.loading {
   display: flex;
@@ -27,7 +28,9 @@ min-height: 100vh;}
 }
 
 @keyframes billing-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== LEFT: Menu Panel ===== */
@@ -436,12 +439,13 @@ min-height: 100vh;}
   border-color: #ff6b35;
   background: #ff6b35;
   color: var(--text-primary);
-  svg{
+
+  svg {
     color: var(--text-primary);
   }
 }
 
-.billing-payment-btn svg{
+.billing-payment-btn svg {
   color: #ff6b35;
 }
 
@@ -493,4 +497,47 @@ min-height: 100vh;}
   .billing-cart-panel {
     max-height: none;
   }
+}
+
+/* ===== Menu Pagination ===== */
+.billing-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.billing-pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #f0e4dc;
+  background: var(--bg-card);
+  color: #6b5c50;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.billing-pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ff6b35, #ff914d);
+  border-color: transparent;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.billing-pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.billing-pagination-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
 }

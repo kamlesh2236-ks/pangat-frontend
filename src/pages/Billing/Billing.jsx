@@ -15,6 +15,8 @@ import {
   IconWallet,
   IconTag,
   IconPrinter,
+  IconChevronLeft,
+  IconChevronRight,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { menuAPI, tablesAPI, ordersAPI } from '../../utils/api';
@@ -28,6 +30,8 @@ const PAYMENT_METHODS = [
   { value: 'Wallet', label: 'Wallet', icon: IconWallet },
 ];
 
+const ITEMS_PER_PAGE = 6;
+
 const Billing = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [tables, setTables] = useState([]);
@@ -35,6 +39,7 @@ const Billing = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [cart, setCart] = useState([]); // [{ menuItemId, name, price, quantity, specialInstructions }]
 
@@ -107,6 +112,23 @@ const Billing = () => {
       return matchesCategory && matchesSearch;
     });
   }, [menuItems, activeCategory, searchTerm]);
+
+  // ===== Pagination =====
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedItems = filteredItems.slice(
+    (safePage - 1) * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, searchTerm]);
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
 
   // ---------- Cart logic ----------
   const addToCart = (menuItem) => {
@@ -268,7 +290,7 @@ const Billing = () => {
           {filteredItems.length === 0 ? (
             <div className="billing-empty">No items found</div>
           ) : (
-            filteredItems.map((item) => (
+            paginatedItems.map((item) => (
               <div
                 key={item._id}
                 className="billing-menu-card"
@@ -309,6 +331,31 @@ const Billing = () => {
             ))
           )}
         </div>
+
+        {/* ===== Pagination (menu panel ke andar, grid ke turant baad) ===== */}
+        {filteredItems.length > ITEMS_PER_PAGE && (
+          <div className="billing-pagination">
+            <button
+              className="billing-pagination-btn"
+              onClick={() => goToPage(safePage - 1)}
+              disabled={safePage === 1}
+            >
+              <IconChevronLeft size={16} />
+            </button>
+
+            <span className="billing-pagination-info">
+              Page {safePage} of {totalPages}
+            </span>
+
+            <button
+              className="billing-pagination-btn"
+              onClick={() => goToPage(safePage + 1)}
+              disabled={safePage === totalPages}
+            >
+              <IconChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ===== RIGHT: Cart / Checkout ===== */}
@@ -449,25 +496,6 @@ const Billing = () => {
             </button>
           ))}
         </div>
-
-        {/* <div className="billing-payment-status">
-          <label>
-            <input
-              type="radio"
-              checked={paymentStatus === 'Completed'}
-              onChange={() => setPaymentStatus('Completed')}
-            />
-            Paid now
-          </label>
-          <label>
-            <input
-              type="radio"
-              checked={paymentStatus === 'Pending'}
-              onChange={() => setPaymentStatus('Pending')}
-            />
-            Pay later
-          </label>
-        </div> */}
 
         <button
           className="billing-generate-btn"

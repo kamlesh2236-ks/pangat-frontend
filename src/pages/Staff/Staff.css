@@ -235,10 +235,33 @@
 }
 
 /* ===== Attendance List ===== */
+/* ===== Attendance List ===== */
 .staff-attendance-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) transparent;
+}
+
+.staff-attendance-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.staff-attendance-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.staff-attendance-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+.staff-attendance-list::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
 }
 
 .staff-attendance-row {
@@ -634,7 +657,8 @@
     background: var(--bg-card);
     color: var(--color-primary);
     border-color: var(--color-primary);
-    svg{
+
+    svg {
         color: var(--color-primary);
     }
 }
@@ -865,6 +889,103 @@
 .staff-attendance-status.paid-leave {
     background: rgba(124, 58, 237, 0.12);
     color: var(--color-primary);
+}
+
+/* ===== Staff Table Pagination ===== */
+.staff-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.staff-pagination-info {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.staff-pagination-info strong {
+    color: var(--text-primary);
+}
+
+.staff-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.staff-pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-pagination-btn:hover:not(:disabled) {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.staff-pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.staff-pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.staff-pagination-page {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-pagination-page:hover:not(.active) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.staff-pagination-page.active {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+@media (max-width: 560px) {
+    .staff-pagination {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .staff-pagination-controls {
+        justify-content: center;
+    }
 }
 
 /* ===== Responsive ===== */

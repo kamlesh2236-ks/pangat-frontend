@@ -18,6 +18,7 @@ import { staffAPI } from '../../utils/api';
 import './Staff.css';
 
 const ROLES = ['Manager', 'Chef', 'Cook', 'Waiter', 'Cashier', 'Cleaner', 'Delivery', 'Security', 'Other'];
+const STAFF_PER_PAGE = 8;
 
 const ATTENDANCE_OPTIONS = [
     { value: 'Present', label: 'P', full: 'Present' },
@@ -41,6 +42,7 @@ const Staff = () => {
     const [todayAttendance, setTodayAttendance] = useState([]);
     const [payroll, setPayroll] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(currentMonth());
+    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
 
     const [showAddModal, setShowAddModal] = useState(false);
@@ -79,6 +81,10 @@ const Staff = () => {
     useEffect(() => {
         fetchAll();
     }, [fetchAll]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedMonth]);
 
     // ---------- Attendance ----------
     const handleMarkAttendance = async (staffId, status) => {
@@ -266,6 +272,19 @@ const Staff = () => {
         return entry ? entry.salary.dueAmount : null;
     };
 
+    // ===== Pagination =====
+    const totalPages = Math.max(1, Math.ceil(staffList.length / STAFF_PER_PAGE));
+    const safePage = Math.min(currentPage, totalPages);
+    const paginatedStaff = staffList.slice(
+        (safePage - 1) * STAFF_PER_PAGE,
+        safePage * STAFF_PER_PAGE
+    );
+
+    const goToPage = (page) => {
+        if (page < 1 || page > totalPages) return;
+        setCurrentPage(page);
+    };
+
     if (loading) {
         return (
             <div className="staff-page loading">
@@ -379,7 +398,7 @@ const Staff = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {staffList.map((staff) => {
+                        {paginatedStaff.map((staff) => {
                             const due = getStaffDue(staff._id);
                             return (
                                 <tr key={staff._id} className={!staff.isActive ? 'inactive-row' : ''}>
@@ -417,6 +436,47 @@ const Staff = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* ===== Staff Table Pagination ===== */}
+            {totalPages > 1 && (
+                <div className="staff-pagination">
+                    <span className="staff-pagination-info">
+                        Showing <strong>{(safePage - 1) * STAFF_PER_PAGE + 1}</strong>–
+                        <strong>{Math.min(safePage * STAFF_PER_PAGE, staffList.length)}</strong> of{' '}
+                        <strong>{staffList.length}</strong> staff
+                    </span>
+
+                    <div className="staff-pagination-controls">
+                        <button
+                            className="staff-pagination-btn"
+                            onClick={() => goToPage(safePage - 1)}
+                            disabled={safePage === 1}
+                        >
+                            <IconChevronRight size={16} style={{ transform: 'rotate(180deg)' }} />
+                        </button>
+
+                        <div className="staff-pagination-pages">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                <button
+                                    key={p}
+                                    className={`staff-pagination-page ${p === safePage ? 'active' : ''}`}
+                                    onClick={() => goToPage(p)}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            className="staff-pagination-btn"
+                            onClick={() => goToPage(safePage + 1)}
+                            disabled={safePage === totalPages}
+                        >
+                            <IconChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* ===== Add/Edit Staff Modal ===== */}
             {(showAddModal || showEditModal) && (

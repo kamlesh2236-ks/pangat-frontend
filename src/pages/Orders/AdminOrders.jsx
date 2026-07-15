@@ -4,7 +4,6 @@ import {
   IconSearch,
   IconFilter,
   IconRefresh,
-  IconEye,
   IconCheck,
   IconChecks,
   IconClock,
@@ -19,6 +18,10 @@ import {
   IconUsers,
   IconReceipt,
   IconMapPin,
+  IconChevronLeft,
+  IconChevronRight,
+  IconCreditCard,
+  IconToolsKitchen2,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { ordersAPI } from '../../utils/api';
@@ -27,16 +30,18 @@ import BillPrint from './BillPrint';
 import './AdminOrders.css';
 
 const POLL_INTERVAL_MS = 15000;
+const ORDERS_PER_PAGE = 10;
 
 const AdminOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showModal, setShowModal] = useState(false); // renamed from showDetail
+  const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [billOrder, setBillOrder] = useState(null);
   const [showBillPrint, setShowBillPrint] = useState(false);
@@ -78,6 +83,11 @@ const AdminOrders = () => {
     };
   }, [showModal]);
 
+  // Reset to page 1 whenever search/filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterPayment]);
+
   const fetchOrders = useCallback(async () => {
     try {
       if (isFirstLoadRef.current) {
@@ -110,7 +120,6 @@ const AdminOrders = () => {
 
         setOrders(fetchedOrders);
 
-        // Keep the modal's data fresh if it's open and refers to this order
         if (showModal && selectedOrder) {
           const updated = fetchedOrders.find((o) => o._id === selectedOrder._id);
           if (updated) setSelectedOrder(updated);
@@ -142,6 +151,33 @@ const AdminOrders = () => {
 
     return matchesSearch && matchesStatus && matchesPayment;
   });
+
+  // ===== Pagination =====
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedOrders = filteredOrders.slice(
+    (safePage - 1) * ORDERS_PER_PAGE,
+    safePage * ORDERS_PER_PAGE
+  );
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    // scroll orders list into view smoothly on page change
+    document.querySelector('.orders-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, safePage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -180,7 +216,6 @@ const AdminOrders = () => {
 
   const closeModal = () => {
     setShowModal(false);
-    // Small delay so exit animation can play before clearing data
     setTimeout(() => setSelectedOrder(null), 200);
   };
 
@@ -323,69 +358,131 @@ const AdminOrders = () => {
       </div>
 
       <div className="content-wrapper">
-        {/* Orders List — now always full width since detail is a modal */}
         <div className="orders-list">
           {filteredOrders.length === 0 ? (
             <div className="empty-state">
               <p>No orders found</p>
             </div>
           ) : (
-            <div className="orders-table">
-              {filteredOrders.map((order) => (
-                <div
-                  key={order._id}
-                  className="order-card"
-                  onClick={() => openModal(order)}
-                >
-                  <div className="order-card-header">
-                    <div className="order-number-section">
-                      <h3>#{order.orderNumber}</h3>
-                      <span className="table-badge">Table {order.tableNumber}</span>
+            <>
+              <div className="orders-table">
+                {paginatedOrders.map((order) => (
+                  <div
+                    key={order._id}
+                    className="order-card"
+                    onClick={() => openModal(order)}
+                  >
+                    <div className="order-card-header">
+                      <div className="order-number-section">
+                        <h3>#{order.orderNumber}</h3>
+                        <span className="table-badge">Table {order.tableNumber}</span>
+                      </div>
+                      <div className="order-time">
+                        {new Date(order.placedAt).toLocaleTimeString()}
+                      </div>
                     </div>
-                    <div className="order-time">
-                      {new Date(order.placedAt).toLocaleTimeString()}
+
+                    <div className="order-card-body">
+                      <div className="order-info">
+                        <p className="customer-name">{order.customerName}</p>
+                        <p className="customer-phone">{order.customerPhone || 'No phone'}</p>
+                      </div>
+
+                      <div className="order-items-preview">
+                        {order.items?.slice(0, 2).map((item, idx) => (
+                          <span key={idx} className="item-badge">
+                            {item.quantity}x {item.itemName}
+                          </span>
+                        ))}
+                        {order.items?.length > 2 && (
+                          <span className="item-badge more">+{order.items.length - 2} more</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="order-card-footer">
+                      <div className="amount-section">
+                        <span className="amount">₹{order.totalAmount}</span>
+                        <span className={`payment-badge ${order.paymentStatus.toLowerCase()}`}>
+                          {order.paymentStatus}
+                        </span>
+                      </div>
+
+                      <div className="status-section">
+                        <span
+                          className="status-badge"
+                          style={{ backgroundColor: getStatusColor(order.orderStatus) }}
+                        >
+                          {getStatusIcon(order.orderStatus)}
+                          {order.orderStatus}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
 
-                  <div className="order-card-body">
-                    <div className="order-info">
-                      <p className="customer-name">{order.customerName}</p>
-                      <p className="customer-phone">{order.customerPhone || 'No phone'}</p>
-                    </div>
+              {/* ===== Pagination ===== */}
+              {totalPages > 1 && (
+                <div className="orders-pagination">
+                  <span className="orders-pagination-info">
+                    Showing <strong>{(safePage - 1) * ORDERS_PER_PAGE + 1}</strong>–
+                    <strong>{Math.min(safePage * ORDERS_PER_PAGE, filteredOrders.length)}</strong> of{' '}
+                    <strong>{filteredOrders.length}</strong> orders
+                  </span>
 
-                    <div className="order-items-preview">
-                      {order.items?.slice(0, 2).map((item, idx) => (
-                        <span key={idx} className="item-badge">
-                          {item.quantity}x {item.itemName}
-                        </span>
+                  <div className="orders-pagination-controls">
+                    <button
+                      className="orders-pagination-btn"
+                      onClick={() => goToPage(safePage - 1)}
+                      disabled={safePage === 1}
+                      aria-label="Previous page"
+                    >
+                      <IconChevronLeft size={16} />
+                    </button>
+
+                    <div className="orders-pagination-pages">
+                      {getPageNumbers()[0] > 1 && (
+                        <>
+                          <button className="orders-pagination-page" onClick={() => goToPage(1)}>1</button>
+                          {getPageNumbers()[0] > 2 && <span className="orders-pagination-dots">…</span>}
+                        </>
+                      )}
+
+                      {getPageNumbers().map((p) => (
+                        <button
+                          key={p}
+                          className={`orders-pagination-page ${p === safePage ? 'active' : ''}`}
+                          onClick={() => goToPage(p)}
+                        >
+                          {p}
+                        </button>
                       ))}
-                      {order.items?.length > 2 && (
-                        <span className="item-badge more">+{order.items.length - 2} more</span>
+
+                      {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
+                        <>
+                          {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && (
+                            <span className="orders-pagination-dots">…</span>
+                          )}
+                          <button className="orders-pagination-page" onClick={() => goToPage(totalPages)}>
+                            {totalPages}
+                          </button>
+                        </>
                       )}
                     </div>
-                  </div>
 
-                  <div className="order-card-footer">
-                    <div className="amount-section">
-                      <span className="amount">₹{order.totalAmount}</span>
-                      <span className={`payment-badge ${order.paymentStatus.toLowerCase()}`}>
-                        {order.paymentStatus}
-                      </span>
-                    </div>
-
-                    <div className="status-section">
-                      <span
-                        className="status-badge"
-                        style={{ backgroundColor: getStatusColor(order.orderStatus) }}
-                      >
-                        {getStatusIcon(order.orderStatus)}
-                        {order.orderStatus}
-                      </span>
-                    </div>
+                    <button
+                      className="orders-pagination-btn"
+                      onClick={() => goToPage(safePage + 1)}
+                      disabled={safePage === totalPages}
+                      aria-label="Next page"
+                    >
+                      <IconChevronRight size={16} />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -399,7 +496,6 @@ const AdminOrders = () => {
           }}
         >
           <div className={`order-modal ${showModal ? 'open' : ''}`}>
-            {/* Sticky header */}
             <div
               className="order-modal-header"
               style={{ '--status-color': getStatusColor(selectedOrder.orderStatus) }}
@@ -435,9 +531,7 @@ const AdminOrders = () => {
               </div>
             </div>
 
-            {/* Scrollable body */}
             <div className="order-modal-body">
-              {/* Customer + meta */}
               <div className="order-modal-grid">
                 <div className="order-modal-card">
                   <span className="order-modal-card-label">
@@ -451,14 +545,17 @@ const AdminOrders = () => {
                 </div>
 
                 <div className="order-modal-card">
-                  <span className="order-modal-card-label">Guest Count</span>
+                  <span className="order-modal-card-label">
+                    <IconUsers size={14} /> Guest Count
+                  </span>
                   <p className="order-modal-card-main">{selectedOrder.guestCount || 1}</p>
                 </div>
               </div>
 
-              {/* Items */}
               <div className="order-modal-section">
-                <h4 className="order-modal-section-title">Items Ordered</h4>
+                <h4 className="order-modal-section-title">
+                  <IconToolsKitchen2 size={14} /> Items Ordered
+                </h4>
                 <div className="order-modal-items">
                   {selectedOrder.items?.map((item, idx) => (
                     <div key={idx} className="order-modal-item-row">
@@ -469,7 +566,6 @@ const AdminOrders = () => {
                           {item.isCombo && <span className="order-modal-combo-tag">COMBO</span>}
                         </p>
 
-                        {/* ✅ Combo ke andar kaunse items hain, wo yahan dikhega */}
                         {item.isCombo && item.comboItems?.length > 0 && (
                           <div className="order-modal-combo-items">
                             {item.comboItems.map((ci, ciIdx) => (
@@ -491,9 +587,10 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              {/* Billing */}
               <div className="order-modal-section">
-                <h4 className="order-modal-section-title">Billing Summary</h4>
+                <h4 className="order-modal-section-title">
+                  <IconReceipt size={14} /> Billing Summary
+                </h4>
                 <div className="order-modal-billing">
                   <div className="order-modal-billing-row">
                     <span>Subtotal</span>
@@ -516,10 +613,11 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              {/* Status + Payment controls */}
               <div className="order-modal-grid">
                 <div className="order-modal-section">
-                  <h4 className="order-modal-section-title">Order Status</h4>
+                  <h4 className="order-modal-section-title">
+                    <IconClipboardList size={14} /> Order Status
+                  </h4>
                   <select
                     value={selectedOrder.orderStatus}
                     onChange={(e) => updateOrderStatus(selectedOrder._id, e.target.value)}
@@ -535,7 +633,9 @@ const AdminOrders = () => {
                 </div>
 
                 <div className="order-modal-section">
-                  <h4 className="order-modal-section-title">Payment</h4>
+                  <h4 className="order-modal-section-title">
+                    <IconCreditCard size={14} /> Payment
+                  </h4>
                   <p className="order-modal-payment-method">{selectedOrder.paymentMethod}</p>
                   <select
                     value={selectedOrder.paymentStatus}
@@ -550,7 +650,6 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              {/* Special requests */}
               {selectedOrder.specialRequests && (
                 <div className="order-modal-section">
                   <h4 className="order-modal-section-title">Special Requests</h4>
@@ -559,7 +658,6 @@ const AdminOrders = () => {
               )}
             </div>
 
-            {/* Sticky footer actions */}
             <div className="order-modal-footer">
               <button className="order-modal-btn secondary" onClick={closeModal}>
                 Close
