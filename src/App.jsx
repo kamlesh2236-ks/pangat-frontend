@@ -64,16 +64,19 @@ const SuperAdminRoute = ({ children }) => {
 
 const MainLayout = ({ children }) => {
   const { isNavbarOpen } = React.useContext(NavbarContext);
-  useNewOrderAlert();
+  const userStr = localStorage.getItem('adminUser');
+  const isSuperAdmin = userStr ? JSON.parse(userStr)?.role === 'SuperAdmin' : false;
+
+  useNewOrderAlert(isSuperAdmin);
 
   return (
     <div className="main-layout">
       <Navbar />
-      <Topbar />
+       <Topbar />
       <main className={`main-content ${!isNavbarOpen ? 'sidebar-closed' : ''}`}>
         {children}
       </main>
-      <SubscriptionGate />
+      {!isSuperAdmin && <SubscriptionGate />}
     </div>
   );
 };
