@@ -119,7 +119,7 @@ export default function App() {
                       </SuperAdminRoute>
                     }
                   />
-
+                  
                   {/* Protected Routes */}
                   <Route
                     path="/dashboard"
