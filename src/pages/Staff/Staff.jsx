@@ -10,7 +10,6 @@ import {
     IconCoin,
     IconReceipt2,
     IconWallet,
-    IconClockHour4,
     IconChevronRight,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
@@ -59,9 +58,15 @@ const Staff = () => {
     const [txnForm, setTxnForm] = useState({ type: 'Payment', amount: '', notes: '' });
     const [addingTxn, setAddingTxn] = useState(false);
 
-    const fetchAll = useCallback(async () => {
+    // markingId tracks which staff row's attendance button is currently being updated,
+    // so we can show a tiny inline spinner on just that button instead of reloading the page
+    const [markingId, setMarkingId] = useState(null);
+
+    // `showLoader` lets us refetch data in the background (e.g. after marking attendance)
+    // WITHOUT flipping the page back into its full "Loading staff..." spinner state.
+    const fetchAll = useCallback(async (showLoader = true) => {
         try {
-            setLoading(true);
+            if (showLoader) setLoading(true);
             const [staffRes, todayRes, payrollRes] = await Promise.all([
                 staffAPI.getAll(),
                 staffAPI.getTodayAttendance(),
@@ -74,12 +79,12 @@ const Staff = () => {
             console.error('Error fetching staff data:', error);
             toast.error('Failed to load staff data');
         } finally {
-            setLoading(false);
+            if (showLoader) setLoading(false);
         }
     }, [selectedMonth]);
 
     useEffect(() => {
-        fetchAll();
+        fetchAll(true);
     }, [fetchAll]);
 
     useEffect(() => {
@@ -89,34 +94,17 @@ const Staff = () => {
     // ---------- Attendance ----------
     const handleMarkAttendance = async (staffId, status) => {
         try {
+            setMarkingId(`${staffId}-${status}`);
             const response = await staffAPI.markAttendance(staffId, { status });
             if (response.data.success) {
                 toast.success(response.data.message);
-                fetchAll();
+                // Background refresh only — no full-page loading spinner
+                fetchAll(false);
             }
         } catch (error) {
             toast.error('Failed to mark attendance');
-        }
-    };
-
-    const markAllPresent = async () => {
-        const records = todayAttendance
-            .filter((row) => !row.attendance)
-            .map((row) => ({ staffId: row.staff._id, status: 'Present' }));
-
-        if (records.length === 0) {
-            toast('Sab already marked hain', { icon: 'ℹ️' });
-            return;
-        }
-
-        try {
-            const response = await staffAPI.bulkMarkAttendance({ records });
-            if (response.data.success) {
-                toast.success(response.data.message);
-                fetchAll();
-            }
-        } catch (error) {
-            toast.error('Failed to bulk mark attendance');
+        } finally {
+            setMarkingId(null);
         }
     };
 
@@ -160,7 +148,7 @@ const Staff = () => {
             if (response.data.success) {
                 toast.success(showEditModal ? 'Staff updated' : 'Staff added');
                 closeModal();
-                fetchAll();
+                fetchAll(true);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to save staff');
@@ -191,7 +179,7 @@ const Staff = () => {
             const response = await staffAPI.delete(staffId);
             if (response.data.success) {
                 toast.success('Staff deleted');
-                fetchAll();
+                fetchAll(true);
             }
         } catch (error) {
             toast.error('Failed to delete staff');
@@ -244,7 +232,7 @@ const Staff = () => {
                 setTxnForm({ type: 'Payment', amount: '', notes: '' });
                 const salaryRes = await staffAPI.getSalary(detailStaff._id, selectedMonth);
                 if (salaryRes.data.success) setDetailSalary(salaryRes.data.data);
-                fetchAll();
+                fetchAll(false);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to add transaction');
@@ -260,7 +248,7 @@ const Staff = () => {
             toast.success('Transaction deleted');
             const salaryRes = await staffAPI.getSalary(detailStaff._id, selectedMonth);
             if (salaryRes.data.success) setDetailSalary(salaryRes.data.data);
-            fetchAll();
+            fetchAll(false);
         } catch (error) {
             toast.error('Failed to delete transaction');
         }
@@ -270,6 +258,12 @@ const Staff = () => {
         if (!payroll) return null;
         const entry = payroll.payroll.find((p) => p.staff._id === staffId);
         return entry ? entry.salary.dueAmount : null;
+    };
+
+    // Look up today's attendance status for a given staff member (used to highlight the active button)
+    const getTodayStatus = (staffId) => {
+        const row = todayAttendance.find((r) => r.staff._id === staffId);
+        return row?.attendance?.status || null;
     };
 
     // ===== Pagination =====
@@ -348,42 +342,6 @@ const Staff = () => {
                 </div>
             )}
 
-            {/* ===== Today's Attendance ===== */}
-            <div className="staff-card">
-                <div className="staff-card-header">
-                    <h3><IconClockHour4 size={18} /> Today's Attendance</h3>
-                    <button className="staff-mark-all-btn" onClick={markAllPresent}>Mark All Present</button>
-                </div>
-
-                <div className="staff-attendance-list">
-                    {todayAttendance.length === 0 ? (
-                        <p className="staff-empty-text">Didn't Active Any Staff</p>
-                    ) : (
-                        todayAttendance.map((row) => (
-                            <div key={row.staff._id} className="staff-attendance-row">
-                                <div className="staff-attendance-info">
-                                    <span className="staff-attendance-name">{row.staff.name}</span>
-                                    <span className="staff-attendance-role">{row.staff.role}</span>
-                                </div>
-                                <div className="staff-attendance-buttons">
-                                    {ATTENDANCE_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            className={`staff-attendance-btn ${opt.value.toLowerCase().replace(' ', '-')} ${row.attendance?.status === opt.value ? 'active' : ''
-                                                }`}
-                                            title={opt.full}
-                                            onClick={() => handleMarkAttendance(row.staff._id, opt.value)}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-
             {/* ===== Staff Table ===== */}
             <div className="staff-table-wrapper">
                 <table className="staff-table">
@@ -394,12 +352,13 @@ const Staff = () => {
                             <th>Salary Type</th>
                             <th>Amount</th>
                             <th>This Month Due</th>
-                            <th>Actions</th>
+                            <th>Attendance / Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedStaff.map((staff) => {
                             const due = getStaffDue(staff._id);
+                            const currentStatus = getTodayStatus(staff._id);
                             return (
                                 <tr key={staff._id} className={!staff.isActive ? 'inactive-row' : ''}>
                                     <td>
@@ -420,15 +379,34 @@ const Staff = () => {
                                         ) : '—'}
                                     </td>
                                     <td className="staff-row-actions">
-                                        <button onClick={() => openDetail(staff)} title="View Details">
-                                            <IconChevronRight size={16} />
-                                        </button>
-                                        <button onClick={() => handleEditClick(staff)} title="Edit">
-                                            <IconEdit size={16} />
-                                        </button>
-                                        <button onClick={() => handleDelete(staff._id)} title="Delete" className="danger">
-                                            <IconTrash size={16} />
-                                        </button>
+                                        <div className="staff-row-attendance-grid">
+                                            {ATTENDANCE_OPTIONS.map((opt) => {
+                                                const isActive = currentStatus === opt.value;
+                                                const isMarking = markingId === `${staff._id}-${opt.value}`;
+                                                return (
+                                                    <button
+                                                        key={opt.value}
+                                                        className={`staff-attendance-btn-sm ${opt.value.toLowerCase().replace(' ', '-')} ${isActive ? 'active' : ''}`}
+                                                        title={opt.full}
+                                                        disabled={isMarking}
+                                                        onClick={() => handleMarkAttendance(staff._id, opt.value)}
+                                                    >
+                                                        {isMarking ? '…' : opt.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="staff-row-action-buttons">
+                                            <button onClick={() => openDetail(staff)} title="View Details">
+                                                <IconChevronRight size={16} />
+                                            </button>
+                                            <button onClick={() => handleEditClick(staff)} title="Edit">
+                                                <IconEdit size={16} />
+                                            </button>
+                                            <button onClick={() => handleDelete(staff._id)} title="Delete" className="danger">
+                                                <IconTrash size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             );

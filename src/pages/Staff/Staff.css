@@ -235,7 +235,7 @@
 }
 
 /* ===== Attendance List ===== */
-/* ===== Attendance List ===== */
+
 .staff-attendance-list {
     display: flex;
     flex-direction: column;
@@ -436,13 +436,78 @@
     color: #16a34a;
 }
 
+/* ===== Actions column: attendance grid + row buttons ===== */
 .staff-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.staff-row-attendance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.staff-attendance-btn-sm {
+    width: 26px;
+    height: 22px;
+    padding: 0;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 10.5px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-attendance-btn-sm:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.staff-attendance-btn-sm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.staff-attendance-btn-sm.present.active {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-attendance-btn-sm.absent.active {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-attendance-btn-sm.half-day.active {
+    background: var(--gradient-warm);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-attendance-btn-sm.paid-leave.active {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.staff-row-action-buttons {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.staff-row-actions button {
+.staff-row-action-buttons button {
     width: 30px;
     height: 30px;
     border-radius: 8px;
@@ -456,12 +521,12 @@
     transition: all 0.15s ease;
 }
 
-.staff-row-actions button:hover {
+.staff-row-action-buttons button:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
 }
 
-.staff-row-actions button.danger:hover {
+.staff-row-action-buttons button.danger:hover {
     border-color: #ef4444;
     color: #ef4444;
 }
