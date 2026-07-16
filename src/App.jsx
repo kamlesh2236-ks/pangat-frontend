@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useNewOrderAlert from './hooks/useNewOrderAlert';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
@@ -119,7 +120,7 @@ export default function App() {
                       </SuperAdminRoute>
                     }
                   />
-                  
+
                   {/* Protected Routes */}
                   <Route
                     path="/dashboard"
