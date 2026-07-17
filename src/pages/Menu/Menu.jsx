@@ -16,6 +16,8 @@ import {
     IconLoader2,
     IconChevronLeft,
     IconChevronRight,
+    IconFlame,
+    IconFlameOff,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -81,6 +83,7 @@ const MenuManagement = () => {
         quantity: '',
         isAvailable: true,
         isOutOfStock: false,
+        isSpicyLevel: false,
         tags: [],
         preparationTime: '15',
         rating: '0',
@@ -154,6 +157,7 @@ const MenuManagement = () => {
                 quantity: formData.quantity ? parseInt(formData.quantity) : null,
                 isAvailable: formData.isAvailable,
                 isOutOfStock: formData.isOutOfStock,
+                isSpicyLevel: formData.isSpicyLevel,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
                 rating: formData.rating ? Math.min(5, Math.max(0, parseFloat(formData.rating) || 0)) : 0,
@@ -191,6 +195,7 @@ const MenuManagement = () => {
                 quantity: formData.quantity ? parseInt(formData.quantity) : null,
                 isAvailable: formData.isAvailable,
                 isOutOfStock: formData.isOutOfStock,
+                isSpicyLevel: formData.isSpicyLevel,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
                 rating: formData.rating ? Math.min(5, Math.max(0, parseFloat(formData.rating) || 0)) : 0,
@@ -258,6 +263,19 @@ const MenuManagement = () => {
             toast.error('Failed to update stock status');
         }
     };
+
+    const handleToggleSpicyLevel = async (item) => {
+        try{
+            const response = await menuAPI.toggleSpicyLevel(item._id, !item.isSpicyLevel);
+            if (response.data.success){
+                toast.success(response.data.message);
+                setMenuItems(menuItems.map(i => (i._id === item._id ? response.data.data : i)));
+            }
+        } catch (error) {
+            console.error('Error toggle Spicy Level:', error)
+            toast.error('Failed to Update Spicy Level')
+        }
+    }
 
 
     const handleExcelFileSelect = async (e) => {
@@ -398,6 +416,7 @@ const MenuManagement = () => {
             quantity: item.quantity?.toString() || '',
             isAvailable: item.isAvailable,
             isOutOfStock: item.isOutOfStock,
+            isSpicyLevel: item.isSpicyLevel,
             tags: item.tags || [],
             preparationTime: item.preparationTime?.toString() || '15',
             rating: item.rating?.toString() || '0',
@@ -421,6 +440,7 @@ const MenuManagement = () => {
             quantity: '',
             isAvailable: true,
             isOutOfStock: false,
+            isSpicyLevel: false,
             tags: [],
             preparationTime: '15',
             rating: '0',
@@ -620,7 +640,10 @@ const MenuManagement = () => {
                                     </td>
                                     <td>
                                         <span className={`status-badge ${item.isAvailable ? 'available' : 'unavailable'}`}>
-                                            {item.isAvailable ? '✓ Available' : '✗ Unavailable'}
+                                            {item.isAvailable ? 'Available' : 'Unavailable'}
+                                        </span>
+                                        <span className={`status-badge ${item.isSpicyLevel ? 'available' : 'unavailable'}`}>
+                                            {item.isSpicyLevel ? 'Spicy On' : 'Spicy Off'}
                                         </span>
                                     </td>
                                     <td className="actions">
@@ -630,6 +653,14 @@ const MenuManagement = () => {
                                             title={item.isAvailable ? 'Mark Unavailable' : 'Mark Available'}
                                         >
                                             {item.isAvailable ? <IconEye size={18} /> : <IconEyeOff size={18} />}
+                                        </button>
+
+                                        <button className='action-btn'
+                                                onClick={() => handleToggleSpicyLevel(item)}
+                                                title={item.isSpicyLevel ? 'Mark Spicy Off' : 'Mark Spicy On'}
+                                        >
+                                            {item.isSpicyLevel ? <IconFlame size={18} /> : <IconFlameOff size={18} />}
+
                                         </button>
                                         <button
                                             className="action-btn"

@@ -1203,6 +1203,74 @@
     color: var(--charcoal);
 }
 
+.spicy-level-selector {
+    display: flex;
+    gap: 6px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+}
+
+.spicy-level-chip {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.spicy-level-chip.active {
+    background: #fff0e6;
+    border-color: #ff6b35;
+    color: #ff6b35;
+    font-weight: 600;
+}
+
+.cart-item-spicy {
+    font-size: 11px;
+    color: #ff6b35;
+    margin: 2px 0;
+}
+
+.spicy-level-dropdown-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 6px 0;
+}
+
+.spicy-dropdown-icon {
+    color: #ff6b35;
+    flex-shrink: 0;
+}
+
+.spicy-level-dropdown {
+    font-size: 12px;
+    padding: 4px 0px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    max-width: 90px;
+    outline: none;
+}
+
+.spicy-level-dropdown:focus {
+    border-color: #ff6b35;
+}
+
+.cart-item-spicy {
+    font-size: 11px;
+    color: #ff6b35;
+    margin: 2px 0;
+}
+
 /* ===== Open/Closed status ===== */
 .open-status-badge {
     display: flex;

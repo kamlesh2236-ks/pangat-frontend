@@ -25,6 +25,8 @@ const MAIN_CATEGORIES = [
     { key: 'Desserts', label: 'Desserts', icon: IconIceCream, tag: 'Desserts' },
 ];
 
+const SPICY_LEVELS = ['Low', 'Medium', 'High'];
+
 // Item ye check karta hai ki wo selected landing-category (tag) se match karta hai ya nahi
 const itemMatchesMainCategory = (item, mainCat) => {
     if (!mainCat || mainCat === 'ALL') return true;
@@ -97,6 +99,7 @@ const CustomerMenu = () => {
     const [activeBanner, setActiveBanner] = useState(0);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState([]);
+    const [spicyLevelSelections, setSpicyLevelSelections] = useState({});
     const [showCart, setShowCart] = useState(false);
     const [orderPlacing, setOrderPlacing] = useState(false);
     const [restaurantInfo, setRestaurantInfo] = useState(null);
@@ -304,6 +307,10 @@ const CustomerMenu = () => {
         }
     };
 
+    const selectSpicyLevel = (itemId, level) => {
+        setSpicyLevelSelections(prev => ({ ...prev, [itemId]: level }));
+    };
+
     const addToCart = (item) => {
 
         if (restaurantStatus.isOpen === false) {
@@ -315,10 +322,13 @@ const CustomerMenu = () => {
             return;
         }
 
-        if (item.isOutOfStock === true) {
-            toast.error(`${item.name} is out of stock`);
+        if (item.isSpicyLevel && !spicyLevelSelections[item._id]) {
+            toast.error('Please select a spicy level first');
             return;
         }
+
+        const selectedSpicyLevel = item.isSpicyLevel ? spicyLevelSelections[item._id] : null;
+
         const existingItem = cart.find(c => c._id === item._id);
 
         if (existingItem) {
@@ -328,7 +338,7 @@ const CustomerMenu = () => {
                     : c
             ));
         } else {
-            setCart([...cart, { ...item, quantity: 1 }]);
+            setCart([...cart, { ...item, quantity: 1, spicyLevel: selectedSpicyLevel }]);
         }
         toast.success(`${item.name} added to cart`);
     };
@@ -402,7 +412,9 @@ const CustomerMenu = () => {
                 items: cart.map(item => ({
                     itemId: item._id,
                     quantity: item.quantity,
-                    specialInstructions: item.notes || '',
+                    specialInstructions: item.spicyLevel
+                        ? `Spicy Level: ${item.spicyLevel}`
+                        : (item.notes || ''),
                 })),
                 paymentMethod,
             };
@@ -701,7 +713,27 @@ const CustomerMenu = () => {
                         </div>
                     )}
 
+
                     {item.description && <p className="item-desc">{item.description}</p>}
+
+                    {item.isSpicyLevel && (
+                        <div className="spicy-level-dropdown-wrapper">
+                            <IconFlame size={13} stroke={2} className="spicy-dropdown-icon" />
+                            <select
+                                className="spicy-level-dropdown"
+                                value={spicyLevelSelections[item._id] || ''}
+                                onChange={(e) => selectSpicyLevel(item._id, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <option value="" disabled>Select spicy</option>
+                                {SPICY_LEVELS.map(level => (
+                                    <option key={level} value={level}>{level} Spicy</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+
                     {item.isCombo && item.comboItems?.length > 0 && (
                         <div className="combo-items-preview">
                             {item.comboItems.map((ci, i) => (
@@ -1081,6 +1113,9 @@ const CustomerMenu = () => {
                                         <div key={item._id} className="cart-item">
                                             <div className="item-info">
                                                 <h4>{item.name}</h4>
+                                                {item.spicyLevel && (
+                                                    <p className="cart-item-spicy">🌶️ {item.spicyLevel} Spicy</p>
+                                                )}
                                                 <p>₹{item.price}</p>
                                             </div>
                                             <div className="quantity-control">

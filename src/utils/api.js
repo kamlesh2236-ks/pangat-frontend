@@ -90,11 +90,9 @@ export const menuAPI = {
     update: (id, data) => apiClient.put(`/admin/menu/${id}`, data),
     delete: (id) => apiClient.delete(`/admin/menu/${id}`),
     getByCategoryy: (category) => apiClient.get(`/admin/menu/category/${category}`),
-    toggleAvailability: (id, isAvailable) =>
-        apiClient.patch(`/admin/menu/${id}/availability`, { isAvailable }),
-
-    toggleStock: (id, isOutOfStock) =>
-        apiClient.patch(`/admin/menu/${id}/stock`, { isOutOfStock }),
+    toggleAvailability: (id, isAvailable) => apiClient.patch(`/admin/menu/${id}/availability`, { isAvailable }),
+    toggleStock: (id, isOutOfStock) => apiClient.patch(`/admin/menu/${id}/stock`, { isOutOfStock }),
+    toggleSpicyLevel:(id, isSpicyLevel) => apiClient.patch(`/admin/menu/${id}/spicy`, { isSpicyLevel }),
 };
 
 export const tablesAPI = {
@@ -103,7 +101,7 @@ export const tablesAPI = {
     create: (data) => apiClient.post('/admin/tables', data),
     update: (id, data) => apiClient.put(`/admin/tables/${id}`, data),
     delete: (id) => apiClient.delete(`/admin/tables/${id}`),
-    updateStatus: (id, data) => apiClient.patch(`/admin/tables/${id}/status`, data), // NEW
+    updateStatus: (id, data) => apiClient.patch(`/admin/tables/${id}/status`, data),
     generateQR: (tableNumber) => apiClient.post(`/admin/tables/${tableNumber}/qr`),
     generateBatchQR: (tableNumbers) => apiClient.post('/admin/tables/qr/batch', { tableNumbers }),
 };
