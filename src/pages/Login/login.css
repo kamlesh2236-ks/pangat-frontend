@@ -562,7 +562,12 @@
   .auth-footer,
   .image-caption,
   .image-container .particle,
-  .login-head h1,
+  .login-head h1 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   .login-head h1::after {
     animation: none !important;
     opacity: 1 !important;
