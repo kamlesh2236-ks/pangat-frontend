@@ -309,7 +309,7 @@ const Combos = () => {
           <IconGift size={40} />
           <p>No Combos Created yet</p>
           <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-            <IconPlus size={18} /> Apna Pehla Combo Banao
+            <IconPlus size={18} /> Create Your First Combo
           </button>
         </div>
       ) : (
