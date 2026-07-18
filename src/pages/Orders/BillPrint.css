@@ -187,31 +187,38 @@
 
 /* ---- PRINT RULES ---- */
 @media print {
-  body * {
-    visibility: hidden;
-  }
-
-  .bill-print-root,
-  .bill-print-root * {
-    visibility: visible;
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 0;
+    overflow: hidden;
   }
 
   .bill-print-root {
-    display: block;
-    position: absolute;
+    display: block !important;
+    visibility: visible !important;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .bill-print-root * {
+    visibility: visible !important;
   }
 
   .bill-paper {
     border: none;
     width: 100%;
     max-width: 320px;
+    margin: 0 auto;
   }
 
   @page {
-    margin: 8mm;
+    size: 80mm auto;
+    margin: 0;
   }
 }
 
