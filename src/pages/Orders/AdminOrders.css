@@ -113,7 +113,6 @@
   background: var(--bg-card);
   border-radius: 8px;
   border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-glow);
 }
 
 .search-box input {

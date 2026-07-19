@@ -18,6 +18,7 @@ import {
   IconLogout,
   IconArrowsExchange,
   IconBuildingStore,
+  IconCategory,
 } from "@tabler/icons-react";
 import { NavbarContext } from "../context/NavbarContext";
 import LogoutConfirmModal from "./LogoutConfirmModal";
@@ -30,6 +31,7 @@ export const menuGroups = [
       { title: "Orders", icon: <IconShoppingCart size={20} />, path: "/orders" },
       { title: "Billing", icon: <IconReceipt size={20} />, path: "/billing" },
       { title: "Menu", icon: <IconToolsKitchen2 size={20} />, path: "/menu" },
+      { title: "Main Category", icon: <IconCategory size={20} />, path: "/main_category" },
       { title: "Combos", icon: <IconBox size={20} />, path: "/combos" },
       { title: "Tables", icon: <IconArmchair2 size={20} />, path: "/tables" },
     ],
@@ -103,7 +105,7 @@ const Navbar = () => {
     <aside className={`sidebar ${!isNavbarOpen ? "close" : ""}`}>
       <div className="logo">
         <div className="logo-box">{user?.name?.[0]}</div>
-        <h2>{user?.name}</h2>
+        <h2 title={user?.name}>{user?.name}</h2>
       </div>
 
       {activeMenuGroups.map((group) => (

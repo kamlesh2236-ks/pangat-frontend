@@ -69,15 +69,16 @@
    Category filter — horizontal scroll jab categories zyada ho
    ============================================================ */
 .category-filter-scroll {
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
+    scroll-behavior: smooth;
 }
 
 .category-filter-scroll::-webkit-scrollbar {
-    height: 5px;
+    display: none;
 }
 
 .category-filter-scroll::-webkit-scrollbar-thumb {
@@ -444,30 +445,57 @@
     color: #666;
 }
 
-/* Modal */
+/* ============================================================
+   Modal — beautified
+   ============================================================ */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(20, 15, 10, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     padding: 20px;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(3px);
+    animation: mm-fade-in 0.15s ease;
+}
+
+@keyframes mm-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .menu-modal-content {
     background: var(--bg-base);
-    border-radius: 12px;
+    border-radius: 16px;
     max-width: 600px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 0px 40px var(--shadow-color);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    animation: mm-pop-in 0.18s ease;
+    border: 1px solid var(--border-color);
+}
+
+@keyframes mm-pop-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .menu-modal-content.large-modal {
@@ -477,64 +505,96 @@
 .modal-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 25px;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 26px;
     border-bottom: 1px solid var(--border-color);
+    position: sticky;
     top: 0;
-    background: var(--bg--surface);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
     z-index: 10;
+    backdrop-filter: blur(6px);
 }
 
-.modal-header h2 {
-    margin: 0;
-    font-size: 22px;
+.modal-header-text h2 {
+    margin: 0 0 4px 0;
+    font-size: 21px;
     font-weight: 700;
     color: var(--color-secondary);
 }
 
+.modal-header-text p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted, #999);
+}
+
 .close-btn {
-    background: none;
-    border: none;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
     cursor: pointer;
     color: var(--color-secondary);
-    padding: 0;
+    padding: 8px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .close-btn:hover {
-    color: #333;
-    transform: scale(1.1);
+    color: #fff;
+    background: #f44336;
+    border-color: #f44336;
+    transform: rotate(90deg);
 }
 
 /* Form */
 .menu-form {
-    padding: 25px;
+    padding: 22px 26px 26px;
 }
 
 .form-section {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-surface, rgba(0, 0, 0, 0.015));
+    position: relative;
 }
 
-.form-section:last-child {
-    border-bottom: none;
+.form-section:last-of-type {
+    margin-bottom: 0;
 }
 
 .form-section h3 {
-    margin: 0 0 15px 0;
-    font-size: 16px;
+    margin: 0 0 16px 0;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.form-section h3 svg {
+    color: #667eea;
 }
 
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 18px;
+    margin-bottom: 16px;
+}
+
+.form-row:last-child {
+    margin-bottom: 0;
 }
 
 .menu-form-group {
@@ -542,10 +602,22 @@
     flex-direction: column;
 }
 
+.menu-form-group:not(:last-child) {
+    margin-bottom: 0;
+}
+
+.form-section>.menu-form-group {
+    margin-bottom: 16px;
+}
+
+.form-section>.menu-form-group:last-child {
+    margin-bottom: 0;
+}
+
 .menu-form-group label {
     margin-bottom: 8px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-muted);
 }
 
@@ -557,14 +629,20 @@
 .menu-form-group input,
 .menu-form-group select,
 .menu-form-group textarea {
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    padding: 11px 13px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 9px;
     font-size: 14px;
     font-family: inherit;
-    transition: all 0.3s ease;
-    background: var(--bg-surface);
+    transition: all 0.2s ease;
+    background: var(--bg-card, #fff);
     color: var(--text-muted);
+}
+
+.menu-form-group input:hover,
+.menu-form-group select:hover,
+.menu-form-group textarea:hover {
+    border-color: #b7bde8;
 }
 
 .menu-form-group input:focus,
@@ -572,14 +650,15 @@
 .menu-form-group textarea:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
     background: var(--bg--surface);
 }
 
 .menu-form-group small {
-    margin-top: 4px;
-    font-size: 12px;
+    margin-top: 5px;
+    font-size: 11px;
     color: #999;
+    align-self: flex-end;
 }
 
 .input-with-prefix {
@@ -590,8 +669,9 @@
 
 .input-with-prefix .prefix {
     position: absolute;
+    left: 13px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: #667eea;
     pointer-events: none;
 }
 
@@ -604,6 +684,11 @@
     flex-direction: row;
     align-items: center;
     gap: 10px;
+    background: var(--bg-card, #fff);
+    border: 1.5px solid var(--border-color);
+    border-radius: 9px;
+    padding: 10px 14px;
+    flex: 1;
 }
 
 .menu-form-group.checkbox input {
@@ -611,11 +696,14 @@
     height: 18px;
     margin: 0;
     cursor: pointer;
+    accent-color: #667eea;
 }
 
 .menu-form-group.checkbox label {
     margin: 0;
     cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted);
 }
 
 /* Tags Selection */
@@ -623,7 +711,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
 }
 
 .tag-checkbox {
@@ -631,18 +719,19 @@
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
-    background: #f9f9f9;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
+    background: var(--bg-card, #f9f9f9);
+    border: 1.5px solid var(--border-color);
+    border-radius: 20px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .tag-checkbox input {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     margin: 0;
     cursor: pointer;
+    accent-color: #667eea;
 }
 
 .tag-checkbox .active {
@@ -651,12 +740,17 @@
 
 .tag-checkbox:hover {
     border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, 0.08);
+}
+
+.tag-checkbox:has(input:checked) {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.12);
 }
 
 .tag-checkbox input:checked+span {
     color: #667eea;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 /* Image Upload */
@@ -672,24 +766,26 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px;
-    border: 2px dashed #ddd;
-    border-radius: 8px;
+    padding: 34px 20px;
+    border: 2px dashed #c9cff5;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    background: rgba(102, 126, 234, 0.03);
+    color: #667eea;
 }
 
 .image-upload-label:hover {
     border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, 0.08);
     color: #667eea;
 }
 
 .image-upload-label span {
     margin-top: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    color: #666;
+    color: inherit;
 }
 
 .image-upload-label input:disabled~span {
@@ -698,36 +794,39 @@
 
 .image-preview {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 110px;
+    height: 110px;
+    flex-shrink: 0;
 }
 
 .image-preview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
 }
 
 .remove-image {
     position: absolute;
     top: -8px;
     right: -8px;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     background: #f44336;
     color: white;
-    border: none;
+    border: 2px solid var(--bg-base, #fff);
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .remove-image:hover {
-    transform: scale(1.1);
+    transform: scale(1.12);
 }
 
 /* Modal Actions */
@@ -736,17 +835,20 @@
     gap: 12px;
     justify-content: flex-end;
     padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
+    margin-top: 4px;
+    position: sticky;
+    bottom: -26px;
+    background: linear-gradient(0deg, var(--bg-base) 60%, transparent);
 }
 
 .btn-primary,
 .btn-secondary {
     padding: 12px 28px;
     border: none;
-    border-radius: 8px;
+    border-radius: 9px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     font-size: 14px;
 }
 
@@ -822,6 +924,18 @@
     .image-upload-label {
         padding: 30px;
     }
+
+    .modal-header {
+        padding: 18px 20px;
+    }
+
+    .menu-form {
+        padding: 18px 20px 20px;
+    }
+
+    .form-section {
+        padding: 14px 16px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -853,6 +967,20 @@
 
     .actions {
         flex-direction: column;
+    }
+
+    .modal-header-text h2 {
+        font-size: 18px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .modal-actions .btn-primary,
+    .modal-actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
     }
 }
 

@@ -92,7 +92,7 @@ export const menuAPI = {
     getByCategoryy: (category) => apiClient.get(`/admin/menu/category/${category}`),
     toggleAvailability: (id, isAvailable) => apiClient.patch(`/admin/menu/${id}/availability`, { isAvailable }),
     toggleStock: (id, isOutOfStock) => apiClient.patch(`/admin/menu/${id}/stock`, { isOutOfStock }),
-    toggleSpicyLevel:(id, isSpicyLevel) => apiClient.patch(`/admin/menu/${id}/spicy`, { isSpicyLevel }),
+    toggleSpicyLevel: (id, isSpicyLevel) => apiClient.patch(`/admin/menu/${id}/spicy`, { isSpicyLevel }),
 };
 
 export const tablesAPI = {
@@ -257,6 +257,14 @@ export const searchAPI = {
 export const transactionsAPI = {
     getAll: (filters = {}) => apiClient.get('/admin/transactions', { params: filters }),
     getSummary: () => apiClient.get('/admin/transactions/summary'),
+};
+
+export const mainCategoriesAPI = {
+    getAll: () => apiClient.get('/admin/main-categories'),
+    create: (data) => apiClient.post('/admin/main-categories', data),
+    update: (id, data) => apiClient.put(`/admin/main-categories/${id}`, data),
+    delete: (id) => apiClient.delete(`/admin/main-categories/${id}`),
+    reorder: (order) => apiClient.patch('/admin/main-categories/reorder', { order }),
 };
 
 

@@ -325,11 +325,11 @@ const Topbar = () => {
             </div>
 
             <div className="text">
-                <p>{greeting.emoji} {greeting.greet}, {user?.name}!</p>
+                <p title={user?.name}>{greeting.emoji} {greeting.greet}, {user?.name}!</p>
                 <span>{time.toLocaleString('en-IN')}</span>
             </div>
 
-            {/* ✅ NEW: Super Admin ke liye restaurant search bar nahi dikhega */}
+            {/* Super Admin ke liye restaurant search bar nahi dikhega */}
             {!isSuperAdmin && (
                 <div className="search-cont" ref={searchRef}>
                     <IconListSearch size={24} stroke={2} />

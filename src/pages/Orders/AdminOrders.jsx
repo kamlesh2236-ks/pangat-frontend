@@ -31,6 +31,13 @@ import './AdminOrders.css';
 
 const POLL_INTERVAL_MS = 15000;
 const ORDERS_PER_PAGE = 10;
+const formatDateIN = (dateStr) => {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const datePart = d.toLocaleDateString('en-GB'); // en-GB => dd/mm/yyyy
+  const timePart = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+  return `${datePart}, ${timePart}`;
+};
 
 const AdminOrders = () => {
   const navigate = useNavigate();
@@ -378,7 +385,7 @@ const AdminOrders = () => {
                         <span className="table-badge">Table {order.tableNumber}</span>
                       </div>
                       <div className="order-time">
-                        {new Date(order.placedAt).toLocaleTimeString()}
+                        {new Date(order.placedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
                       </div>
                     </div>
 
@@ -511,7 +518,7 @@ const AdminOrders = () => {
                       <IconMapPin size={14} /> Table {selectedOrder.tableNumber}
                     </span>
                     <span className="order-modal-time">
-                      {new Date(selectedOrder.placedAt).toLocaleString()}
+                      {formatDateIN(selectedOrder.placedAt)}
                     </span>
                   </div>
                 </div>
@@ -596,10 +603,10 @@ const AdminOrders = () => {
                     <span>Subtotal</span>
                     <span>₹{selectedOrder.subtotal}</span>
                   </div>
-                  <div className="order-modal-billing-row">
+                  {/* <div className="order-modal-billing-row">
                     <span>Tax (5%)</span>
                     <span>₹{selectedOrder.taxAmount}</span>
-                  </div>
+                  </div> */}
                   {selectedOrder.discountAmount > 0 && (
                     <div className="order-modal-billing-row discount">
                       <span>Discount</span>

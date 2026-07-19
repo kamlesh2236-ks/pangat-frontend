@@ -9,30 +9,18 @@ import {
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
+import { resolveIcon } from '../../utils/mainCategoryIcons';
 import './CustomerMenu.css';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-// landing-categories
-const MAIN_CATEGORIES = [
-    { key: 'Veg', label: 'Veg', icon: IconLeaf, tag: 'Veg' },
-    { key: 'NonVeg', label: 'Non-Veg', icon: IconMeat, tag: 'Non-Veg' },
-    { key: 'Spicy', label: 'Spicy', icon: IconFlame, tag: 'Spicy' },
-    { key: 'FastFood', label: 'Fast Food', icon: IconBurger, tag: 'Fast Food' },
-    { key: 'Coffee', label: 'Coffee', icon: IconCoffee, tag: 'Coffee' },
-    { key: 'ShakeMojito', label: 'Shakes & Mojitos', icon: IconGlassCocktail, tag: 'Shakes & Mojitos' },
-    { key: 'IceCrusher', label: 'Ice Crusher', icon: IconSnowflake, tag: 'Ice Crusher' },
-    { key: 'Desserts', label: 'Desserts', icon: IconIceCream, tag: 'Desserts' },
-];
 
 const SPICY_LEVELS = ['Low', 'Medium', 'High'];
 
 // Item ye check karta hai ki wo selected landing-category (tag) se match karta hai ya nahi
-const itemMatchesMainCategory = (item, mainCat) => {
-    if (!mainCat || mainCat === 'ALL') return true;
-    const config = MAIN_CATEGORIES.find(c => c.key === mainCat);
-    if (!config) return true;
-    return item.tags?.includes(config.tag);
+const itemMatchesMainCategory = (item, mainCatTag) => {
+    if (!mainCatTag || mainCatTag === 'ALL') return true;
+    return item.tags?.includes(mainCatTag);
 };
 
 const getISTNow = () => {
@@ -117,6 +105,7 @@ const CustomerMenu = () => {
     const [priceBucket, setPriceBucket] = useState(0);
     const [sortBy, setSortBy] = useState('default');
     const [selectedMainCategory, setSelectedMainCategory] = useState(null);
+    const [mainCategories, setMainCategories] = useState([]);
 
     const bannerTimerRef = useRef(null);
 
@@ -125,7 +114,7 @@ const CustomerMenu = () => {
     const scrollResumeTimer = useRef(null);
     const menuPanelRef = useRef(null);
     const sidebarItemRefs = useRef({});
-
+    const sidebarContainerRef = useRef(null);
     const priceBuckets = [
         { label: 'All Prices', min: 0, max: Infinity },
         { label: 'Under ₹100', min: 0, max: 100 },
@@ -157,10 +146,17 @@ const CustomerMenu = () => {
 
     // Sidebar ko andar hi andar scroll karo taaki active category hamesha dikhe
     useEffect(() => {
+        const container = sidebarContainerRef.current;
         const el = sidebarItemRefs.current[activeCategory];
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        if (!container || !el) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+
+        // Element ko container ke andar center karne ke liye scroll offset nikalo
+        const offset = (elRect.top + elRect.height / 2) - (containerRect.top + containerRect.height / 2);
+
+        container.scrollBy({ top: offset, behavior: 'smooth' });
     }, [activeCategory]);
 
     useEffect(() => {
@@ -255,6 +251,7 @@ const CustomerMenu = () => {
             if (response.data.success) {
                 setMenuItems(response.data.data.items || []);
                 setRestaurantInfo(response.data.data.restaurant || null);
+                setMainCategories(response.data.data.mainCategories || []);
             }
 
             fetchBanners(qrId);
@@ -640,13 +637,13 @@ const CustomerMenu = () => {
                     <p className="category-landing-subtitle">Category choose karein, hum aapke liye menu open kar dete hain</p>
 
                     <div className="category-landing-grid">
-                        {MAIN_CATEGORIES.map(cat => {
-                            const Icon = cat.icon;
+                        {mainCategories.map(cat => {
+                            const Icon = resolveIcon(cat.icon);
                             return (
                                 <button
-                                    key={cat.key}
+                                    key={cat.tag}
                                     className="category-landing-card"
-                                    onClick={() => selectMainCategory(cat.key)}
+                                    onClick={() => selectMainCategory(cat.tag)}
                                 >
                                     <span className="category-landing-icon">
                                         <Icon size={26} stroke={1.8} />
@@ -658,7 +655,7 @@ const CustomerMenu = () => {
                     </div>
 
                     <button className="category-landing-skip" onClick={() => selectMainCategory('ALL')}>
-                        Pura menu dekhein <IconChevronRight size={16} stroke={2.5} />
+                        All menu dekhein <IconChevronRight size={16} stroke={2.5} />
                     </button>
                 </div>
             </div>
@@ -838,8 +835,7 @@ const CustomerMenu = () => {
                         <IconArrowLeft size={15} stroke={2.5} /> Change
                     </button>
                     <span className="selected-category-label">
-                        Showing: <strong>{selectedMainCategory === 'ALL' ? 'Full Menu' : MAIN_CATEGORIES.find(c => c.key === selectedMainCategory)?.label}</strong>
-                    </span>
+                        Showing: <strong>{selectedMainCategory === 'ALL' ? 'Full Menu' : mainCategories.find(c => c.tag === selectedMainCategory)?.label}</strong>                    </span>
                 </div>
             )}
 
@@ -1032,7 +1028,7 @@ const CustomerMenu = () => {
                     /* ===== Blinkit-style: sidebar + categorized items ===== */
                     <div className="menu-body">
                         {hasCategories && (
-                            <div className="category-sidebar">
+                            <div className="category-sidebar" ref={sidebarContainerRef}>
                                 {categoryNames.map((category) => (
                                     <button
                                         key={category}
@@ -1141,13 +1137,13 @@ const CustomerMenu = () => {
                                     <span>Subtotal</span>
                                     <span>₹{calculateTotal()}</span>
                                 </div>
-                                <div className="summary-row">
+                                {/* <div className="summary-row">
                                     <span>GST (5%)</span>
                                     <span>₹{(calculateTotal() * 0.05).toFixed(2)}</span>
-                                </div>
+                                </div> */}
                                 <div className="summary-row total">
                                     <span>Total</span>
-                                    <span>₹{(calculateTotal() * 1.05).toFixed(2)}</span>
+                                    <span>₹{calculateTotal()}</span>
                                 </div>
                                 <button className="btn-place-order" onClick={goToDetailsStep}>
                                     Continue <IconChevronRight size={18} stroke={2.5} />
@@ -1218,13 +1214,13 @@ const CustomerMenu = () => {
                                     <span>Subtotal</span>
                                     <span>₹{calculateTotal()}</span>
                                 </div>
-                                <div className="summary-row">
+                                {/* <div className="summary-row">
                                     <span>GST (5%)</span>
                                     <span>₹{(calculateTotal() * 0.05).toFixed(2)}</span>
-                                </div>
+                                </div> */}
                                 <div className="summary-row total">
                                     <span>Total</span>
-                                    <span>₹{(calculateTotal() * 1.05).toFixed(2)}</span>
+                                    <span>₹{calculateTotal()}</span>
                                 </div>
                                 <button className="btn-place-order" onClick={placeOrder} disabled={orderPlacing}>
                                     {orderPlacing ? (

@@ -57,6 +57,9 @@ body.sidebar-closed .top-container,
     justify-content: center;
     flex: 0.5;
     user-select: none;
+    min-width: 0;
+    overflow: hidden;
+    max-width: 100%;
 }
 
 .text p {
@@ -69,6 +72,9 @@ body.sidebar-closed .top-container,
     font-weight: 400;
     margin: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .text span {

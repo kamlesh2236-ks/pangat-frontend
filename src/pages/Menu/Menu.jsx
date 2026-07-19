@@ -18,10 +18,14 @@ import {
     IconChevronRight,
     IconFlame,
     IconFlameOff,
+    IconToolsKitchen2,
+    IconTags,
+    IconPhoto,
+    IconInfoCircle,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
-import { menuAPI } from '../../utils/api';
+import { menuAPI, mainCategoriesAPI } from '../../utils/api';
 import './Menu.css';
 
 // ---------- Excel helpers ----------
@@ -61,6 +65,7 @@ const MenuManagement = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [imagePreview, setImagePreview] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [mainCategories, setMainCategories] = useState([]);
 
     //  Excel import ke liye
     const [importing, setImporting] = useState(false);
@@ -68,6 +73,10 @@ const MenuManagement = () => {
     //  Pagination ke liye
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    //  Category filter auto-scroll ke liye
+    const categoryFilterContainerRef = useRef(null);
+    const filterBtnRefs = useRef({});
 
     const categories = ['All', ...new Set(menuItems.map(item => item.category).filter(Boolean))];
 
@@ -97,10 +106,30 @@ const MenuManagement = () => {
         fetchMenuItems();
     }, []);
 
+    useEffect(() => {
+        mainCategoriesAPI.getAll().then(res => {
+            if (res.data.success) setMainCategories(res.data.data);
+        });
+    }, []);
+
     // Search ya category filter badalte hi pehle page par wapas
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, filterCategory, itemsPerPage]);
+
+    // 👇 Active category filter button ko horizontally center karke scroll karo
+    useEffect(() => {
+        const container = categoryFilterContainerRef.current;
+        const el = filterBtnRefs.current[filterCategory];
+        if (!container || !el) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+
+        const offset = (elRect.left + elRect.width / 2) - (containerRect.left + containerRect.width / 2);
+
+        container.scrollBy({ left: offset, behavior: 'smooth' });
+    }, [filterCategory, categories.length]);
 
     const fetchMenuItems = async () => {
         try {
@@ -265,9 +294,9 @@ const MenuManagement = () => {
     };
 
     const handleToggleSpicyLevel = async (item) => {
-        try{
+        try {
             const response = await menuAPI.toggleSpicyLevel(item._id, !item.isSpicyLevel);
-            if (response.data.success){
+            if (response.data.success) {
                 toast.success(response.data.message);
                 setMenuItems(menuItems.map(i => (i._id === item._id ? response.data.data : i)));
             }
@@ -526,11 +555,12 @@ const MenuManagement = () => {
                     />
                 </div>
 
-                <div className="category-filter-scroll">
+                <div className="category-filter-scroll" ref={categoryFilterContainerRef}>
                     <div className="category-filter">
                         {categories.map(cat => (
                             <button
                                 key={cat}
+                                ref={(el) => { filterBtnRefs.current[cat] = el; }}
                                 className={`filter-btn ${filterCategory === cat ? 'active' : ''}`}
                                 onClick={() => setFilterCategory(cat)}
                             >
@@ -656,8 +686,8 @@ const MenuManagement = () => {
                                         </button>
 
                                         <button className='action-btn'
-                                                onClick={() => handleToggleSpicyLevel(item)}
-                                                title={item.isSpicyLevel ? 'Mark Spicy Off' : 'Mark Spicy On'}
+                                            onClick={() => handleToggleSpicyLevel(item)}
+                                            title={item.isSpicyLevel ? 'Mark Spicy Off' : 'Mark Spicy On'}
                                         >
                                             {item.isSpicyLevel ? <IconFlame size={18} /> : <IconFlameOff size={18} />}
 
@@ -758,7 +788,10 @@ const MenuManagement = () => {
                 }}>
                     <div className="menu-modal-content large-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2>{showEditModal ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
+                            <div className="modal-header-text">
+                                <h2>{showEditModal ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
+                                <p>{showEditModal ? 'Update the details of this dish' : 'Fill in the details to add a new dish to your menu'}</p>
+                            </div>
                             <button
                                 className="close-btn"
                                 onClick={() => {
@@ -767,14 +800,14 @@ const MenuManagement = () => {
                                     resetForm();
                                 }}
                             >
-                                <IconX size={24} />
+                                <IconX size={22} />
                             </button>
                         </div>
 
                         <form onSubmit={showEditModal ? handleUpdateItem : handleAddItem} className="menu-form">
                             {/* Basic Info Section */}
                             <div className="form-section">
-                                <h3>Basic Information</h3>
+                                <h3><IconToolsKitchen2 size={17} stroke={2} /> Basic Information</h3>
 
                                 <div className="form-row">
                                     <div className="menu-form-group">
@@ -821,7 +854,7 @@ const MenuManagement = () => {
 
                             {/* Pricing Section */}
                             <div className="form-section">
-                                <h3>Pricing & Stock</h3>
+                                <h3>💰 Pricing & Stock</h3>
 
                                 <div className="form-row">
                                     <div className="menu-form-group">
@@ -895,7 +928,7 @@ const MenuManagement = () => {
 
                             {/* Image Section */}
                             <div className="form-section">
-                                <h3>Image</h3>
+                                <h3><IconPhoto size={17} stroke={2} /> Image</h3>
 
                                 <div className="image-upload-section">
                                     <label className="image-upload-label">
@@ -930,17 +963,17 @@ const MenuManagement = () => {
 
                             {/* Tags Section */}
                             <div className="form-section">
-                                <h3>Tags & Features</h3>
+                                <h3><IconTags size={17} stroke={2} /> Tags & Features</h3>
 
                                 <div className="tags-selection">
-                                    {tags.map(tag => (
-                                        <label key={tag} className="tag-checkbox">
+                                    {mainCategories.filter(c => c.isActive).map(cat => (
+                                        <label key={cat.tag} className="tag-checkbox">
                                             <input
                                                 type="checkbox"
-                                                checked={formData.tags.includes(tag)}
-                                                onChange={() => toggleTag(tag)}
+                                                checked={formData.tags.includes(cat.tag)}
+                                                onChange={() => toggleTag(cat.tag)}
                                             />
-                                            <span>{tag}</span>
+                                            <span>{cat.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -970,7 +1003,7 @@ const MenuManagement = () => {
 
                             {/* Additional Info */}
                             <div className="form-section">
-                                <h3>Additional Information</h3>
+                                <h3><IconInfoCircle size={17} stroke={2} /> Additional Information</h3>
 
                                 <div className="form-row">
                                     <div className="menu-form-group">

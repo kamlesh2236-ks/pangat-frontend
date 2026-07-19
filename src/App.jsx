@@ -33,6 +33,7 @@ import Reports from './pages/Reports/Reports';
 import Media from './pages/Media/Media';
 import Transactions from './pages/Transactions/Transactions';
 import ForgotPassword from './pages/Login/ForgotPassword';
+import MainCategories from './pages/Menu/MainCategories';
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
@@ -149,6 +150,17 @@ export default function App() {
                       <ProtectedRoute>
                         <MainLayout>
                           <Menu />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route
+                    path="/main_category"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <MainCategories />
                         </MainLayout>
                       </ProtectedRoute>
                     }

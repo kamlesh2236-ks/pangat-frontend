@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
     IconBuildingStore,
     IconMapPin,
@@ -21,6 +21,7 @@ import {
 import toast from 'react-hot-toast';
 import { profileAPI, subscriptionAPI } from '../../utils/api';
 import { useSubscriptionPayment } from '../../hooks/useSubscriptionPayment';
+import { AuthContext } from '../../context/AuthContext';
 import './Profile.css';
 
 const DAYS = [
@@ -57,6 +58,7 @@ const emptyOperatingHours = () =>
 const Profile = () => {
     const [profile, setProfile] = useState(null);
     const [subscription, setSubscription] = useState(null);
+    const { user, updateUser } = useContext(AuthContext);
     const { pay, payingPlan } = useSubscriptionPayment(() => fetchSubscription());
 
     const fetchSubscription = async () => {
@@ -202,6 +204,13 @@ const Profile = () => {
             if (response.data.success) {
                 toast.success('Profile updated successfully');
                 setProfile(response.data.data);
+
+                // 👇 AuthContext ka user bhi update karo taaki Navbar/Topbar/Dashboard turant naya naam dikhaye
+                updateUser({
+                    ...user,
+                    name: response.data.data.name,
+                    logo: response.data.data.logo,
+                });
             }
         } catch (error) {
             const msg = error.response?.data?.message || 'Failed to update profile';
