@@ -387,7 +387,6 @@
 }
 
 .status-badge.unavailable {
-    background: #f8d7da;
     color: #721c24;
 }
 
@@ -719,7 +718,8 @@
     align-items: center;
     gap: 8px;
     padding: 8px 14px;
-    background: var(--bg-card, #f9f9f9);
+    background: var(--bg-card);
+    color: var(--text-secondary);
     border: 1.5px solid var(--border-color);
     border-radius: 20px;
     cursor: pointer;

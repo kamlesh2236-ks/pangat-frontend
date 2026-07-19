@@ -93,7 +93,11 @@ export const menuAPI = {
     toggleAvailability: (id, isAvailable) => apiClient.patch(`/admin/menu/${id}/availability`, { isAvailable }),
     toggleStock: (id, isOutOfStock) => apiClient.patch(`/admin/menu/${id}/stock`, { isOutOfStock }),
     toggleSpicyLevel: (id, isSpicyLevel) => apiClient.patch(`/admin/menu/${id}/spicy`, { isSpicyLevel }),
+    uploadImage: (formData) => apiClient.post('/admin/upload-image', formData, {
+        headers: { 'Content-Type': undefined },
+    }),
 };
+
 
 export const tablesAPI = {
     getAll: () => apiClient.get('/admin/tables'),

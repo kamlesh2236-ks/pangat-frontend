@@ -26,6 +26,7 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { menuAPI, mainCategoriesAPI } from '../../utils/api';
+
 import './Menu.css';
 
 // ---------- Excel helpers ----------
@@ -87,8 +88,9 @@ const MenuManagement = () => {
         description: '',
         price: '',
         discountPrice: '',
-        category: 'Main Course',
+        category: '',
         image: '',
+        imagePublicId: null,
         quantity: '',
         isAvailable: true,
         isOutOfStock: false,
@@ -152,23 +154,46 @@ const MenuManagement = () => {
 
         setUploading(true);
         try {
-            // Show preview
+            // Pehle preview turant dikhado (local, fast)
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-                setFormData({ ...formData, image: reader.result });
-            };
+            reader.onloadend = () => setImagePreview(reader.result);
             reader.readAsDataURL(file);
-            toast.success('Image selected');
+
+            // Cloudinary pe actual upload
+            const uploadFormData = new FormData();
+            uploadFormData.append('image', file);
+
+            const response = await menuAPI.uploadImage(uploadFormData);
+            console.log('upload response:', response.data);
+            if (response.data.success) {
+                setFormData(prev => ({
+                    ...prev,
+                    image: response.data.data.url,
+                    imagePublicId: response.data.data.publicId,
+                }));
+                toast.success('Image uploaded');
+            }
         } catch (error) {
+            console.error(error);
             toast.error('Failed to upload image');
+            setImagePreview(null);
         } finally {
             setUploading(false);
         }
     };
 
     const handleAddItem = async (e) => {
-        e.preventDefault();
+            e.preventDefault();
+
+    if (uploading) {
+        toast.error('Image abhi upload ho rahi hai, thoda wait karo');
+        return;
+    }
+
+    if (!formData.name || !formData.price || !formData.category) {
+        toast.error('Please fill all required fields');
+        return;
+    }
 
         if (!formData.name || !formData.price || !formData.category) {
             toast.error('Please fill all required fields');
@@ -183,6 +208,7 @@ const MenuManagement = () => {
                 discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
                 category: formData.category,
                 image: formData.image,
+                imagePublicId: formData.imagePublicId,
                 quantity: formData.quantity ? parseInt(formData.quantity) : null,
                 isAvailable: formData.isAvailable,
                 isOutOfStock: formData.isOutOfStock,
@@ -197,6 +223,8 @@ const MenuManagement = () => {
             };
 
             const response = await menuAPI.create(data);
+            console.log('create response:', response.data.data);
+            console.log('full response:', JSON.stringify(response.data.data, null, 2));
 
             if (response.data.success) {
                 toast.success('Menu item added successfully');
@@ -221,6 +249,7 @@ const MenuManagement = () => {
                 discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
                 category: formData.category,
                 image: formData.image,
+                imagePublicId: formData.imagePublicId,
                 quantity: formData.quantity ? parseInt(formData.quantity) : null,
                 isAvailable: formData.isAvailable,
                 isOutOfStock: formData.isOutOfStock,
@@ -355,7 +384,7 @@ const MenuManagement = () => {
                     discountPrice: discountRaw !== '' && !isNaN(parseFloat(discountRaw))
                         ? parseFloat(discountRaw)
                         : null,
-                    category: pick(row, ['category'], 'Main Course').toString(),
+                    category: pick(row, ['category'], '').toString(),
                     image: '',
                     quantity: quantityRaw !== '' && !isNaN(parseInt(quantityRaw))
                         ? parseInt(quantityRaw)
@@ -442,6 +471,7 @@ const MenuManagement = () => {
             discountPrice: item.discountPrice?.toString() || '',
             category: item.category,
             image: item.image || '',
+            imagePublicId: item.imagePublicId || null,
             quantity: item.quantity?.toString() || '',
             isAvailable: item.isAvailable,
             isOutOfStock: item.isOutOfStock,
@@ -464,8 +494,9 @@ const MenuManagement = () => {
             description: '',
             price: '',
             discountPrice: '',
-            category: 'Main Course',
+            category: '',
             image: '',
+            imagePublicId: null,
             quantity: '',
             isAvailable: true,
             isOutOfStock: false,
@@ -537,7 +568,7 @@ const MenuManagement = () => {
                         onChange={handleExcelFileSelect}
                         style={{ display: 'none' }}
                     />
-                    <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+                    <button className="btn-primary" onClick={() => { resetForm(); setShowAddModal(true); }}>
                         <IconPlus size={18} /> Add New Item
                     </button>
                 </div>
@@ -580,7 +611,7 @@ const MenuManagement = () => {
                 <div className="empty-state">
                     {/* <IconImage size={48} /> */}
                     <p>No menu items found</p>
-                    <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+                    <button className="btn-primary" onClick={() => { resetForm(); setShowAddModal(true); }}>
                         <IconPlus size={18} /> Add Your First Item
                     </button>
                 </div>
@@ -815,7 +846,7 @@ const MenuManagement = () => {
                                         <input
                                             type="text"
                                             value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                                             placeholder="e.g., Chicken Biryani"
                                             required
                                         />
@@ -827,7 +858,7 @@ const MenuManagement = () => {
                                             type="text"
                                             list="category-suggestions"
                                             value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                                             placeholder="e.g., Biryani, Roti, Dal, Rice"
                                             required
                                         />
@@ -843,7 +874,7 @@ const MenuManagement = () => {
                                     <label>Description</label>
                                     <textarea
                                         value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                         placeholder="Describe your item..."
                                         rows="3"
                                         maxLength="500"
@@ -864,7 +895,7 @@ const MenuManagement = () => {
                                             <input
                                                 type="number"
                                                 value={formData.price}
-                                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                                                 placeholder="250"
                                                 min="0"
                                                 step="0.01"
@@ -880,7 +911,7 @@ const MenuManagement = () => {
                                             <input
                                                 type="number"
                                                 value={formData.discountPrice}
-                                                onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, discountPrice: e.target.value }))}
                                                 placeholder="200"
                                                 min="0"
                                                 step="0.01"
@@ -895,7 +926,7 @@ const MenuManagement = () => {
                                         <input
                                             type="number"
                                             value={formData.quantity}
-                                            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
                                             placeholder="Leave empty for unlimited"
                                             min="0"
                                         />
@@ -906,7 +937,7 @@ const MenuManagement = () => {
                                         <input
                                             type="number"
                                             value={formData.preparationTime}
-                                            onChange={(e) => setFormData({ ...formData, preparationTime: e.target.value })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, preparationTime: e.target.value }))}
                                             min="1"
                                         />
                                     </div>
@@ -919,7 +950,7 @@ const MenuManagement = () => {
                                             type="checkbox"
                                             id="outOfStock"
                                             checked={formData.isOutOfStock}
-                                            onChange={(e) => setFormData({ ...formData, isOutOfStock: e.target.checked })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, isOutOfStock: e.target.checked }))}
                                         />
                                         <label htmlFor="outOfStock">Out of Stock (temporarily)</label>
                                     </div>
@@ -951,7 +982,7 @@ const MenuManagement = () => {
                                                 className="remove-image"
                                                 onClick={() => {
                                                     setImagePreview(null);
-                                                    setFormData({ ...formData, image: '' });
+                                                    setFormData(prev => ({ ...prev, image: '', imagePublicId: null }));
                                                 }}
                                             >
                                                 <IconX size={18} />
@@ -984,7 +1015,7 @@ const MenuManagement = () => {
                                             type="checkbox"
                                             id="featured"
                                             checked={formData.isFeatured}
-                                            onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))}
                                         />
                                         <label htmlFor="featured">Featured Item</label>
                                     </div>
@@ -994,7 +1025,7 @@ const MenuManagement = () => {
                                             type="checkbox"
                                             id="available"
                                             checked={formData.isAvailable}
-                                            onChange={(e) => setFormData({ ...formData, isAvailable: e.target.checked })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, isAvailable: e.target.checked }))}
                                         />
                                         <label htmlFor="available">Available</label>
                                     </div>
@@ -1011,7 +1042,7 @@ const MenuManagement = () => {
                                         <input
                                             type="number"
                                             value={formData.rating}
-                                            onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, rating: e.target.value }))}
                                             min="0"
                                             max="5"
                                             step="0.1"
@@ -1024,7 +1055,7 @@ const MenuManagement = () => {
                                     <input
                                         type="text"
                                         value={formData.ingredients}
-                                        onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, ingredients: e.target.value }))}
                                         placeholder="Chicken, Rice, Spices"
                                     />
                                 </div>
@@ -1034,7 +1065,7 @@ const MenuManagement = () => {
                                     <input
                                         type="text"
                                         value={formData.allergens}
-                                        onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, allergens: e.target.value }))}
                                         placeholder="Nuts, Dairy, Gluten"
                                     />
                                 </div>
@@ -1053,8 +1084,8 @@ const MenuManagement = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn-primary">
-                                    {showEditModal ? 'Update Item' : 'Add Item'}
+                                <button type="submit" className="btn-primary" disabled={uploading}>
+                                    {uploading ? 'Uploading Image...' : (showEditModal ? 'Update Item' : 'Add Item')}
                                 </button>
                             </div>
                         </form>
