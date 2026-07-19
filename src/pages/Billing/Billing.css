@@ -86,6 +86,11 @@
   padding: 14px 20px;
   overflow-x: auto;
   border-bottom: 1px solid var(--border-color);
+  scroll-behavior: smooth;
+}
+
+.billing-category-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .billing-cat-tab {

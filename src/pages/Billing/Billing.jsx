@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   IconSearch,
   IconPlus,
@@ -26,8 +26,8 @@ import './Billing.css';
 const PAYMENT_METHODS = [
   { value: 'Cash', label: 'Cash', icon: IconCash },
   { value: 'UPI', label: 'UPI', icon: IconDeviceMobile },
-  { value: 'Card', label: 'Card', icon: IconCreditCard },
-  { value: 'Wallet', label: 'Wallet', icon: IconWallet },
+  // { value: 'Card', label: 'Card', icon: IconCreditCard },
+  // { value: 'Wallet', label: 'Wallet', icon: IconWallet },
 ];
 
 const ITEMS_PER_PAGE = 6;
@@ -39,17 +39,17 @@ const Billing = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const catRefs = useRef({});
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [cart, setCart] = useState([]); // [{ menuItemId, name, price, quantity, specialInstructions }]
-
-  const [orderType, setOrderType] = useState('walkin'); // 'walkin' | 'table'
+  const [cart, setCart] = useState([]);
+  const [orderType, setOrderType] = useState('walkin');
   const [selectedTableId, setSelectedTableId] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
 
   const [paymentMethod, setPaymentMethod] = useState('Cash');
-  const [paymentStatus, setPaymentStatus] = useState('Completed'); // 'Completed' | 'Pending'
+  const [paymentStatus, setPaymentStatus] = useState('Completed');
 
   const [discountAmount, setDiscountAmount] = useState('');
   const [discountReason, setDiscountReason] = useState('');
@@ -79,6 +79,17 @@ const Billing = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const el = catRefs.current[activeCategory];
+    if (el) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [activeCategory]);
 
   useEffect(() => {
     if (showBillPrint && billOrder) {
@@ -278,6 +289,7 @@ const Billing = () => {
           {categories.map((cat) => (
             <button
               key={cat}
+              ref={(el) => (catRefs.current[cat] = el)}
               className={`billing-cat-tab ${activeCategory === cat ? 'active' : ''}`}
               onClick={() => setActiveCategory(cat)}
             >
