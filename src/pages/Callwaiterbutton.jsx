@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { IconBell, IconX } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 import { customerAPI } from "../utils/api";
-import "./CallWaiterButton.css";
+import "./CallWaiterbutton.css";
 
 const REASONS = ["Water", "Extra Plates", "Bill Please", "Something Else"];
 
