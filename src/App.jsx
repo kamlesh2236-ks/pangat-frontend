@@ -34,7 +34,7 @@ import Media from './pages/Media/Media';
 import Transactions from './pages/Transactions/Transactions';
 import ForgotPassword from './pages/Login/ForgotPassword';
 import MainCategories from './pages/Menu/MainCategories';
-import KitchenDashboard from './pages/Kitchen/KitchenDashboard';
+import KitchenDashboard from './pages/Kitchen/Kitchendashboard';
 import WaiterDashboard from './pages/Waiter/Waiterdashboard';
 import StaffLogin from "./pages/Login/StaffLogin";
 
