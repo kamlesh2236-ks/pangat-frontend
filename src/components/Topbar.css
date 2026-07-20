@@ -11,7 +11,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    z-index: 1001;
+    z-index: 999;
     gap: 28px;
     user-select: none;
 }
@@ -489,6 +489,7 @@ body.sidebar-closed .top-container,
         margin-left: 0;
         padding: 12px 15px;
         gap: 14px;
+        z-index: 1001;
     }
 
     body.sidebar-closed .top-container,
@@ -533,6 +534,7 @@ body.sidebar-closed .top-container,
     .top-container {
         padding: 14px 12px;
         gap: 10px;
+        z-index: 1001;
     }
 
     .nav-icon,
