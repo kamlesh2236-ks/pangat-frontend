@@ -79,8 +79,7 @@ export const superAdminMenuGroups = [
   },
 ];
 
-// ✅ Kitchen staff sirf apna dashboard dekhe — baaki sab route bhi is-role
-// ke liye backend me already checkRole se block honge, ye sirf UI-level hai
+
 export const kitchenMenuGroups = [
   {
     heading: "Kitchen",
@@ -96,7 +95,6 @@ export const kitchenMenuGroups = [
   },
 ];
 
-// ✅ Waiter staff sirf apna dashboard dekhe
 export const waiterMenuGroups = [
   {
     heading: "Waiter",
@@ -122,7 +120,7 @@ const Navbar = () => {
   const isKitchen = user?.role === "Kitchen";
   const isWaiter = user?.role === "Waiter";
 
-  // ✅ role ke hisaab se sidebar decide hota hai — owner/SuperAdmin ko sab dikhta hai
+  // role ke hisaab se sidebar decide hota hai — owner/SuperAdmin ko sab dikhta hai
   let activeMenuGroups = menuGroups;
   if (isSuperAdmin) activeMenuGroups = superAdminMenuGroups;
   else if (isKitchen) activeMenuGroups = kitchenMenuGroups;

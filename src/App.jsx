@@ -42,29 +42,69 @@ import StaffLogin from "./pages/Login/StaffLogin";
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
 import RestaurantDetail from './pages/SuperAdmin/RestaurantDetail';
 
+// ---- Role helpers ----
+// NOTE: agar normal restaurant owner/admin ka user.role backend se
+// 'Admin' ya 'Owner' string aata hai (undefined/null nahi), to
+// ADMIN_ROLES array mein wo exact value add/replace kar dena.
+const ADMIN_ROLES = [undefined, null, 'Admin', 'Owner'];
+
+const getUserFromStorage = () => {
+  try {
+    return JSON.parse(localStorage.getItem('adminUser'));
+  } catch {
+    return null;
+  }
+};
+
+// Role ke hisaab se sahi landing route decide karta hai
+const getDefaultRoute = (user) => {
+  if (!user) return '/login';
+  if (user.role === 'SuperAdmin') return '/super-admin/dashboard';
+  if (user.role === 'Kitchen') return '/kitchen';
+  if (user.role === 'Waiter') return '/waiter';
+  return '/dashboard';
+};
+
+// Sirf login check karta hai (kisi bhi role ke liye)
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
   return token ? children : <Navigate to="/login" />;
 };
 
-// Sirf SuperAdmin role wale users ko allow karta hai
-const SuperAdminRoute = ({ children }) => {
+// allowedRoles list ke hisaab se access deta hai — mismatch hone par
+// user ko uske apne sahi dashboard pe bhej deta hai (login pe nahi,
+// taaki logged-in user "logged out" jaisa feel na kare)
+const RoleProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('adminToken');
-  const userStr = localStorage.getItem('adminUser');
-
   if (!token) return <Navigate to="/login" />;
 
-  try {
-    const user = JSON.parse(userStr);
-    if (user?.role !== 'SuperAdmin') {
-      return <Navigate to="/dashboard" />;
-    }
-  } catch {
-    return <Navigate to="/login" />;
+  const user = getUserFromStorage();
+  if (!user) return <Navigate to="/login" />;
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to={getDefaultRoute(user)} replace />;
   }
 
   return children;
 };
+
+// Sirf SuperAdmin role wale users ko allow karta hai
+const SuperAdminRoute = ({ children }) => {
+  const token = localStorage.getItem('adminToken');
+  const user = getUserFromStorage();
+
+  if (!token) return <Navigate to="/login" />;
+  if (user?.role !== 'SuperAdmin') {
+    return <Navigate to={getDefaultRoute(user)} replace />;
+  }
+
+  return children;
+};
+
+// "/" aur "*" dono ke liye — role ke hisaab se sahi jagah bhejta hai
+const RootRedirect = () => (
+  <Navigate to={getDefaultRoute(getUserFromStorage())} replace />
+);
 
 const MainLayout = ({ children }) => {
   const { isNavbarOpen } = React.useContext(NavbarContext);
@@ -76,7 +116,7 @@ const MainLayout = ({ children }) => {
   return (
     <div className="main-layout">
       <Navbar />
-       <Topbar />
+      <Topbar />
       <main className={`main-content ${!isNavbarOpen ? 'sidebar-closed' : ''}`}>
         {children}
       </main>
@@ -125,99 +165,102 @@ export default function App() {
                     }
                   />
 
-                  {/* Protected Routes */}
                   <Route
                     path="/dashboard"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Dashboard />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
 
                   <Route
                     path="/tables"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <TablesList />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
+
+                  {/* Kitchen route — sirf Kitchen role */}
                   <Route
                     path="/kitchen"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={[...ADMIN_ROLES, 'Kitchen']}>
                         <MainLayout>
                           <KitchenDashboard />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
+
+                  {/* Waiter route — sirf Waiter role */}
                   <Route
                     path="/waiter"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={[...ADMIN_ROLES, 'Waiter']}>
                         <MainLayout>
                           <WaiterDashboard />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
 
                   <Route
                     path="/menu"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Menu />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
 
                   <Route
                     path="/main_category"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <MainCategories />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
 
                   <Route
                     path="/orders"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Orders />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
                     path="/billing"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Billing />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
                     path="/combos"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Combos />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
@@ -233,51 +276,51 @@ export default function App() {
                   <Route
                     path="/inventory"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Inventory />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
                     path="/staff"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Staff />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
                     path="/reports"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Reports />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
                     path="/media"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Media />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
                   <Route
                     path="/transactions"
                     element={
-                      <ProtectedRoute>
+                      <RoleProtectedRoute allowedRoles={ADMIN_ROLES}>
                         <MainLayout>
                           <Transactions />
                         </MainLayout>
-                      </ProtectedRoute>
+                      </RoleProtectedRoute>
                     }
                   />
 
@@ -290,9 +333,9 @@ export default function App() {
                     element={<OrderStatus />}
                   />
 
-                  {/* Redirect */}
-                  <Route path="/" element={<Navigate to="/dashboard" />} />
-                  <Route path="*" element={<Navigate to="/dashboard" />} />
+                  {/* Redirect — ab role-aware hai, hardcoded /dashboard nahi */}
+                  <Route path="/" element={<RootRedirect />} />
+                  <Route path="*" element={<RootRedirect />} />
                 </Routes>
               </NotificationProvider>
             </NavbarProvider>
