@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { IconCheck, IconClock, IconChefHat, IconTruck, IconHome } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
+import CallWaiterButton from '../Callwaiterbutton';
 import './OrderStatus.css';
 
 const OrderStatus = () => {
@@ -181,6 +182,13 @@ const OrderStatus = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ✅ Call Waiter — order place hone ke baad customer kabhi bhi bula sakta hai */}
+            <CallWaiterButton
+                orderId={order._id}
+                qrId={qrId}
+                alreadyCalled={order.waiterCallRequested && !order.waiterCallResolved}
+            />
 
             {/* Order Details */}
             <div className="order-details">

@@ -1,0 +1,68 @@
+.call-waiter-wrapper {
+    margin: 16px 0;
+}
+
+.call-waiter-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #ff6b35;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.call-waiter-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.call-waiter-picker {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.picker-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.picker-options button {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.picker-options button:hover {
+    background: #ff6b35;
+    color: white;
+    border-color: #ff6b35;
+}

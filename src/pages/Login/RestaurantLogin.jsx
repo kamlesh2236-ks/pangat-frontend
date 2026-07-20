@@ -155,8 +155,11 @@ const RestaurantLogin = () => {
           </form>
 
           <p className="auth-footer">
+            Staff Login Here <Link to="/staff-login">Staff Login</Link>
+            <br />
             Don't have an account? <Link to="/signup">Register here</Link>
           </p>
+
         </div>
       </div>
     </div>

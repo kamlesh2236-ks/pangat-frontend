@@ -11,6 +11,7 @@ import {
     IconReceipt2,
     IconWallet,
     IconChevronRight,
+    IconKey,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { staffAPI } from '../../utils/api';
@@ -62,6 +63,11 @@ const Staff = () => {
     // so we can show a tiny inline spinner on just that button instead of reloading the page
     const [markingId, setMarkingId] = useState(null);
 
+    // Login credentials modal state
+    const [credStaff, setCredStaff] = useState(null);
+    const [credForm, setCredForm] = useState({ email: '', password: '' });
+    const [savingCred, setSavingCred] = useState(false);
+
     // `showLoader` lets us refetch data in the background (e.g. after marking attendance)
     // WITHOUT flipping the page back into its full "Loading staff..." spinner state.
     const fetchAll = useCallback(async (showLoader = true) => {
@@ -98,7 +104,6 @@ const Staff = () => {
             const response = await staffAPI.markAttendance(staffId, { status });
             if (response.data.success) {
                 toast.success(response.data.message);
-                // Background refresh only — no full-page loading spinner
                 fetchAll(false);
             }
         } catch (error) {
@@ -266,6 +271,64 @@ const Staff = () => {
         return row?.attendance?.status || null;
     };
 
+    // ---------- Login Credentials ----------
+    const openCredentials = (staff) => {
+        setCredStaff(staff);
+        setCredForm({ email: staff.email || '', password: '' });
+    };
+
+    const closeCredentials = () => {
+        setCredStaff(null);
+        setCredForm({ email: '', password: '' });
+    };
+
+    const generatePassword = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+        let pass = '';
+        for (let i = 0; i < 8; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+        setCredForm((prev) => ({ ...prev, password: pass }));
+    };
+
+    const handleSaveCredentials = async (e) => {
+        e.preventDefault();
+        if (!credForm.email.trim()) {
+            toast.error('Email is required');
+            return;
+        }
+        if (!credForm.password || credForm.password.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+        try {
+            setSavingCred(true);
+            const response = await staffAPI.setCredentials(credStaff._id, {
+                email: credForm.email.trim(),
+                password: credForm.password,
+            });
+            if (response.data.success) {
+                toast.success('Login credentials set. Staff ko email/password note karke de dein.');
+                closeCredentials();
+                fetchAll(false);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to set credentials');
+        } finally {
+            setSavingCred(false);
+        }
+    };
+
+    const handleRevokeCredentials = async (staff) => {
+        if (!window.confirm(`${staff.name} ka login access hata dein?`)) return;
+        try {
+            await staffAPI.revokeCredentials(staff._id);
+            toast.success('Login access revoked');
+            closeCredentials();
+            fetchAll(false);
+        } catch (error) {
+            toast.error('Failed to revoke access');
+        }
+    };
+
     // ===== Pagination =====
     const totalPages = Math.max(1, Math.ceil(staffList.length / STAFF_PER_PAGE));
     const safePage = Math.min(currentPage, totalPages);
@@ -397,6 +460,9 @@ const Staff = () => {
                                             })}
                                         </div>
                                         <div className="staff-row-action-buttons">
+                                            <button onClick={() => openCredentials(staff)} title={staff.hasLoginAccess ? 'Manage Login' : 'Create Login'}>
+                                                <IconKey size={16} className={staff.hasLoginAccess ? 'text-success' : ''} />
+                                            </button>
                                             <button onClick={() => openDetail(staff)} title="View Details">
                                                 <IconChevronRight size={16} />
                                             </button>
@@ -717,6 +783,64 @@ const Staff = () => {
                                 </div>
                             ) : null}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ===== Login Credentials Modal ===== */}
+            {credStaff && (
+                <div className="modal-overlay" onClick={closeCredentials}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Login Access — {credStaff.name}</h2>
+                            <button className="close-btn" onClick={closeCredentials}><IconX size={22} /></button>
+                        </div>
+
+                        <form onSubmit={handleSaveCredentials} className="staff-form">
+                            <div className="Staff-form-group">
+                                <label>Email *</label>
+                                <input
+                                    type="email"
+                                    value={credForm.email}
+                                    onChange={(e) => setCredForm({ ...credForm, email: e.target.value })}
+                                    placeholder="staff@example.com"
+                                    required
+                                />
+                            </div>
+
+                            <div className="Staff-form-group">
+                                <label>Password *</label>
+                                <div className="form-row">
+                                    <input
+                                        type="text"
+                                        value={credForm.password}
+                                        onChange={(e) => setCredForm({ ...credForm, password: e.target.value })}
+                                        placeholder="Min 6 characters"
+                                    />
+                                    <button type="button" className="btn-secondary" onClick={generatePassword}>
+                                        Generate
+                                    </button>
+                                </div>
+                                <p className="staff-empty-text">
+                                    Ye password sirf ab dikhega, dobara nahi milega — save karte hi staff ko note karke de dein.
+                                </p>
+                            </div>
+
+                            <div className="modal-actions">
+                                {credStaff.hasLoginAccess && (
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={() => handleRevokeCredentials(credStaff)}
+                                    >
+                                        Revoke Access
+                                    </button>
+                                )}
+                                <button type="submit" className="btn-primary" disabled={savingCred}>
+                                    {savingCred ? 'Saving...' : credStaff.hasLoginAccess ? 'Update Credentials' : 'Create Login'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

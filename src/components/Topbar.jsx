@@ -52,6 +52,7 @@ const Topbar = () => {
 
 
     const isSuperAdmin = user?.role === 'SuperAdmin';
+    const isStaffUser = ['Kitchen', 'Waiter', 'Staff'].includes(user?.role);
 
     // ===== Notifications dropdown =====
     const notificationsRef = useRef(null);
@@ -224,6 +225,16 @@ const Topbar = () => {
                 name: user?.name,
                 email: user?.email,
                 isSuperAdmin: true,
+            });
+            return;
+        }
+
+        if (isStaffUser) {
+            setProfile({
+                name: user?.name,
+                email: user?.email,
+                staffRole: user?.staffRole || user?.role,
+                isStaffUser: true,
             });
             return;
         }
@@ -457,6 +468,35 @@ const Topbar = () => {
                                             <div className="profile-dropdown-badges">
                                                 <span className="profile-dropdown-badge plan">
                                                     <IconCrown size={11} /> Super Admin
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="profile-dropdown-info">
+                                        <IconMail size={14} />
+                                        <span>{profile.email}</span>
+                                    </div>
+
+                                    <div className="profile-dropdown-divider" />
+
+                                    <button className="profile-dropdown-logout-btn" onClick={requestLogout}>
+                                        <IconLogout size={16} /> Logout
+                                    </button>
+                                </>
+                            ) : profile?.isStaffUser ? (
+                                // Staff (Kitchen/Waiter/etc.) ke liye simple read-only info — koi "Edit Profile" nahi,
+                                // kyunki restaurant profile edit karna staff ka kaam nahi hai
+                                <>
+                                    <div className="profile-dropdown-header">
+                                        <div className="profile-dropdown-logo profile-dropdown-logo-placeholder">
+                                            <IconUserSearch size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="profile-dropdown-name">{profile.name}</p>
+                                            <div className="profile-dropdown-badges">
+                                                <span className="profile-dropdown-badge plan">
+                                                    {profile.staffRole}
                                                 </span>
                                             </div>
                                         </div>

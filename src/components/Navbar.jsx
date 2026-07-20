@@ -19,6 +19,8 @@ import {
   IconArrowsExchange,
   IconBuildingStore,
   IconCategory,
+  IconChefHat,
+  IconTruck,
 } from "@tabler/icons-react";
 import { NavbarContext } from "../context/NavbarContext";
 import LogoutConfirmModal from "./LogoutConfirmModal";
@@ -34,6 +36,8 @@ export const menuGroups = [
       { title: "Main Category", icon: <IconCategory size={20} />, path: "/main_category" },
       { title: "Combos", icon: <IconBox size={20} />, path: "/combos" },
       { title: "Tables", icon: <IconArmchair2 size={20} />, path: "/tables" },
+      { title: "Kitchen", icon: <IconChefHat size={20} />, path: "/kitchen" },
+      { title: "Waiter", icon: <IconTruck size={20} />, path: "/waiter" },
     ],
   },
   {
@@ -75,6 +79,39 @@ export const superAdminMenuGroups = [
   },
 ];
 
+// ✅ Kitchen staff sirf apna dashboard dekhe — baaki sab route bhi is-role
+// ke liye backend me already checkRole se block honge, ye sirf UI-level hai
+export const kitchenMenuGroups = [
+  {
+    heading: "Kitchen",
+    items: [
+      { title: "Order Queue", icon: <IconChefHat size={20} />, path: "/kitchen" },
+    ],
+  },
+  {
+    heading: "Account",
+    items: [
+      { title: "Logout", icon: <IconLogout size={20} />, action: "logout" },
+    ],
+  },
+];
+
+// ✅ Waiter staff sirf apna dashboard dekhe
+export const waiterMenuGroups = [
+  {
+    heading: "Waiter",
+    items: [
+      { title: "Ready Orders", icon: <IconTruck size={20} />, path: "/waiter" },
+    ],
+  },
+  {
+    heading: "Account",
+    items: [
+      { title: "Logout", icon: <IconLogout size={20} />, action: "logout" },
+    ],
+  },
+];
+
 const Navbar = () => {
   const { isNavbarOpen } = useContext(NavbarContext);
   const { logout, user } = useContext(AuthContext);
@@ -82,7 +119,14 @@ const Navbar = () => {
   const location = useLocation();
 
   const isSuperAdmin = user?.role === "SuperAdmin";
-  const activeMenuGroups = isSuperAdmin ? superAdminMenuGroups : menuGroups;
+  const isKitchen = user?.role === "Kitchen";
+  const isWaiter = user?.role === "Waiter";
+
+  // ✅ role ke hisaab se sidebar decide hota hai — owner/SuperAdmin ko sab dikhta hai
+  let activeMenuGroups = menuGroups;
+  if (isSuperAdmin) activeMenuGroups = superAdminMenuGroups;
+  else if (isKitchen) activeMenuGroups = kitchenMenuGroups;
+  else if (isWaiter) activeMenuGroups = waiterMenuGroups;
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 

@@ -8,14 +8,12 @@ const getAPIBaseURL = () => {
         return `${VITE_API_URL}/api`;
     }
 
-    // Auto-detect based on current location
     const hostname = window.location.hostname;
     const port = '5000';
 
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return `http://localhost:${port}/api`;
     } else {
-        // Running on network IP
         return `http://${hostname}:${port}/api`;
     }
 };
@@ -24,7 +22,6 @@ const API_BASE_URL = getAPIBaseURL();
 
 console.log('API Base URL:', API_BASE_URL);
 
-// Create axios instance
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -32,7 +29,6 @@ const apiClient = axios.create({
     },
 });
 
-// Add token to requests
 apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('adminToken');
@@ -69,6 +65,7 @@ apiClient.interceptors.response.use(
 
 export const authAPI = {
     login: (data) => apiClient.post('/auth/login', data),
+    staffLogin: (data) => apiClient.post('/auth/admin/login', data),
     restaurantSignup: (data) => apiClient.post('/auth/restaurant/signup', data),
     restaurantLogin: (data) => apiClient.post('/auth/restaurant/login', data),
     adminLogin: (data) => apiClient.post('/auth/admin/login', data),
@@ -176,6 +173,9 @@ export const customerAPI = {
 
     getBanners: (restaurantId) =>
         apiClient.get(`/customer/media/${restaurantId}`),
+
+    callWaiter: (orderId, qrId, reason) =>
+        apiClient.patch(`/customer/orders/${orderId}/call-waiter`, { qrId, reason }),
 };
 
 export const restaurantAPI = {
@@ -238,6 +238,10 @@ export const staffAPI = {
 
     getPayrollSummary: (month) =>
         apiClient.get('/admin/staff/payroll/summary', { params: { month } }),
+
+    // Login Credentials
+    setCredentials: (id, data) => apiClient.post(`/admin/staff/${id}/credentials`, data),
+    revokeCredentials: (id) => apiClient.delete(`/admin/staff/${id}/credentials`),
 };
 
 export const reportsAPI = {

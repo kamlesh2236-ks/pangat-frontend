@@ -174,3 +174,72 @@ body {
 .menu-group li.active:hover {
     transform: translateX(6px);
 }
+
+/* ===================================================================
+   MOBILE — sidebar ab full-width off-canvas drawer ban jaata hai.
+   Content ko push nahi karta (margin-left 0), balki slide in/out
+   hoke content ke UPAR overlay ki tarah aata hai.
+   =================================================================== */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 240px;
+        max-width: 80vw;
+        transform: translateX(-100%);
+        box-shadow: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Default (open / "not close") state → drawer khula, overlay ki tarah dikhega */
+    .sidebar:not(.close) {
+        transform: translateX(0);
+        box-shadow: 10px 0 35px rgba(0, 0, 0, 0.28);
+    }
+
+    /* "close" state → poora off-screen, icon-rail wala 75px avatar nahi chahiye mobile pe */
+    .sidebar.close {
+        width: 240px;
+        max-width: 80vw;
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    /* Desktop pe .close hone par text/labels chhup jaate the (icon-only rail) —
+       mobile pe jab drawer khulta hai to poora label dikhna chahiye, isliye
+       in hiding rules ko sirf tab lagao jab drawer khud bhi hidden ho */
+    .sidebar.close h2,
+    .sidebar.close .logo h2,
+    .sidebar.close .menu-group h4,
+    .sidebar.close ul li span {
+        display: block;
+    }
+
+    .sidebar.close ul li {
+        justify-content: flex-start;
+        padding: 7px 15px;
+        gap: 13px;
+    }
+
+    .menu-group li {
+        padding: 10px 15px;
+        font-size: 15px;
+    }
+
+    .menu-group li:hover {
+        transform: none;
+    }
+
+    .menu-group li.active:hover {
+        transform: none;
+    }
+}
+
+/* Chhote phones (<380px) ke liye drawer aur bhi tight */
+@media (max-width: 380px) {
+    .sidebar {
+        max-width: 85vw;
+    }
+
+    .sidebar.close {
+        max-width: 85vw;
+    }
+}

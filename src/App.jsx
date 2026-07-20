@@ -34,6 +34,9 @@ import Media from './pages/Media/Media';
 import Transactions from './pages/Transactions/Transactions';
 import ForgotPassword from './pages/Login/ForgotPassword';
 import MainCategories from './pages/Menu/MainCategories';
+import KitchenDashboard from './pages/Kitchen/KitchenDashboard';
+import WaiterDashboard from './pages/Waiter/Waiterdashboard';
+import StaffLogin from "./pages/Login/StaffLogin";
 
 // Super Admin Pages
 import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
@@ -96,6 +99,7 @@ export default function App() {
                 <Routes>
                   {/* Auth Routes */}
                   <Route path="/login" element={<RestaurantLogin />} />
+                  <Route path="/staff-login" element={<StaffLogin />} />
                   <Route path="/signup" element={<RestaurantSignup />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -139,6 +143,26 @@ export default function App() {
                       <ProtectedRoute>
                         <MainLayout>
                           <TablesList />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/kitchen"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <KitchenDashboard />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/waiter"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <WaiterDashboard />
                         </MainLayout>
                       </ProtectedRoute>
                     }

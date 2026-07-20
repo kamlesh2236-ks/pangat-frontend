@@ -1,0 +1,171 @@
+.waiter-dashboard {
+    padding: 24px;
+    background: var(--bg-base);
+    min-height: 100%;
+}
+
+.waiter-dashboard h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 22px;
+    margin: 20px 0;
+    color: var(--text-primary);
+}
+
+.waiter-calls-section {
+    background: var(--bg-surface);
+    border: 1px solid var(--color-secondary-light);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.waiter-calls-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--color-secondary);
+}
+
+.calls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.call-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.call-table {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.call-reason {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 4px 0;
+}
+
+.call-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.resolve-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.resolve-btn:hover {
+    opacity: 0.9;
+}
+
+.waiter-empty {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 30px;
+}
+
+.waiter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.waiter-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border-left: 5px solid var(--color-primary);
+}
+
+.waiter-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.waiter-items {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px;
+}
+
+.waiter-items li {
+    font-size: 14px;
+    padding: 3px 0;
+    color: var(--text-primary);
+}
+
+.serve-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--gradient-secondary);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.serve-btn:hover {
+    opacity: 0.9;
+}
+
+.served-heading {
+    margin-top: 24px;
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.served-list {
+    margin-top: 8px;
+}
+
+.served-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.waiter-loading {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+}

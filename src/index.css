@@ -207,6 +207,10 @@ button:disabled {
     h2 {
         font-size: 20px;
     }
+
+    .main-content.sidebar-closed{
+        margin-left: 0 !important;
+    }
 }
 
 
