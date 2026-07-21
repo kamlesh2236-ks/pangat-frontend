@@ -2,146 +2,63 @@ import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { IconTruck, IconBell, IconCheck, IconVolume, IconVolumeOff } from "@tabler/icons-react";
 import apiClient from "../../utils/api";
-import { getSocket, disconnectSocket } from "../../utils/socket";
+import {
+    connectNotifications,
+    onWaiterCalled,
+    onCallResolved,
+    syncPendingCallCount,
+    isSoundEnabled,
+    enableSound as enableSoundGlobal,
+} from "../../utils/notificationManager";
 import "./Waiterdashboard.css";
 
 const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [calls, setCalls] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [soundEnabled, setSoundEnabled] = useState(false);
+    // Initialized straight from localStorage so the toggle reflects the real
+    // state immediately, even on first mount after a page reload.
+    const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
 
     const prevReadyIdsRef = useRef(new Set());
-    const prevCallIdsRef = useRef(new Set());
-
-    const audioCtxRef = useRef(null);
-    const repeatIntervalRef = useRef(null);
-    const callsRef = useRef([]); // always-fresh copy for interval closure
-    // fetchAll runs inside a setInterval set up once on mount, so it closes
-    // over whatever `soundEnabled` was at that time (always false). A ref
-    // always reads the latest value regardless of closures — use this
-    // instead of the state variable inside fetchAll/playBeep triggers.
-    const soundEnabledRef = useRef(false);
 
     useEffect(() => {
         fetchAll();
-        // Socket.io is now the primary real-time channel (see effect below);
-        // this poll is just a safety net in case a socket event is missed
-        // (reconnect gap, dropped packet, etc.) — slowed down since it's
-        // no longer the main notification path.
+        // Safety-net poll only — socket is the primary real-time channel.
         const interval = setInterval(fetchAll, 15000);
-        return () => {
-            clearInterval(interval);
-            if (repeatIntervalRef.current) clearInterval(repeatIntervalRef.current);
-        };
+        return () => clearInterval(interval);
     }, []);
 
-    // --- Real-time socket events ---------------------------------------
+    // --- Real-time notifications (persistent singleton, survives navigation) ---
 
     useEffect(() => {
-        const socket = getSocket();
-        socket.connect();
+        // Idempotent: reuses the existing connection if one is already open
+        // (e.g. it was opened from another page or an earlier mount).
+        connectNotifications();
 
-        socket.on("connect", () => console.log("🔌 Waiter socket connected"));
-        socket.on("connect_error", (err) => console.error("Socket connect error:", err.message));
-
-        socket.on("waiterCalled", (call) => {
+        const offCalled = onWaiterCalled((call) => {
             toast(`🔔 Table ${call.tableNumber} is calling you — ${call.waiterCallReason}`, { icon: "🔔" });
-            if (soundEnabledRef.current) {
-                playBeep();
-                startRepeatingAlert();
-            }
-            if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-                new Notification("Table is calling!", {
-                    body: `Table ${call.tableNumber} — ${call.waiterCallReason}`,
-                });
-            }
-            fetchAll(); // sync the calls/orders list from the server
+            fetchAll(); // resync calls/orders list from the server
         });
 
-        socket.on("callResolved", () => {
+        const offResolved = onCallResolved(() => {
             fetchAll();
         });
 
+        // NOTE: intentionally NOT disconnecting the socket here. The
+        // connection is owned by the notificationManager singleton, not by
+        // this component — so navigating away from this page keeps
+        // notifications (sound + toast) flowing in the background. It only
+        // unregisters this component's own listener callbacks.
         return () => {
-            socket.off("connect");
-            socket.off("connect_error");
-            socket.off("waiterCalled");
-            socket.off("callResolved");
-            disconnectSocket();
+            offCalled();
+            offResolved();
         };
     }, []);
 
-    // --- Sound setup -------------------------------------------------
-
-    // Browsers block audio until the user has interacted with the page once.
-    // This unlocks (and resumes) the AudioContext on tap.
-    const enableSound = () => {
-        try {
-            if (!audioCtxRef.current) {
-                audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtxRef.current.state === "suspended") {
-                audioCtxRef.current.resume();
-            }
-            setSoundEnabled(true);
-            soundEnabledRef.current = true;
-
-            // Ask for OS-level notification permission in the same tap —
-            // works while the browser is open (even backgrounded), not on
-            // a locked screen with the browser fully closed.
-            if (typeof Notification !== "undefined" && Notification.permission === "default") {
-                Notification.requestPermission();
-            }
-
-            // tiny confirmation beep so the waiter knows it worked
-            playBeep();
-        } catch (err) {
-            console.error("Could not enable sound:", err);
-        }
-    };
-
-    // Plays a short double-beep. Pure Web Audio API — no mp3 asset needed.
-    const playBeep = () => {
-        const ctx = audioCtxRef.current;
-        if (!ctx || ctx.state === "suspended") return;
-
-        const beepAt = (startOffset) => {
-            // Two stacked oscillators (fundamental + octave) sound louder/punchier
-            // than a single sine tone at the same gain, without clipping.
-            [880, 1760].forEach((freq, idx) => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = "square"; // square wave is much more attention-grabbing than sine
-                osc.frequency.value = freq;
-                const peak = idx === 0 ? 0.9 : 0.4; // fundamental louder than the harmonic
-                gain.gain.setValueAtTime(0.0001, ctx.currentTime + startOffset);
-                gain.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + startOffset + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startOffset + 0.35);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(ctx.currentTime + startOffset);
-                osc.stop(ctx.currentTime + startOffset + 0.37);
-            });
-        };
-        // Three beeps instead of two — harder to miss
-        beepAt(0);
-        beepAt(0.4);
-        beepAt(0.8);
-    };
-
-    // Starts repeating the beep every 6s so a busy waiter notices,
-    // stops automatically once there are no pending calls left.
-    const startRepeatingAlert = () => {
-        if (repeatIntervalRef.current) return; // already running
-        repeatIntervalRef.current = setInterval(() => {
-            if (callsRef.current.length > 0) {
-                playBeep();
-            } else {
-                clearInterval(repeatIntervalRef.current);
-                repeatIntervalRef.current = null;
-            }
-        }, 6000);
+    const handleEnableSound = () => {
+        enableSoundGlobal();
+        setSoundEnabled(true);
     };
 
     // --- Data fetching -------------------------------------------------
@@ -163,16 +80,10 @@ const WaiterDashboard = () => {
             }
             prevReadyIdsRef.current = newReadyIds;
 
-            // Note: toast + sound for NEW calls are triggered by the
-            // "waiterCalled" socket event (see effect above), not here —
-            // this poll only keeps `calls`/`orders` state in sync as a
-            // fallback. We still track ids so nothing double-fires if a
-            // socket event and a poll cycle land close together.
             const newCalls = callsRes.data.data;
-            const newCallIds = new Set(newCalls.map((c) => c._id));
-            prevCallIdsRef.current = newCallIds;
+            // Keep the repeating alert's pending-count in sync with server truth
+            syncPendingCallCount(newCalls.length);
 
-            callsRef.current = newCalls;
             setOrders(ordersRes.data.data);
             setCalls(newCalls);
         } catch (error) {
@@ -209,9 +120,11 @@ const WaiterDashboard = () => {
 
     return (
         <div className="waiter-dashboard">
-            {/* Sound unlock — browsers need one tap before they allow audio */}
+            {/* Sound unlock — browsers need one tap before they allow audio.
+                Once enabled it stays on (persisted in localStorage) across
+                page navigation and reloads, until explicitly turned off. */}
             {!soundEnabled && (
-                <button className="sound-unlock-btn" onClick={enableSound}>
+                <button className="sound-unlock-btn" onClick={handleEnableSound}>
                     <IconVolumeOff size={18} /> Enable Call Sound
                 </button>
             )}
