@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { IconTruck, IconBell, IconCheck, IconVolume, IconVolumeOff } from "@tabler/icons-react";
+import { IconTruck, IconBell, IconCheck, IconVolume, IconVolumeOff, IconHistory } from "@tabler/icons-react";
 import apiClient from "../../utils/api";
 import { subscribeToPush } from "../../utils/pushSubscribe";
 import {
@@ -19,18 +19,10 @@ const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [calls, setCalls] = useState([]);
     const [loading, setLoading] = useState(true);
-    // Initialized straight from localStorage so the toggle reflects the real
-    // state immediately, even on first mount after a page reload.
     const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
-    // Separate from the preference above — mobile browsers can silently
-    // drop the live AudioContext (backgrounded tab, OS reload) even while
-    // the "on" preference stays saved. This flag drives whether we show a
-    // "tap to resume sound" prompt instead of failing silently.
     const [audioLive, setAudioLive] = useState(isAudioReady());
 
     useEffect(() => {
-        // Re-check whenever the waiter comes back to this tab (very common
-        // on mobile — screen was locked, or they switched apps).
         const recheck = () => setAudioLive(isAudioReady());
         document.addEventListener("visibilitychange", recheck);
         const poll = setInterval(recheck, 5000);
@@ -42,40 +34,27 @@ const WaiterDashboard = () => {
 
     useEffect(() => {
         fetchAll();
-        // Safety-net poll only — socket is the primary real-time channel.
         const interval = setInterval(fetchAll, 15000);
         return () => clearInterval(interval);
     }, []);
 
-    // --- Real-time notifications (persistent singleton, survives navigation) ---
-
     useEffect(() => {
-        // Idempotent: reuses the existing connection if one is already open
-        // (e.g. it was opened from another page or an earlier mount).
         connectNotifications();
 
         const offCalled = onWaiterCalled((call) => {
             toast(`🔔 Table ${call.tableNumber} is calling you — ${call.waiterCallReason}`, { icon: "🔔" });
-            fetchAll(); // resync calls/orders list from the server
+            fetchAll();
         });
 
         const offResolved = onCallResolved(() => {
             fetchAll();
         });
 
-        // Cook marked an order Ready — this is what should actually ring,
-        // not new-order creation. Sound + toast both come from the socket
-        // event now (not from the polling fallback below).
         const offReady = onOrderReady((order) => {
             toast.success(`🍽️ Order #${order.orderNumber} is Ready — Table ${order.tableNumber ?? "Counter"}`);
             fetchAll();
         });
 
-        // NOTE: intentionally NOT disconnecting the socket here. The
-        // connection is owned by the notificationManager singleton, not by
-        // this component — so navigating away from this page keeps
-        // notifications (sound + toast) flowing in the background. It only
-        // unregisters this component's own listener callbacks.
         return () => {
             offCalled();
             offResolved();
@@ -87,12 +66,8 @@ const WaiterDashboard = () => {
         enableSoundGlobal();
         setSoundEnabled(true);
         setAudioLive(true);
-        // Same tap covers both: audio unlock (foreground beep) AND push
-        // subscription (background/locked-phone alerts).
         subscribeToPush("/waiter/push-subscribe");
     };
-
-    // --- Data fetching -------------------------------------------------
 
     const fetchAll = async () => {
         try {
@@ -102,14 +77,7 @@ const WaiterDashboard = () => {
             ]);
 
             const readyOrders = ordersRes.data.data.filter((o) => o.orderStatus === "Ready");
-            // Note: the "order Ready" toast + sound now come from the
-            // "orderReady" socket event (see effect above) — this poll only
-            // keeps state in sync as a fallback, no toast fired here to
-            // avoid double notifications when socket + poll land close together.
-
             const newCalls = callsRes.data.data;
-            // Repeat-alert should keep ringing for BOTH unresolved calls
-            // and unserved Ready orders — combine them for the count.
             syncPendingCallCount(newCalls.length + readyOrders.length);
 
             setOrders(ordersRes.data.data);
@@ -141,32 +109,95 @@ const WaiterDashboard = () => {
         }
     };
 
+    // --- Serve History (Today / Yesterday / Earlier) -------------------
+    // Built from whatever "Served" orders are currently loaded in state.
+    // Note: this only reflects orders the /waiter/orders endpoint returns
+    // (usually recent ones) — for a full multi-day history the backend
+    // would ideally expose a dedicated stats endpoint, but this gives an
+    // accurate breakdown of everything currently in memory.
+    const getServeHistory = () => {
+        const servedOrders = orders.filter((o) => o.orderStatus === "Served" && o.servedAt);
+
+        const groups = {};
+        servedOrders.forEach((o) => {
+            const key = new Date(o.servedAt).toDateString();
+            groups[key] = (groups[key] || 0) + 1;
+        });
+
+        const todayKey = new Date().toDateString();
+        const yesterdayKey = new Date(Date.now() - 86400000).toDateString();
+
+        const todayCount = groups[todayKey] || 0;
+        const yesterdayCount = groups[yesterdayKey] || 0;
+
+        const earlier = Object.entries(groups)
+            .filter(([key]) => key !== todayKey && key !== yesterdayKey)
+            .sort((a, b) => new Date(b[0]) - new Date(a[0]));
+
+        return { todayCount, yesterdayCount, earlier };
+    };
+
+    const formatHistoryLabel = (dateStr) =>
+        new Date(dateStr).toLocaleDateString("en-IN", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+        });
+
     if (loading) return <div className="waiter-loading">Loading waiter dashboard...</div>;
 
     const readyOrders = orders.filter((o) => o.orderStatus === "Ready");
     const recentlyServed = orders.filter((o) => o.orderStatus === "Served");
+    const { todayCount, yesterdayCount, earlier } = getServeHistory();
 
     return (
         <div className="waiter-dashboard">
-            {/* Sound unlock — browsers need one tap before they allow the
-                custom ring audio to play. Once enabled it stays on
-                (persisted in localStorage) across page navigation and
-                reloads, until explicitly turned off. */}
             {!soundEnabled && (
-                <button className="sound-unlock-btn" onClick={handleEnableSound}>
-                    <IconVolumeOff size={18} /> Enable Call Sound
+                <button className="sound-unlock-btn sound-unlock-btn--off" onClick={handleEnableSound}>
+                    <IconVolumeOff size={18} /> <span>Enable Call Sound</span>
                 </button>
             )}
             {soundEnabled && !audioLive && (
-                <button className="sound-unlock-btn" onClick={handleEnableSound}>
-                    <IconVolumeOff size={18} /> Sound paused — tap to resume
+                <button className="sound-unlock-btn sound-unlock-btn--paused" onClick={handleEnableSound}>
+                    <IconVolumeOff size={18} /> <span>Sound paused — tap to resume</span>
                 </button>
             )}
             {soundEnabled && audioLive && (
                 <div className="sound-status">
-                    <IconVolume size={16} /> Call sound is on
+                    <IconVolume size={16} /> <span>Call sound is on</span>
                 </div>
             )}
+
+            {/* Serve History Card */}
+            <div className="serve-history-card">
+                <div className="serve-history-header">
+                    <IconHistory size={20} /> Serve History
+                </div>
+
+                <div className="serve-history-stats">
+                    <div className="serve-stat-box today">
+                        <span className="stat-count">{todayCount}</span>
+                        <span className="stat-label">Today</span>
+                    </div>
+                    <div className="serve-stat-box">
+                        <span className="stat-count">{yesterdayCount}</span>
+                        <span className="stat-label">Yesterday</span>
+                    </div>
+                </div>
+
+                {earlier.length > 0 ? (
+                    <div className="serve-history-list">
+                        {earlier.map(([dateKey, count]) => (
+                            <div key={dateKey} className="serve-history-row">
+                                <span>{formatHistoryLabel(dateKey)}</span>
+                                <span className="day-count">{count} served</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="serve-history-empty">No earlier records loaded yet</div>
+                )}
+            </div>
 
             {calls.length > 0 && (
                 <div className="waiter-calls-section">
