@@ -22,6 +22,7 @@ let pendingCallCount = 0;
 const listeners = {
     waiterCalled: new Set(),
     callResolved: new Set(),
+    orderReady: new Set(),
 };
 
 export const isSoundEnabled = () => localStorage.getItem(SOUND_PREF_KEY) === "true";
@@ -107,8 +108,8 @@ export const connectNotifications = () => {
         return socket;
     }
 
-    // ⚠️ Confirm this is the exact key your login flow stores the JWT under.
-    const token = localStorage.getItem("token");
+    // Matches the exact key apiClient.js reads in its request interceptor.
+    const token = localStorage.getItem("adminToken");
     console.log("[notifications] connecting with token present:", !!token, "url:", SOCKET_URL);
 
     socket = io(SOCKET_URL, {
@@ -141,6 +142,23 @@ export const connectNotifications = () => {
         listeners.callResolved.forEach((cb) => cb(data));
     });
 
+    // Cook marked an order Ready — this is the "go serve it" alert, separate
+    // from a customer's Call Waiter button.
+    socket.on("orderReady", (order) => {
+        console.log("[notifications] 🍽️ orderReady event received:", order);
+        pendingCallCount += 1;
+        listeners.orderReady.forEach((cb) => cb(order));
+        if (isSoundEnabled()) {
+            playBeep();
+            startRepeatingAlert();
+        }
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+            new Notification("Order ready to serve!", {
+                body: `Order #${order.orderNumber} — Table ${order.tableNumber ?? "Counter"}`,
+            });
+        }
+    });
+
     return socket;
 };
 
@@ -154,9 +172,15 @@ export const onCallResolved = (cb) => {
     return () => listeners.callResolved.delete(cb);
 };
 
-// Call this after every fetchAll() with the real /waiter/calls count, so
-// the repeat-alert correctly stops even if a call was resolved from
-// another device/tab while this one was muted or missed the event.
+export const onOrderReady = (cb) => {
+    listeners.orderReady.add(cb);
+    return () => listeners.orderReady.delete(cb);
+};
+
+// Call this after every fetchAll() with the combined count of pending
+// waiter calls + unserved Ready orders (the two things the repeat-alert
+// should keep ringing for), so it stops correctly even if an event was
+// missed or resolved from another device/tab.
 export const syncPendingCallCount = (count) => {
     pendingCallCount = count;
     if (count === 0) stopRepeatingAlert();

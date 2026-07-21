@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { IconTruck, IconBell, IconCheck, IconVolume, IconVolumeOff } from "@tabler/icons-react";
 import apiClient from "../../utils/api";
@@ -6,6 +6,7 @@ import {
     connectNotifications,
     onWaiterCalled,
     onCallResolved,
+    onOrderReady,
     syncPendingCallCount,
     isSoundEnabled,
     enableSound as enableSoundGlobal,
@@ -19,8 +20,6 @@ const WaiterDashboard = () => {
     // Initialized straight from localStorage so the toggle reflects the real
     // state immediately, even on first mount after a page reload.
     const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
-
-    const prevReadyIdsRef = useRef(new Set());
 
     useEffect(() => {
         fetchAll();
@@ -45,6 +44,14 @@ const WaiterDashboard = () => {
             fetchAll();
         });
 
+        // Cook marked an order Ready — this is what should actually ring,
+        // not new-order creation. Sound + toast both come from the socket
+        // event now (not from the polling fallback below).
+        const offReady = onOrderReady((order) => {
+            toast.success(`🍽️ Order #${order.orderNumber} is Ready — Table ${order.tableNumber ?? "Counter"}`);
+            fetchAll();
+        });
+
         // NOTE: intentionally NOT disconnecting the socket here. The
         // connection is owned by the notificationManager singleton, not by
         // this component — so navigating away from this page keeps
@@ -53,6 +60,7 @@ const WaiterDashboard = () => {
         return () => {
             offCalled();
             offResolved();
+            offReady();
         };
     }, []);
 
@@ -71,18 +79,15 @@ const WaiterDashboard = () => {
             ]);
 
             const readyOrders = ordersRes.data.data.filter((o) => o.orderStatus === "Ready");
-            const newReadyIds = new Set(readyOrders.map((o) => o._id));
-            const freshlyReady = readyOrders.filter((o) => !prevReadyIdsRef.current.has(o._id));
-            if (prevReadyIdsRef.current.size > 0 && freshlyReady.length > 0) {
-                freshlyReady.forEach((o) =>
-                    toast.success(`🍽️ Order #${o.orderNumber} is Ready — Table ${o.tableNumber ?? "Counter"}`)
-                );
-            }
-            prevReadyIdsRef.current = newReadyIds;
+            // Note: the "order Ready" toast + sound now come from the
+            // "orderReady" socket event (see effect above) — this poll only
+            // keeps state in sync as a fallback, no toast fired here to
+            // avoid double notifications when socket + poll land close together.
 
             const newCalls = callsRes.data.data;
-            // Keep the repeating alert's pending-count in sync with server truth
-            syncPendingCallCount(newCalls.length);
+            // Repeat-alert should keep ringing for BOTH unresolved calls
+            // and unserved Ready orders — combine them for the count.
+            syncPendingCallCount(newCalls.length + readyOrders.length);
 
             setOrders(ordersRes.data.data);
             setCalls(newCalls);
