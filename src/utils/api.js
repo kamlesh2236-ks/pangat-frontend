@@ -158,10 +158,6 @@ export const customerAPI = {
     placeOrder: (data) =>
         apiClient.post('/customer/orders', data),
 
-    getOrderStatus: (orderId, qrId) =>
-        apiClient.get(`/customer/orders/${orderId}`, {
-            params: { qr: qrId }
-        }),
 
     getTableInfo: (qrId) =>
         apiClient.get(`/customer/tables/${qrId}`),

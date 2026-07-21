@@ -25,6 +25,7 @@ const CallWaiterButton = ({ orderId, qrId, alreadyCalled }) => {
         }
     };
 
+
     if (called) {
         return (
             <div className="call-waiter-status">
