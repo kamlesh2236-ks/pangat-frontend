@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IconBell, IconX } from "@tabler/icons-react";
 import toast from "react-hot-toast";
 import { customerAPI } from "../utils/api";
@@ -10,6 +10,10 @@ const CallWaiterButton = ({ orderId, qrId, alreadyCalled }) => {
     const [showPicker, setShowPicker] = useState(false);
     const [called, setCalled] = useState(alreadyCalled || false);
     const [sending, setSending] = useState(false);
+
+    useEffect(() => {
+        setCalled(alreadyCalled || false);
+    }, [alreadyCalled]);
 
     const handleCall = async (reason) => {
         setSending(true);

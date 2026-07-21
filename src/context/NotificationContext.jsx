@@ -30,8 +30,6 @@ export const NotificationProvider = ({ children }) => {
   const isFirstLoad = useRef(true);
   const authFailCountRef = useRef(0);
 
-  // ✅ FIXED: Super Admin ke paas restaurantDbName nahi hota, isliye
-  // ordersAPI call karna hi galat hai uske liye — poora polling skip karo.
   const canPollOrders = () => {
     const token = localStorage.getItem('adminToken');
     if (!token) return false;
@@ -40,8 +38,9 @@ export const NotificationProvider = ({ children }) => {
       const userStr = localStorage.getItem('adminUser');
       const user = userStr ? JSON.parse(userStr) : null;
       if (user?.role === 'SuperAdmin') return false;
+      if (user?.role === 'Waiter') return false;
     } catch {
-      // parse fail ho to bhi normal flow chalne do
+      // parse fail ho to bhi normal flow 
     }
 
     return true;
@@ -63,7 +62,7 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const fetchAndDiff = useCallback(async () => {
-    if (!canPollOrders()) return; // ✅ FIXED: SuperAdmin ke liye yahin ruk jayega
+    if (!canPollOrders()) return;
     if (authFailCountRef.current >= MAX_AUTH_FAILS) return;
 
     try {
