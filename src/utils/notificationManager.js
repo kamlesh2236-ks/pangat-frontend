@@ -85,25 +85,29 @@ export const playBeep = () => {
 };
 
 const emitBeep = (ctx) => {
-    const beepAt = (startOffset) => {
-        [880, 1760].forEach((freq, idx) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = "square";
-            osc.frequency.value = freq;
-            const peak = idx === 0 ? 0.9 : 0.4;
-            gain.gain.setValueAtTime(0.0001, ctx.currentTime + startOffset);
-            gain.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + startOffset + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startOffset + 0.35);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(ctx.currentTime + startOffset);
-            osc.stop(ctx.currentTime + startOffset + 0.37);
-        });
-    };
-    beepAt(0);
-    beepAt(0.4);
-    beepAt(0.8);
+    // A phone-ring style trill: one tone, amplitude-pulsed on/off rapidly —
+    // reads as "ringing" rather than a flat notification beep.
+    const now = ctx.currentTime;
+    const durationSec = 1.6;
+    const pulseSec = 0.15;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = 1000;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    const steps = Math.floor(durationSec / pulseSec);
+    for (let i = 0; i < steps; i++) {
+        const t = now + i * pulseSec;
+        const peak = i % 2 === 0 ? 0.8 : 0.0001;
+        gain.gain.linearRampToValueAtTime(peak, t + 0.05);
+    }
+
+    osc.start(now);
+    osc.stop(now + durationSec + 0.1);
 };
 
 // Mobile browsers suspend audio/throttle timers when a tab is backgrounded
@@ -116,7 +120,7 @@ if (typeof document !== "undefined") {
         if (document.visibilityState === "visible" && audioCtx && audioCtx.state === "suspended") {
             audioCtx.resume().then(() => {
                 console.log("[notifications] AudioContext resumed after tab became visible");
-            }).catch(() => {});
+            }).catch(() => { });
         }
     });
 }
@@ -129,7 +133,7 @@ const startRepeatingAlert = () => {
         } else {
             stopRepeatingAlert();
         }
-    }, 6000);
+    }, 2500); // shorter gap = feels like continuous ringing, not a periodic ping
 };
 
 const stopRepeatingAlert = () => {
