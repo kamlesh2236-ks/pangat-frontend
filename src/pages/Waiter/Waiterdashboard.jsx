@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { IconTruck, IconBell, IconCheck, IconVolume, IconVolumeOff } from "@tabler/icons-react";
 import apiClient from "../../utils/api";
+import { subscribeToPush } from "../../utils/pushSubscribe";
 import {
     connectNotifications,
     onWaiterCalled,
@@ -18,18 +19,10 @@ const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [calls, setCalls] = useState([]);
     const [loading, setLoading] = useState(true);
-    // Initialized straight from localStorage so the toggle reflects the real
-    // state immediately, even on first mount after a page reload.
     const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
-    // Separate from the preference above — mobile browsers can silently
-    // drop the live AudioContext (backgrounded tab, OS reload) even while
-    // the "on" preference stays saved. This flag drives whether we show a
-    // "tap to resume sound" prompt instead of failing silently.
     const [audioLive, setAudioLive] = useState(isAudioReady());
 
     useEffect(() => {
-        // Re-check whenever the waiter comes back to this tab (very common
-        // on mobile — screen was locked, or they switched apps).
         const recheck = () => setAudioLive(isAudioReady());
         document.addEventListener("visibilitychange", recheck);
         const poll = setInterval(recheck, 5000);
@@ -41,7 +34,6 @@ const WaiterDashboard = () => {
 
     useEffect(() => {
         fetchAll();
-        // Safety-net poll only — socket is the primary real-time channel.
         const interval = setInterval(fetchAll, 15000);
         return () => clearInterval(interval);
     }, []);
@@ -49,32 +41,22 @@ const WaiterDashboard = () => {
     // --- Real-time notifications (persistent singleton, survives navigation) ---
 
     useEffect(() => {
-        // Idempotent: reuses the existing connection if one is already open
-        // (e.g. it was opened from another page or an earlier mount).
         connectNotifications();
 
         const offCalled = onWaiterCalled((call) => {
             toast(`🔔 Table ${call.tableNumber} is calling you — ${call.waiterCallReason}`, { icon: "🔔" });
-            fetchAll(); // resync calls/orders list from the server
+            fetchAll();
         });
 
         const offResolved = onCallResolved(() => {
             fetchAll();
         });
 
-        // Cook marked an order Ready — this is what should actually ring,
-        // not new-order creation. Sound + toast both come from the socket
-        // event now (not from the polling fallback below).
         const offReady = onOrderReady((order) => {
             toast.success(`🍽️ Order #${order.orderNumber} is Ready — Table ${order.tableNumber ?? "Counter"}`);
             fetchAll();
         });
 
-        // NOTE: intentionally NOT disconnecting the socket here. The
-        // connection is owned by the notificationManager singleton, not by
-        // this component — so navigating away from this page keeps
-        // notifications (sound + toast) flowing in the background. It only
-        // unregisters this component's own listener callbacks.
         return () => {
             offCalled();
             offResolved();
@@ -86,6 +68,8 @@ const WaiterDashboard = () => {
         enableSoundGlobal();
         setSoundEnabled(true);
         setAudioLive(true);
+
+        subscribeToPush("/waiter/push-subscribe");
     };
 
     // --- Data fetching -------------------------------------------------
@@ -98,14 +82,7 @@ const WaiterDashboard = () => {
             ]);
 
             const readyOrders = ordersRes.data.data.filter((o) => o.orderStatus === "Ready");
-            // Note: the "order Ready" toast + sound now come from the
-            // "orderReady" socket event (see effect above) — this poll only
-            // keeps state in sync as a fallback, no toast fired here to
-            // avoid double notifications when socket + poll land close together.
-
             const newCalls = callsRes.data.data;
-            // Repeat-alert should keep ringing for BOTH unresolved calls
-            // and unserved Ready orders — combine them for the count.
             syncPendingCallCount(newCalls.length + readyOrders.length);
 
             setOrders(ordersRes.data.data);

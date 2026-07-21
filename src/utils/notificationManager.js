@@ -116,7 +116,7 @@ if (typeof document !== "undefined") {
         if (document.visibilityState === "visible" && audioCtx && audioCtx.state === "suspended") {
             audioCtx.resume().then(() => {
                 console.log("[notifications] AudioContext resumed after tab became visible");
-            }).catch(() => { });
+            }).catch(() => {});
         }
     });
 }
