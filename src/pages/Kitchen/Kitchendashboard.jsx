@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { IconClock, IconChefHat, IconCheck } from "@tabler/icons-react";
+import { IconClock, IconChefHat, IconCheck, IconFlame, IconHistory } from "@tabler/icons-react";
 import apiClient from "../../utils/api";
 import "./Kitchendashboard.css";
 
@@ -11,9 +11,33 @@ const NEXT_ACTION = {
     Preparing: { label: "Mark Ready", next: "Ready", icon: <IconCheck size={18} /> },
 };
 
+// --- Local "Ready" history tracking -----------------------------------
+// Backend abhi sirf active/pending orders return karta hai (koi history
+// endpoint nahi), isliye jab bhi is device se ek order "Ready" mark hota
+// hai, uska count aaj ki date ke against localStorage me save kar dete
+// hain. Yeh device-specific record hai, server-wide nahi.
+const HISTORY_KEY = "kitchenReadyHistory";
+
+const loadHistory = () => {
+    try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {};
+    } catch {
+        return {};
+    }
+};
+
+const recordReadyOrder = () => {
+    const history = loadHistory();
+    const key = new Date().toDateString();
+    history[key] = (history[key] || 0) + 1;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    return history;
+};
+
 const KitchenDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [history, setHistory] = useState(loadHistory);
     const prevOrderIdsRef = useRef(new Set());
 
     useEffect(() => {
@@ -57,17 +81,64 @@ const KitchenDashboard = () => {
                 status: action.next,
             });
             toast.success(`Order #${order.orderNumber} → ${action.next}`);
+
+            // Order kitchen se Ready ho gaya — history counter update karo
+            if (action.next === "Ready") {
+                setHistory(recordReadyOrder());
+            }
+
             fetchOrders();
         } catch (error) {
             toast.error(error.response?.data?.message || "Status update failed");
         }
     };
 
+    // --- Derive Today / Yesterday / Day-before-yesterday counts --------
+    const getHistorySummary = () => {
+        const todayKey = new Date().toDateString();
+        const yesterdayKey = new Date(Date.now() - 86400000).toDateString();
+        const dayBeforeKey = new Date(Date.now() - 2 * 86400000).toDateString();
+
+        return {
+            today: history[todayKey] || 0,
+            yesterday: history[yesterdayKey] || 0,
+            dayBefore: history[dayBeforeKey] || 0,
+            dayBeforeLabel: new Date(dayBeforeKey).toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+            }),
+        };
+    };
+
     if (loading) return <div className="kitchen-loading">Loading kitchen queue...</div>;
+
+    const { today, yesterday, dayBefore, dayBeforeLabel } = getHistorySummary();
 
     return (
         <div className="kitchen-dashboard">
-            <h1>Kitchen Queue</h1>
+            <h1><IconFlame size={22} /> Kitchen Queue</h1>
+
+            {/* 3-day Ready History Card */}
+            <div className="kitchen-history-card">
+                <div className="kitchen-history-header">
+                    <IconHistory size={20} /> Orders Completed
+                </div>
+                <div className="kitchen-history-stats">
+                    <div className="kitchen-stat-box today">
+                        <span className="stat-count">{today}</span>
+                        <span className="stat-label">Today</span>
+                    </div>
+                    <div className="kitchen-stat-box">
+                        <span className="stat-count">{yesterday}</span>
+                        <span className="stat-label">Yesterday</span>
+                    </div>
+                    <div className="kitchen-stat-box">
+                        <span className="stat-count">{dayBefore}</span>
+                        <span className="stat-label">{dayBeforeLabel}</span>
+                    </div>
+                </div>
+            </div>
 
             {orders.length === 0 ? (
                 <p className="kitchen-empty">No pending orders 🎉</p>
