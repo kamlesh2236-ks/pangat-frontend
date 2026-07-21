@@ -9,6 +9,7 @@ import {
     onOrderReady,
     syncPendingCallCount,
     isSoundEnabled,
+    isAudioReady,
     enableSound as enableSoundGlobal,
 } from "../../utils/notificationManager";
 import "./Waiterdashboard.css";
@@ -20,6 +21,23 @@ const WaiterDashboard = () => {
     // Initialized straight from localStorage so the toggle reflects the real
     // state immediately, even on first mount after a page reload.
     const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
+    // Separate from the preference above — mobile browsers can silently
+    // drop the live AudioContext (backgrounded tab, OS reload) even while
+    // the "on" preference stays saved. This flag drives whether we show a
+    // "tap to resume sound" prompt instead of failing silently.
+    const [audioLive, setAudioLive] = useState(isAudioReady());
+
+    useEffect(() => {
+        // Re-check whenever the waiter comes back to this tab (very common
+        // on mobile — screen was locked, or they switched apps).
+        const recheck = () => setAudioLive(isAudioReady());
+        document.addEventListener("visibilitychange", recheck);
+        const poll = setInterval(recheck, 5000);
+        return () => {
+            document.removeEventListener("visibilitychange", recheck);
+            clearInterval(poll);
+        };
+    }, []);
 
     useEffect(() => {
         fetchAll();
@@ -67,6 +85,7 @@ const WaiterDashboard = () => {
     const handleEnableSound = () => {
         enableSoundGlobal();
         setSoundEnabled(true);
+        setAudioLive(true);
     };
 
     // --- Data fetching -------------------------------------------------
@@ -133,7 +152,12 @@ const WaiterDashboard = () => {
                     <IconVolumeOff size={18} /> Enable Call Sound
                 </button>
             )}
-            {soundEnabled && (
+            {soundEnabled && !audioLive && (
+                <button className="sound-unlock-btn" onClick={handleEnableSound}>
+                    <IconVolumeOff size={18} /> Sound paused — tap to resume
+                </button>
+            )}
+            {soundEnabled && audioLive && (
                 <div className="sound-status">
                     <IconVolume size={16} /> Call sound is on
                 </div>

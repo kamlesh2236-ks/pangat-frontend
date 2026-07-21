@@ -27,6 +27,13 @@ const listeners = {
 
 export const isSoundEnabled = () => localStorage.getItem(SOUND_PREF_KEY) === "true";
 
+// Distinct from isSoundEnabled(): that reflects the user's saved preference,
+// this reflects whether the AudioContext is actually alive right now. On
+// mobile these can disagree — preference stays "true" in localStorage but
+// the context itself gets dropped when the tab is backgrounded/reloaded by
+// the OS. UI should use this to prompt a re-tap instead of failing silently.
+export const isAudioReady = () => !!audioCtx && audioCtx.state === "running";
+
 const ensureAudioContext = () => {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -55,11 +62,29 @@ export const disableSound = () => {
 
 export const playBeep = () => {
     if (!isSoundEnabled()) return;
-    if (!audioCtx || audioCtx.state === "suspended") {
-        console.warn("[notifications] sound is 'on' but AudioContext isn't unlocked — tap Enable Sound once.");
+
+    if (!audioCtx) {
+        console.warn("[notifications] sound is 'on' but no AudioContext exists yet — mobile likely dropped it after backgrounding. Tap 'Enable Sound' again.");
         return;
     }
-    const ctx = audioCtx;
+
+    if (audioCtx.state === "suspended") {
+        // Mobile browsers suspend AudioContext aggressively when the tab is
+        // backgrounded/screen-locked. Try to resume it right here instead of
+        // just giving up — this recovers most cases where the tab regained
+        // focus a moment before the event arrived.
+        audioCtx.resume().then(() => {
+            if (audioCtx.state === "running") emitBeep(audioCtx);
+        }).catch((err) => {
+            console.warn("[notifications] could not auto-resume AudioContext:", err.message);
+        });
+        return;
+    }
+
+    emitBeep(audioCtx);
+};
+
+const emitBeep = (ctx) => {
     const beepAt = (startOffset) => {
         [880, 1760].forEach((freq, idx) => {
             const osc = ctx.createOscillator();
@@ -80,6 +105,21 @@ export const playBeep = () => {
     beepAt(0.4);
     beepAt(0.8);
 };
+
+// Mobile browsers suspend audio/throttle timers when a tab is backgrounded
+// (app switched, screen locked) and only resume normal behaviour once it's
+// foregrounded again. Proactively try to wake the AudioContext back up the
+// instant the waiter returns to the tab, rather than waiting for the next
+// beep attempt to discover it's dead.
+if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume().then(() => {
+                console.log("[notifications] AudioContext resumed after tab became visible");
+            }).catch(() => { });
+        }
+    });
+}
 
 const startRepeatingAlert = () => {
     if (repeatIntervalId) return;
