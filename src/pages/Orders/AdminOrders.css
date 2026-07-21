@@ -1327,3 +1327,56 @@
     justify-content: center;
   }
 }
+
+
+/* Compact "last actor" badge on order cards */
+.last-actor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #666;
+  margin-right: 8px;
+}
+
+/* Activity Timeline inside the order modal */
+.order-modal-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-modal-timeline-row {
+  display: grid;
+  grid-template-columns: 10px 100px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.order-modal-timeline-row:last-child {
+  border-bottom: none;
+}
+
+.order-modal-timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.order-modal-timeline-status {
+  font-weight: 600;
+}
+
+.order-modal-timeline-actor {
+  color: #555;
+}
+
+.order-modal-timeline-time {
+  color: #999;
+  font-size: 12px;
+  white-space: nowrap;
+}

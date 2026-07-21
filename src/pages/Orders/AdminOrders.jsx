@@ -22,6 +22,8 @@ import {
   IconChevronRight,
   IconCreditCard,
   IconToolsKitchen2,
+  IconUserCircle,
+  IconHistory,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { ordersAPI } from '../../utils/api';
@@ -216,6 +218,13 @@ const AdminOrders = () => {
     }
   };
 
+  // ✅ Most recent statusHistory entry — used for the compact "by X" badge
+  // on each order card in the list view.
+  const getLastActor = (order) => {
+    if (!order.statusHistory || order.statusHistory.length === 0) return null;
+    return order.statusHistory[order.statusHistory.length - 1];
+  };
+
   const openModal = (order) => {
     setSelectedOrder(order);
     setShowModal(true);
@@ -373,60 +382,68 @@ const AdminOrders = () => {
           ) : (
             <>
               <div className="orders-table">
-                {paginatedOrders.map((order) => (
-                  <div
-                    key={order._id}
-                    className="order-card"
-                    onClick={() => openModal(order)}
-                  >
-                    <div className="order-card-header">
-                      <div className="order-number-section">
-                        <h3>#{order.orderNumber}</h3>
-                        <span className="table-badge">Table {order.tableNumber}</span>
-                      </div>
-                      <div className="order-time">
-                        {new Date(order.placedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                      </div>
-                    </div>
-
-                    <div className="order-card-body">
-                      <div className="order-info">
-                        <p className="customer-name">{order.customerName}</p>
-                        <p className="customer-phone">{order.customerPhone || 'No phone'}</p>
+                {paginatedOrders.map((order) => {
+                  const lastActor = getLastActor(order);
+                  return (
+                    <div
+                      key={order._id}
+                      className="order-card"
+                      onClick={() => openModal(order)}
+                    >
+                      <div className="order-card-header">
+                        <div className="order-number-section">
+                          <h3>#{order.orderNumber}</h3>
+                          <span className="table-badge">Table {order.tableNumber}</span>
+                        </div>
+                        <div className="order-time">
+                          {new Date(order.placedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                        </div>
                       </div>
 
-                      <div className="order-items-preview">
-                        {order.items?.slice(0, 2).map((item, idx) => (
-                          <span key={idx} className="item-badge">
-                            {item.quantity}x {item.itemName}
+                      <div className="order-card-body">
+                        <div className="order-info">
+                          <p className="customer-name">{order.customerName}</p>
+                          <p className="customer-phone">{order.customerPhone || 'No phone'}</p>
+                        </div>
+
+                        <div className="order-items-preview">
+                          {order.items?.slice(0, 2).map((item, idx) => (
+                            <span key={idx} className="item-badge">
+                              {item.quantity}x {item.itemName}
+                            </span>
+                          ))}
+                          {order.items?.length > 2 && (
+                            <span className="item-badge more">+{order.items.length - 2} more</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="order-card-footer">
+                        <div className="amount-section">
+                          <span className="amount">₹{order.totalAmount}</span>
+                          <span className={`payment-badge ${order.paymentStatus.toLowerCase()}`}>
+                            {order.paymentStatus}
                           </span>
-                        ))}
-                        {order.items?.length > 2 && (
-                          <span className="item-badge more">+{order.items.length - 2} more</span>
-                        )}
+                        </div>
+
+                        <div className="status-section">
+                          {lastActor && (
+                            <span className="last-actor-badge" title={`${lastActor.status} by ${lastActor.changedBy?.name || 'Staff'}`}>
+                              <IconUserCircle size={13} /> {lastActor.changedBy?.name || 'Staff'}
+                            </span>
+                          )}
+                          <span
+                            className="status-badge"
+                            style={{ backgroundColor: getStatusColor(order.orderStatus) }}
+                          >
+                            {getStatusIcon(order.orderStatus)}
+                            {order.orderStatus}
+                          </span>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="order-card-footer">
-                      <div className="amount-section">
-                        <span className="amount">₹{order.totalAmount}</span>
-                        <span className={`payment-badge ${order.paymentStatus.toLowerCase()}`}>
-                          {order.paymentStatus}
-                        </span>
-                      </div>
-
-                      <div className="status-section">
-                        <span
-                          className="status-badge"
-                          style={{ backgroundColor: getStatusColor(order.orderStatus) }}
-                        >
-                          {getStatusIcon(order.orderStatus)}
-                          {order.orderStatus}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* ===== Pagination ===== */}
@@ -558,6 +575,34 @@ const AdminOrders = () => {
                   <p className="order-modal-card-main">{selectedOrder.guestCount || 1}</p>
                 </div>
               </div>
+
+              {/* ===== Activity Timeline — who did what, when ===== */}
+              {selectedOrder.statusHistory && selectedOrder.statusHistory.length > 0 && (
+                <div className="order-modal-section">
+                  <h4 className="order-modal-section-title">
+                    <IconHistory size={14} /> Activity Timeline
+                  </h4>
+                  <div className="order-modal-timeline">
+                    {selectedOrder.statusHistory.map((entry, idx) => (
+                      <div key={idx} className="order-modal-timeline-row">
+                        <span
+                          className="order-modal-timeline-dot"
+                          style={{ backgroundColor: getStatusColor(entry.status) }}
+                        />
+                        <span className="order-modal-timeline-status">{entry.status}</span>
+                        <span className="order-modal-timeline-actor">
+                          {entry.changedBy?.name
+                            ? `by ${entry.changedBy.name}${entry.changedBy.role ? ` (${entry.changedBy.role})` : ''}`
+                            : 'by —'}
+                        </span>
+                        <span className="order-modal-timeline-time">
+                          {formatDateIN(entry.changedAt)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="order-modal-section">
                 <h4 className="order-modal-section-title">
