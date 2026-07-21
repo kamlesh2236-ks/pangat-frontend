@@ -9,13 +9,11 @@ if (!RAW_API_URL) {
 const SOCKET_URL = (RAW_API_URL || "").replace(/\/api\/?$/, "");
 
 const SOUND_PREF_KEY = "scanserve_sound_enabled";
+const RING_SOUND_URL = "/sounds/notification-ring.mp3";
 
-// Module-level state — NOT React state. This survives component
-// unmount/remount and route navigation because it's just JS living in
-// memory for as long as the tab is open, not tied to any component's
-// lifecycle. It only resets on a full page reload/tab close.
 let socket = null;
-let audioCtx = null;
+let ringAudio = null;
+let audioUnlocked = false;
 let repeatIntervalId = null;
 let pendingCallCount = 0;
 
@@ -27,31 +25,35 @@ const listeners = {
 
 export const isSoundEnabled = () => localStorage.getItem(SOUND_PREF_KEY) === "true";
 
-// Distinct from isSoundEnabled(): that reflects the user's saved preference,
-// this reflects whether the AudioContext is actually alive right now. On
-// mobile these can disagree — preference stays "true" in localStorage but
-// the context itself gets dropped when the tab is backgrounded/reloaded by
-// the OS. UI should use this to prompt a re-tap instead of failing silently.
-export const isAudioReady = () => !!audioCtx && audioCtx.state === "running";
 
-const ensureAudioContext = () => {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+export const isAudioReady = () => audioUnlocked;
+
+const getRingAudio = () => {
+    if (!ringAudio) {
+        ringAudio = new Audio(RING_SOUND_URL);
+        ringAudio.volume = 1.0;
     }
-    if (audioCtx.state === "suspended") {
-        audioCtx.resume();
-    }
-    return audioCtx;
+    return ringAudio;
 };
 
 export const enableSound = () => {
-    ensureAudioContext();
+    const audio = getRingAudio();
+
+    audio.play()
+        .then(() => {
+            audioUnlocked = true;
+            console.log("[notifications] audio unlocked");
+        })
+        .catch((err) => {
+            audioUnlocked = false;
+            console.warn("[notifications] could not unlock audio:", err.message);
+        });
+
     localStorage.setItem(SOUND_PREF_KEY, "true");
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
         Notification.requestPermission();
     }
     console.log("[notifications] sound enabled");
-    playBeep(); // confirmation beep
 };
 
 export const disableSound = () => {
@@ -63,64 +65,37 @@ export const disableSound = () => {
 export const playBeep = () => {
     if (!isSoundEnabled()) return;
 
-    if (!audioCtx) {
-        console.warn("[notifications] sound is 'on' but no AudioContext exists yet — mobile likely dropped it after backgrounding. Tap 'Enable Sound' again.");
-        return;
-    }
-
-    if (audioCtx.state === "suspended") {
-        // Mobile browsers suspend AudioContext aggressively when the tab is
-        // backgrounded/screen-locked. Try to resume it right here instead of
-        // just giving up — this recovers most cases where the tab regained
-        // focus a moment before the event arrived.
-        audioCtx.resume().then(() => {
-            if (audioCtx.state === "running") emitBeep(audioCtx);
-        }).catch((err) => {
-            console.warn("[notifications] could not auto-resume AudioContext:", err.message);
+    const audio = getRingAudio();
+    audio.currentTime = 0;
+    audio.play()
+        .then(() => {
+            audioUnlocked = true;
+        })
+        .catch((err) => {
+            // Most common cause on mobile: tab was backgrounded and the
+            // browser is refusing autoplay again until the next real tap.
+            audioUnlocked = false;
+            console.warn("[notifications] sound is 'on' but playback was blocked — tap 'Enable Sound' again:", err.message);
         });
-        return;
-    }
-
-    emitBeep(audioCtx);
 };
 
-const emitBeep = (ctx) => {
-    // A phone-ring style trill: one tone, amplitude-pulsed on/off rapidly —
-    // reads as "ringing" rather than a flat notification beep.
-    const now = ctx.currentTime;
-    const durationSec = 1.6;
-    const pulseSec = 0.15;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.value = 1000;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    const steps = Math.floor(durationSec / pulseSec);
-    for (let i = 0; i < steps; i++) {
-        const t = now + i * pulseSec;
-        const peak = i % 2 === 0 ? 0.8 : 0.0001;
-        gain.gain.linearRampToValueAtTime(peak, t + 0.05);
-    }
-
-    osc.start(now);
-    osc.stop(now + durationSec + 0.1);
-};
-
-// Mobile browsers suspend audio/throttle timers when a tab is backgrounded
-// (app switched, screen locked) and only resume normal behaviour once it's
-// foregrounded again. Proactively try to wake the AudioContext back up the
-// instant the waiter returns to the tab, rather than waiting for the next
-// beep attempt to discover it's dead.
 if (typeof document !== "undefined") {
     document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible" && audioCtx && audioCtx.state === "suspended") {
-            audioCtx.resume().then(() => {
-                console.log("[notifications] AudioContext resumed after tab became visible");
-            }).catch(() => { });
+        if (document.visibilityState === "visible" && isSoundEnabled() && !audioUnlocked) {
+            const audio = getRingAudio();
+            const prevVolume = audio.volume;
+            audio.volume = 0;
+            audio.play()
+                .then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.volume = prevVolume;
+                    audioUnlocked = true;
+                    console.log("[notifications] audio re-unlocked after tab became visible");
+                })
+                .catch(() => {
+                    audio.volume = prevVolume;
+                });
         }
     });
 }
@@ -143,9 +118,7 @@ const stopRepeatingAlert = () => {
     }
 };
 
-// Idempotent — safe to call from every dashboard's mount. Because socket
-// lives at module scope, calling this from Waiter AND Kitchen dashboards
-// just reuses the same connection instead of creating duplicates.
+
 export const connectNotifications = () => {
     if (socket) {
         if (!socket.connected) socket.connect();
