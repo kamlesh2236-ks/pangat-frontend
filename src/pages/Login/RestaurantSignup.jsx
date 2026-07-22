@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authAPI } from '../../utils/api';
-import Food2 from '../../assets/food2.png';
 import './Auth.css';
+const IMAGE_URL = "https://res.cloudinary.com/xruyknps/image/upload/v1784703806/food2_prnpcy.png";
 
 const RestaurantSignup = () => {
     const navigate = useNavigate();
@@ -290,7 +290,7 @@ const RestaurantSignup = () => {
             </div>
 
             <div className="auth-image-panel">
-                <img src={Food2} alt="Plated dish from the restaurant" />
+                <img src={IMAGE_URL} alt="Plated dish from the restaurant" />
                 <div className="auth-image-overlay" />
                 <span className="particle" style={{ left: '8%', animationDelay: '0s', animationDuration: '9s', width: 4, height: 4 }} />
                 <span className="particle" style={{ left: '22%', animationDelay: '2.5s', animationDuration: '11s', width: 6, height: 6 }} />

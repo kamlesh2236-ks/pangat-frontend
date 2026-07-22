@@ -26,7 +26,6 @@ import {
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { menuAPI, mainCategoriesAPI } from '../../utils/api';
-
 import './Menu.css';
 
 // ---------- Excel helpers ----------

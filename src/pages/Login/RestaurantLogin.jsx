@@ -4,7 +4,8 @@ import toast from 'react-hot-toast';
 import { AuthContext } from '../../context/AuthContext';
 import { authAPI } from '../../utils/api';
 import './login.css'
-import Food2 from '../../assets/food2.png'
+
+const IMAGE_URL = "https://res.cloudinary.com/xruyknps/image/upload/v1784703806/food2_prnpcy.png";
 
 const RestaurantLogin = () => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const RestaurantLogin = () => {
   return (
     <div className="login-container">
       <div className="image-container">
-        <img src={Food2} alt="Plated dish from the restaurant" />
+        <img src={IMAGE_URL} alt="Plated dish from the restaurant" />
         <div className="image-overlay" />
         <div className="image-caption">
           <span className="image-caption-eyebrow">Kitchen dashboard</span>

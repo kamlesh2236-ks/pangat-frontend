@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authAPI } from '../../utils/api';
 import './login.css'
-import forgotImg from "../../assets/forgot-password.png"
+
+const IMAGE_URL = "https://res.cloudinary.com/xruyknps/image/upload/v1784703767/forgot-password_syi2fe.png";
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
@@ -79,7 +80,7 @@ const ForgotPassword = () => {
     return (
         <div className="login-container">
             <div className="image-container">
-                <img src={forgotImg} alt="" />
+                <img src={IMAGE_URL} alt="forgot-password image" />
             </div>
             <div className="login">
                 <div className="login-card">
