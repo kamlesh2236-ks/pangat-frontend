@@ -124,6 +124,15 @@ body .sidebar.close~.dashboard-container {
   cursor: pointer;
 }
 
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+}
+
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 .refresh-btn {
   display: flex;
   align-items: center;

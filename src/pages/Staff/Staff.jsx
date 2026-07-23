@@ -43,7 +43,13 @@ const Staff = () => {
     const [payroll, setPayroll] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(currentMonth());
     const [currentPage, setCurrentPage] = useState(1);
+
+    // Split loading state: staff list is month-independent and should render as soon as it
+    // arrives. Payroll/attendance depend on selectedMonth and are usually the slower call
+    // (per-staff attendance aggregation on the backend), so they get their own flag and
+    // never block the staff table from showing.
     const [loading, setLoading] = useState(true);
+    const [payrollLoading, setPayrollLoading] = useState(true);
 
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -68,30 +74,53 @@ const Staff = () => {
     const [credForm, setCredForm] = useState({ email: '', password: '' });
     const [savingCred, setSavingCred] = useState(false);
 
-    // `showLoader` lets us refetch data in the background (e.g. after marking attendance)
-    // WITHOUT flipping the page back into its full "Loading staff..." spinner state.
-    const fetchAll = useCallback(async (showLoader = true) => {
+    // ---------- Fetchers (decoupled) ----------
+    // Staff list — month independent, only needs to reload on add/edit/delete/credentials.
+    const fetchStaff = useCallback(async (showLoader = true) => {
         try {
             if (showLoader) setLoading(true);
-            const [staffRes, todayRes, payrollRes] = await Promise.all([
-                staffAPI.getAll(),
-                staffAPI.getTodayAttendance(),
-                staffAPI.getPayrollSummary(selectedMonth),
-            ]);
+            const staffRes = await staffAPI.getAll();
             if (staffRes.data.success) setStaffList(staffRes.data.data);
-            if (todayRes.data.success) setTodayAttendance(todayRes.data.data);
-            if (payrollRes.data.success) setPayroll(payrollRes.data.data);
         } catch (error) {
-            console.error('Error fetching staff data:', error);
-            toast.error('Failed to load staff data');
+            console.error('Error fetching staff list:', error);
+            toast.error('Failed to load staff list');
         } finally {
             if (showLoader) setLoading(false);
         }
+    }, []);
+
+    // Today's attendance + payroll summary — month dependent, and the slower of the two
+    // fetches. Kept separate so it never blocks the staff table from rendering.
+    const fetchMonthData = useCallback(async (showLoader = true) => {
+        try {
+            if (showLoader) setPayrollLoading(true);
+            const [todayRes, payrollRes] = await Promise.all([
+                staffAPI.getTodayAttendance(),
+                staffAPI.getPayrollSummary(selectedMonth),
+            ]);
+            if (todayRes.data.success) setTodayAttendance(todayRes.data.data);
+            if (payrollRes.data.success) setPayroll(payrollRes.data.data);
+        } catch (error) {
+            console.error('Error fetching payroll/attendance data:', error);
+            toast.error('Failed to load payroll data');
+        } finally {
+            if (showLoader) setPayrollLoading(false);
+        }
     }, [selectedMonth]);
 
+    // Convenience wrapper for places that used to call the old combined fetchAll()
+    const refreshEverything = useCallback((showLoader = true) => {
+        fetchStaff(showLoader);
+        fetchMonthData(showLoader);
+    }, [fetchStaff, fetchMonthData]);
+
     useEffect(() => {
-        fetchAll(true);
-    }, [fetchAll]);
+        fetchStaff(true);
+    }, [fetchStaff]);
+
+    useEffect(() => {
+        fetchMonthData(true);
+    }, [fetchMonthData]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -104,7 +133,7 @@ const Staff = () => {
             const response = await staffAPI.markAttendance(staffId, { status });
             if (response.data.success) {
                 toast.success(response.data.message);
-                fetchAll(false);
+                fetchMonthData(false);
             }
         } catch (error) {
             toast.error('Failed to mark attendance');
@@ -153,7 +182,8 @@ const Staff = () => {
             if (response.data.success) {
                 toast.success(showEditModal ? 'Staff updated' : 'Staff added');
                 closeModal();
-                fetchAll(true);
+                fetchStaff(true);
+                fetchMonthData(false);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to save staff');
@@ -184,7 +214,8 @@ const Staff = () => {
             const response = await staffAPI.delete(staffId);
             if (response.data.success) {
                 toast.success('Staff deleted');
-                fetchAll(true);
+                fetchStaff(true);
+                fetchMonthData(false);
             }
         } catch (error) {
             toast.error('Failed to delete staff');
@@ -237,7 +268,7 @@ const Staff = () => {
                 setTxnForm({ type: 'Payment', amount: '', notes: '' });
                 const salaryRes = await staffAPI.getSalary(detailStaff._id, selectedMonth);
                 if (salaryRes.data.success) setDetailSalary(salaryRes.data.data);
-                fetchAll(false);
+                fetchMonthData(false);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to add transaction');
@@ -253,7 +284,7 @@ const Staff = () => {
             toast.success('Transaction deleted');
             const salaryRes = await staffAPI.getSalary(detailStaff._id, selectedMonth);
             if (salaryRes.data.success) setDetailSalary(salaryRes.data.data);
-            fetchAll(false);
+            fetchMonthData(false);
         } catch (error) {
             toast.error('Failed to delete transaction');
         }
@@ -308,7 +339,7 @@ const Staff = () => {
             if (response.data.success) {
                 toast.success('Login credentials set. Staff ko email/password note karke de dein.');
                 closeCredentials();
-                fetchAll(false);
+                fetchStaff(false);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to set credentials');
@@ -323,7 +354,7 @@ const Staff = () => {
             await staffAPI.revokeCredentials(staff._id);
             toast.success('Login access revoked');
             closeCredentials();
-            fetchAll(false);
+            fetchStaff(false);
         } catch (error) {
             toast.error('Failed to revoke access');
         }
@@ -342,6 +373,8 @@ const Staff = () => {
         setCurrentPage(page);
     };
 
+    // Only the staff-list fetch blocks the whole page now. Payroll/attendance load
+    // in the background and show their own inline loading state below.
     if (loading) {
         return (
             <div className="staff-page loading">
@@ -372,7 +405,19 @@ const Staff = () => {
             </div>
 
             {/* ===== Payroll Stats ===== */}
-            {payroll && (
+            {payrollLoading ? (
+                <div className="staff-stats-grid">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div className="staff-stat-card" key={i}>
+                            <div className="staff-stat-icon"><IconCoin size={20} /></div>
+                            <div>
+                                <div className="staff-stat-value">…</div>
+                                <div className="staff-stat-label">Loading</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : payroll && (
                 <div className="staff-stats-grid">
                     <div className="staff-stat-card">
                         <div className="staff-stat-icon"><IconUsers size={20} /></div>
@@ -420,7 +465,7 @@ const Staff = () => {
                     </thead>
                     <tbody>
                         {paginatedStaff.map((staff) => {
-                            const due = getStaffDue(staff._id);
+                            const due = payrollLoading ? null : getStaffDue(staff._id);
                             const currentStatus = getTodayStatus(staff._id);
                             return (
                                 <tr key={staff._id} className={!staff.isActive ? 'inactive-row' : ''}>
@@ -435,7 +480,9 @@ const Staff = () => {
                                         {staff.salaryType === 'Daily' ? '/day' : '/mo'}
                                     </td>
                                     <td>
-                                        {due !== null ? (
+                                        {payrollLoading ? (
+                                            <span className="staff-due-badge">…</span>
+                                        ) : due !== null ? (
                                             <span className={`staff-due-badge ${due > 0 ? 'pending' : 'clear'}`}>
                                                 ₹{due.toLocaleString()}
                                             </span>

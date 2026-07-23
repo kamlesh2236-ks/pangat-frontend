@@ -30,6 +30,41 @@
     }
 }
 
+/* ---------- Skeleton Loading (Media page) ---------- */
+
+.skeleton-card {
+    cursor: default;
+    pointer-events: none;
+}
+
+.skeleton-line {
+    background: linear-gradient(90deg, #eee 25%, #e0e0e0 37%, #eee 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+    border-radius: 6px;
+    height: 12px;
+    width: 100%;
+}
+
+.media-row-img-skeleton {
+    width: 90px;
+    height: 60px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+@media (prefers-color-scheme: dark) {
+    .skeleton-line {
+        background: linear-gradient(90deg, #929292 25%, #c4c3c3 37%, #c4c2c2 63%);
+        background-size: 400% 100%;
+    }
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;

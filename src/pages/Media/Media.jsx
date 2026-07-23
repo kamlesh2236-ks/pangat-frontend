@@ -22,6 +22,42 @@ const emptyForm = {
     title: '', image: '', linkedCategory: '', startDate: '', endDate: '', isActive: true,
 };
 
+// ---------- Skeleton ----------
+
+const MediaRowSkeleton = () => (
+    <div className="media-row skeleton-card">
+        <div className="media-row-order">
+            <div className="skeleton-line" style={{ width: '14px', height: '14px', marginBottom: '4px' }} />
+            <div className="skeleton-line" style={{ width: '14px', height: '14px' }} />
+        </div>
+
+        <div className="skeleton-line media-row-img-skeleton" />
+
+        <div className="media-row-info">
+            <div className="skeleton-line" style={{ width: '140px', height: '15px', marginBottom: '8px' }} />
+            <div className="skeleton-line" style={{ width: '100px', height: '12px', borderRadius: '10px' }} />
+        </div>
+
+        <div className="skeleton-line" style={{ width: '50px', height: '20px', borderRadius: '10px' }} />
+
+        <div className="media-row-actions">
+            <div className="skeleton-line" style={{ width: '16px', height: '16px' }} />
+            <div className="skeleton-line" style={{ width: '16px', height: '16px' }} />
+            <div className="skeleton-line" style={{ width: '16px', height: '16px' }} />
+        </div>
+    </div>
+);
+
+const MediaListSkeleton = () => (
+    <div className="media-list">
+        {Array.from({ length: 4 }).map((_, i) => (
+            <MediaRowSkeleton key={i} />
+        ))}
+    </div>
+);
+
+// ---------- Main component ----------
+
 const Media = () => {
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -165,14 +201,9 @@ const Media = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="media-page loading">
-                <div className="spinner"></div>
-                <p>Loading banners...</p>
-            </div>
-        );
-    }
+    // NOTE: removed the old "full page spinner" early-return.
+    // Header + Add Banner button render immediately; only the list area
+    // swaps to a skeleton while `loading` is true, so layout doesn't jump.
 
     return (
         <div className="media-page">
@@ -186,7 +217,9 @@ const Media = () => {
                 </button>
             </div>
 
-            {banners.length === 0 ? (
+            {loading ? (
+                <MediaListSkeleton />
+            ) : banners.length === 0 ? (
                 <div className="empty-state">
                     <IconPhoto size={40} />
                     <p>Not found any banner yet</p>

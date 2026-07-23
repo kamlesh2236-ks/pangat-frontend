@@ -1,11 +1,5 @@
 import { io } from "socket.io-client";
-
-// ⚠️ Confirm this matches your .env variable name (check apiClient.js for
-// whichever VITE_ var it reads). If this logs undefined, that's your bug.
 const RAW_API_URL = import.meta.env.VITE_API_URL;
-if (!RAW_API_URL) {
-    console.error("[notifications] VITE_API_URL is undefined — check .env and restart the dev server.");
-}
 const SOCKET_URL = (RAW_API_URL || "").replace(/\/api\/?$/, "");
 
 const SOUND_PREF_KEY = "scanserve_sound_enabled";
@@ -42,7 +36,6 @@ export const enableSound = () => {
     audio.play()
         .then(() => {
             audioUnlocked = true;
-            console.log("[notifications] audio unlocked");
         })
         .catch((err) => {
             audioUnlocked = false;
@@ -53,13 +46,11 @@ export const enableSound = () => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
         Notification.requestPermission();
     }
-    console.log("[notifications] sound enabled");
 };
 
 export const disableSound = () => {
     localStorage.setItem(SOUND_PREF_KEY, "false");
     stopRepeatingAlert();
-    console.log("[notifications] sound disabled");
 };
 
 export const playBeep = () => {
@@ -127,16 +118,15 @@ export const connectNotifications = () => {
 
     // Matches the exact key apiClient.js reads in its request interceptor.
     const token = localStorage.getItem("adminToken");
-    console.log("[notifications] connecting with token present:", !!token, "url:", SOCKET_URL);
 
     socket = io(SOCKET_URL, {
         transports: ["websocket", "polling"], // allow polling fallback in case websocket is blocked somewhere
         auth: { token },
     });
 
-    socket.on("connect", () => console.log("[notifications] ✅ connected:", socket.id));
-    socket.on("disconnect", (reason) => console.log("[notifications] ❌ disconnected:", reason));
-    socket.on("connect_error", (err) => console.error("[notifications] ⚠️ connect error:", err.message));
+    // socket.on("connect", () => console.log("[notifications] ✅ connected:", socket.id));
+    // socket.on("disconnect", (reason) => console.log("[notifications] ❌ disconnected:", reason));
+    // socket.on("connect_error", (err) => console.error("[notifications] ⚠️ connect error:", err.message));
 
     socket.on("waiterCalled", (call) => {
         console.log("[notifications] 🔔 waiterCalled event received:", call);

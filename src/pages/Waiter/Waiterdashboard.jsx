@@ -18,6 +18,7 @@ import "./Waiterdashboard.css";
 const WaiterDashboard = () => {
     const [orders, setOrders] = useState([]);
     const [calls, setCalls] = useState([]);
+    const [servedHistory, setServedHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
     const [audioLive, setAudioLive] = useState(isAudioReady());
@@ -35,6 +36,13 @@ const WaiterDashboard = () => {
     useEffect(() => {
         fetchAll();
         const interval = setInterval(fetchAll, 15000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Real served-order history, independent of the active-orders poll above.
+    useEffect(() => {
+        fetchServedHistory();
+        const interval = setInterval(fetchServedHistory, 60000);
         return () => clearInterval(interval);
     }, []);
 
@@ -89,11 +97,21 @@ const WaiterDashboard = () => {
         }
     };
 
+    const fetchServedHistory = async () => {
+        try {
+            const res = await apiClient.get("/waiter/served-history?days=3");
+            setServedHistory(res.data.data);
+        } catch (error) {
+            console.error("Served history fetch error:", error);
+        }
+    };
+
     const handleServe = async (orderId) => {
         try {
             await apiClient.patch(`/waiter/orders/${orderId}/serve`);
             toast.success("Marked as Served");
             fetchAll();
+            fetchServedHistory();
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to update");
         }
@@ -109,17 +127,9 @@ const WaiterDashboard = () => {
         }
     };
 
-    // --- Serve History (Today / Yesterday / Earlier) -------------------
-    // Built from whatever "Served" orders are currently loaded in state.
-    // Note: this only reflects orders the /waiter/orders endpoint returns
-    // (usually recent ones) — for a full multi-day history the backend
-    // would ideally expose a dedicated stats endpoint, but this gives an
-    // accurate breakdown of everything currently in memory.
-    const getServeHistory = () => {
-        const servedOrders = orders.filter((o) => o.orderStatus === "Served" && o.servedAt);
-
+    const getServeHistoryStats = () => {
         const groups = {};
-        servedOrders.forEach((o) => {
+        servedHistory.forEach((o) => {
             const key = new Date(o.servedAt).toDateString();
             groups[key] = (groups[key] || 0) + 1;
         });
@@ -147,56 +157,48 @@ const WaiterDashboard = () => {
     if (loading) return <div className="waiter-loading">Loading waiter dashboard...</div>;
 
     const readyOrders = orders.filter((o) => o.orderStatus === "Ready");
-    const recentlyServed = orders.filter((o) => o.orderStatus === "Served");
-    const { todayCount, yesterdayCount, earlier } = getServeHistory();
+    const { todayCount, yesterdayCount, earlier } = getServeHistoryStats();
+    const recentlyServed = servedHistory.slice(0, 20);
 
     return (
         <div className="waiter-dashboard">
-            {!soundEnabled && (
-                <button className="sound-unlock-btn sound-unlock-btn--off" onClick={handleEnableSound}>
-                    <IconVolumeOff size={18} /> <span>Enable Call Sound</span>
-                </button>
-            )}
-            {soundEnabled && !audioLive && (
-                <button className="sound-unlock-btn sound-unlock-btn--paused" onClick={handleEnableSound}>
-                    <IconVolumeOff size={18} /> <span>Sound paused — tap to resume</span>
-                </button>
-            )}
-            {soundEnabled && audioLive && (
-                <div className="sound-status">
-                    <IconVolume size={16} /> <span>Call sound is on</span>
-                </div>
-            )}
+            <div className="section-header">
+                <h1><IconTruck size={22} /> Ready to Serve ({readyOrders.length})</h1>
+                {!soundEnabled && (
+                    <button className="sound-unlock-btn sound-unlock-btn--off" onClick={handleEnableSound}>
+                        <IconVolumeOff size={18} /> <span>Enable Call Sound</span>
+                    </button>
+                )}
+                {soundEnabled && !audioLive && (
+                    <button className="sound-unlock-btn sound-unlock-btn--paused" onClick={handleEnableSound}>
+                        <IconVolumeOff size={18} /> <span>Sound paused — tap to resume</span>
+                    </button>
+                )}
+                {soundEnabled && audioLive && (
+                    <div className="sound-status">
+                        <IconVolume size={16} /> <span>Call sound is on</span>
+                    </div>
+                )}
+            </div>
 
-            {/* Serve History Card */}
+            {/* Serve History Card — now backed by real /waiter/served-history data */}
             <div className="serve-history-card">
-                <div className="serve-history-header">
-                    <IconHistory size={20} /> Serve History
-                </div>
-
                 <div className="serve-history-stats">
                     <div className="serve-stat-box today">
                         <span className="stat-count">{todayCount}</span>
-                        <span className="stat-label">Today</span>
+                        <span className="stat-label">Today Served</span>
                     </div>
                     <div className="serve-stat-box">
                         <span className="stat-count">{yesterdayCount}</span>
-                        <span className="stat-label">Yesterday</span>
+                        <span className="stat-label">Yesterday Served</span>
                     </div>
+                    {earlier[0] && (
+                        <div className="serve-stat-box">
+                            <span className="stat-count">{earlier[0][1]}</span>
+                            <span className="stat-label">{formatHistoryLabel(earlier[0][0])}</span>
+                        </div>
+                    )}
                 </div>
-
-                {earlier.length > 0 ? (
-                    <div className="serve-history-list">
-                        {earlier.map(([dateKey, count]) => (
-                            <div key={dateKey} className="serve-history-row">
-                                <span>{formatHistoryLabel(dateKey)}</span>
-                                <span className="day-count">{count} served</span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="serve-history-empty">No earlier records loaded yet</div>
-                )}
             </div>
 
             {calls.length > 0 && (
@@ -218,8 +220,6 @@ const WaiterDashboard = () => {
                     </div>
                 </div>
             )}
-
-            <h1><IconTruck size={22} /> Ready to Serve ({readyOrders.length})</h1>
 
             {readyOrders.length === 0 ? (
                 <p className="waiter-empty">No orders ready right now</p>
@@ -250,12 +250,13 @@ const WaiterDashboard = () => {
 
             {recentlyServed.length > 0 && (
                 <>
-                    <h2 className="served-heading">Recently Served</h2>
+                    <h2 className="served-heading"><IconHistory size={18} /> Recently Served</h2>
                     <div className="served-list">
                         {recentlyServed.map((o) => (
                             <div key={o._id} className="served-row">
                                 <span>#{o.orderNumber}</span>
                                 <span>Table {o.tableNumber ?? "Counter"}</span>
+                                <span>{new Date(o.servedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
                                 <span>{new Date(o.servedAt).toLocaleTimeString()}</span>
                             </div>
                         ))}

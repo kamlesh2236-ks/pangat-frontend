@@ -42,6 +42,60 @@ const formatDateIN = (dateStr) => {
   return `${datePart}, ${timePart}`;
 };
 
+// ---------- Skeleton pieces ----------
+
+const StatCardSkeleton = () => (
+  <div className="orders-stat-card skeleton-card">
+    <div className="skeleton-line skeleton-value" />
+    <div className="skeleton-line skeleton-label" />
+  </div>
+);
+
+const OrderCardSkeleton = () => (
+  <div className="order-card skeleton-card">
+    <div className="order-card-header">
+      <div className="order-number-section">
+        <div className="skeleton-line" style={{ width: '70px', height: '18px' }} />
+        <div className="skeleton-line" style={{ width: '60px', height: '14px', marginLeft: '8px' }} />
+      </div>
+      <div className="skeleton-line" style={{ width: '50px', height: '14px' }} />
+    </div>
+
+    <div className="order-card-body">
+      <div className="order-info">
+        <div className="skeleton-line" style={{ width: '120px', height: '15px', marginBottom: '6px' }} />
+        <div className="skeleton-line" style={{ width: '90px', height: '13px' }} />
+      </div>
+      <div className="order-items-preview">
+        <div className="skeleton-line" style={{ width: '80px', height: '22px', borderRadius: '12px' }} />
+        <div className="skeleton-line" style={{ width: '70px', height: '22px', borderRadius: '12px' }} />
+      </div>
+    </div>
+
+    <div className="order-card-footer">
+      <div className="skeleton-line" style={{ width: '60px', height: '16px' }} />
+      <div className="skeleton-line" style={{ width: '90px', height: '22px', borderRadius: '12px' }} />
+    </div>
+  </div>
+);
+
+const OrdersSkeleton = () => (
+  <>
+    <div className="orders-stats-grid">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <StatCardSkeleton key={i} />
+      ))}
+    </div>
+    <div className="orders-table">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <OrderCardSkeleton key={i} />
+      ))}
+    </div>
+  </>
+);
+
+// ---------- Main component ----------
+
 const AdminOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
@@ -288,14 +342,9 @@ const AdminOrders = () => {
     }
   }, [showBillPrint, billOrder]);
 
-  if (loading) {
-    return (
-      <div className="admin-orders loading">
-        <div className="spinner"></div>
-        <p>Loading orders...</p>
-      </div>
-    );
-  }
+  // NOTE: removed the old "full page spinner" early-return.
+  // Page shell (header, search, filters) now renders immediately.
+  // Only the stats + list area swaps to skeletons while `loading` is true.
 
   return (
     <div className="admin-orders">
@@ -309,24 +358,32 @@ const AdminOrders = () => {
           </div>
         </div>
 
-        <div className="orders-stats-grid">
-          <div className="orders-stat-card">
-            <div className="orders-stat-value">{orders.length}</div>
-            <div className="orders-stat-label">Total Orders</div>
+        {loading ? (
+          <div className="orders-stats-grid">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
           </div>
-          <div className="orders-stat-card">
-            <div className="orders-stat-value">{orders.filter(o => o.orderStatus === 'Placed').length}</div>
-            <div className="orders-stat-label">New Orders</div>
+        ) : (
+          <div className="orders-stats-grid">
+            <div className="orders-stat-card">
+              <div className="orders-stat-value">{orders.length}</div>
+              <div className="orders-stat-label">Total Orders</div>
+            </div>
+            <div className="orders-stat-card">
+              <div className="orders-stat-value">{orders.filter(o => o.orderStatus === 'Placed').length}</div>
+              <div className="orders-stat-label">New Orders</div>
+            </div>
+            <div className="orders-stat-card">
+              <div className="orders-stat-value">₹{orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}</div>
+              <div className="orders-stat-label">Total Revenue</div>
+            </div>
+            <div className="orders-stat-card">
+              <div className="orders-stat-value">{orders.filter(o => o.paymentStatus === 'Pending').length}</div>
+              <div className="orders-stat-label">Pending Payments</div>
+            </div>
           </div>
-          <div className="orders-stat-card">
-            <div className="orders-stat-value">₹{orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}</div>
-            <div className="orders-stat-label">Total Revenue</div>
-          </div>
-          <div className="orders-stat-card">
-            <div className="orders-stat-value">{orders.filter(o => o.paymentStatus === 'Pending').length}</div>
-            <div className="orders-stat-label">Pending Payments</div>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="filters-section">
@@ -368,7 +425,13 @@ const AdminOrders = () => {
 
       <div className="content-wrapper">
         <div className="orders-list">
-          {filteredOrders.length === 0 ? (
+          {loading ? (
+            <div className="orders-table">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <OrderCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredOrders.length === 0 ? (
             <div className="empty-state">
               <p>No orders found</p>
             </div>

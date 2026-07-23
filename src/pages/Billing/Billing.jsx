@@ -31,11 +31,18 @@ const PAYMENT_METHODS = [
 ];
 
 const ITEMS_PER_PAGE = 6;
+const SKELETON_CARDS = Array.from({ length: 6 });
 
 const Billing = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [tables, setTables] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Menu and tables are independent — the page shell should never wait for both.
+  // Menu is what the user actually needs first (they're here to bill items), so
+  // it gets its own loading flag and renders as soon as it's back, regardless of
+  // how long the tables call takes.
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [tablesLoading, setTablesLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -58,27 +65,38 @@ const Billing = () => {
   const [billOrder, setBillOrder] = useState(null);
   const [showBillPrint, setShowBillPrint] = useState(false);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
+  const fetchMenu = async () => {
     try {
-      setLoading(true);
-      const [menuRes, tablesRes] = await Promise.all([
-        menuAPI.getAll(),
-        tablesAPI.getAll(),
-      ]);
-
+      setMenuLoading(true);
+      const menuRes = await menuAPI.getAll();
       if (menuRes.data.success) setMenuItems(menuRes.data.data);
-      if (tablesRes.data.success) setTables(tablesRes.data.data);
     } catch (error) {
-      toast.error('Failed to load menu / tables');
+      toast.error('Failed to load menu');
       console.error(error);
     } finally {
-      setLoading(false);
+      setMenuLoading(false);
     }
   };
+
+  const fetchTables = async () => {
+    try {
+      setTablesLoading(true);
+      const tablesRes = await tablesAPI.getAll();
+      if (tablesRes.data.success) setTables(tablesRes.data.data);
+    } catch (error) {
+      toast.error('Failed to load tables');
+      console.error(error);
+    } finally {
+      setTablesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fired together but tracked independently — whichever comes back first
+    // updates its own section without waiting for the other.
+    fetchMenu();
+    fetchTables();
+  }, []);
 
   useEffect(() => {
     const el = catRefs.current[activeCategory];
@@ -240,8 +258,7 @@ const Billing = () => {
         resetForm();
         // Table list refresh karo agar table free hui ho
         if (orderType === 'table') {
-          const tablesRes = await tablesAPI.getAll();
-          if (tablesRes.data.success) setTables(tablesRes.data.data);
+          fetchTables();
         }
       } else {
         toast.error(response.data.message || 'The bill could not be generated');
@@ -257,14 +274,8 @@ const Billing = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="billing-page loading">
-        <div className="spinner"></div>
-        <p>Loading menu...</p>
-      </div>
-    );
-  }
+  // The page shell (search bar, category tabs, cart panel) always renders immediately.
+  // Only the menu grid and the table dropdown show their own inline loading states.
 
   return (
     <div className="billing-page">
@@ -281,25 +292,38 @@ const Billing = () => {
               placeholder="Search menu item..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={menuLoading}
             />
           </div>
         </div>
 
-        <div className="billing-category-tabs">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              ref={(el) => (catRefs.current[cat] = el)}
-              className={`billing-cat-tab ${activeCategory === cat ? 'active' : ''}`}
-              onClick={() => setActiveCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {!menuLoading && (
+          <div className="billing-category-tabs">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                ref={(el) => (catRefs.current[cat] = el)}
+                className={`billing-cat-tab ${activeCategory === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="billing-menu-grid">
-          {filteredItems.length === 0 ? (
+          {menuLoading ? (
+            SKELETON_CARDS.map((_, i) => (
+              <div key={i} className="billing-menu-card billing-menu-card-skeleton">
+                <div className="billing-menu-card-img-wrap skeleton-block" />
+                <div className="billing-menu-card-body">
+                  <div className="skeleton-line" style={{ width: '70%' }} />
+                  <div className="skeleton-line" style={{ width: '40%' }} />
+                </div>
+              </div>
+            ))
+          ) : filteredItems.length === 0 ? (
             <div className="billing-empty">No items found</div>
           ) : (
             paginatedItems.map((item) => (
@@ -345,7 +369,7 @@ const Billing = () => {
         </div>
 
         {/* ===== Pagination (menu panel ke andar, grid ke turant baad) ===== */}
-        {filteredItems.length > ITEMS_PER_PAGE && (
+        {!menuLoading && filteredItems.length > ITEMS_PER_PAGE && (
           <div className="billing-pagination">
             <button
               className="billing-pagination-btn"
@@ -392,8 +416,11 @@ const Billing = () => {
             className="billing-select"
             value={selectedTableId}
             onChange={(e) => setSelectedTableId(e.target.value)}
+            disabled={tablesLoading}
           >
-            <option value="">Select Table</option>
+            <option value="">
+              {tablesLoading ? 'Loading tables...' : 'Select Table'}
+            </option>
             {tables.map((t) => (
               <option key={t._id} value={t._id}>
                 Table {t.tableNumber} {t.status === 'Occupied' ? '(Occupied)' : ''}
@@ -512,7 +539,7 @@ const Billing = () => {
         <button
           className="billing-generate-btn"
           onClick={handleGenerateBill}
-          disabled={generating || cart.length === 0}
+          disabled={generating || menuLoading || cart.length === 0}
         >
           <IconPrinter size={18} />
           {generating ? 'Generating...' : `Generate Bill · ₹${cartTotal.toFixed(2)}`}
