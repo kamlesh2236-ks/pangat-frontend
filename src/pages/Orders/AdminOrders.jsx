@@ -33,10 +33,11 @@ import './AdminOrders.css';
 
 const POLL_INTERVAL_MS = 15000;
 const ORDERS_PER_PAGE = 10;
+
 const formatDateIN = (dateStr) => {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
-  const datePart = d.toLocaleDateString('en-GB'); // en-GB => dd/mm/yyyy
+  const datePart = d.toLocaleDateString('en-GB');
   const timePart = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
   return `${datePart}, ${timePart}`;
 };
@@ -76,7 +77,6 @@ const AdminOrders = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Lock body scroll + close on Escape while modal is open
   useEffect(() => {
     if (!showModal) return;
 
@@ -92,7 +92,6 @@ const AdminOrders = () => {
     };
   }, [showModal]);
 
-  // Reset to page 1 whenever search/filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus, filterPayment]);
@@ -111,7 +110,7 @@ const AdminOrders = () => {
 
         if (!isFirstLoadRef.current) {
           const newOrders = fetchedOrders.filter(
-            (o) => !knownOrderIdsRef.current.has(o._id)
+            (o) => !knownOrderIdsRef.current.has(o._id) && o.source !== 'Counter'
           );
 
           if (newOrders.length > 0) {
@@ -161,7 +160,6 @@ const AdminOrders = () => {
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
-  // ===== Pagination =====
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
   const paginatedOrders = filteredOrders.slice(
@@ -172,7 +170,6 @@ const AdminOrders = () => {
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
-    // scroll orders list into view smoothly on page change
     document.querySelector('.orders-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -218,8 +215,6 @@ const AdminOrders = () => {
     }
   };
 
-  // ✅ Most recent statusHistory entry — used for the compact "by X" badge
-  // on each order card in the list view.
   const getLastActor = (order) => {
     if (!order.statusHistory || order.statusHistory.length === 0) return null;
     return order.statusHistory[order.statusHistory.length - 1];
@@ -304,7 +299,6 @@ const AdminOrders = () => {
 
   return (
     <div className="admin-orders">
-      {/* Header */}
       <div className="orders-header">
         <div className="header-top">
           <h1>Orders Management</h1>
@@ -335,7 +329,6 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      {/* Filters and Search */}
       <div className="filters-section">
         <div className="search-box">
           <IconSearch size={20} />
@@ -446,7 +439,6 @@ const AdminOrders = () => {
                 })}
               </div>
 
-              {/* ===== Pagination ===== */}
               {totalPages > 1 && (
                 <div className="orders-pagination">
                   <span className="orders-pagination-info">
@@ -511,7 +503,6 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      {/* ===== Order Detail Modal ===== */}
       {selectedOrder && (
         <div
           className={`order-modal-overlay ${showModal ? 'open' : ''}`}
@@ -576,7 +567,6 @@ const AdminOrders = () => {
                 </div>
               </div>
 
-              {/* ===== Activity Timeline — who did what, when ===== */}
               {selectedOrder.statusHistory && selectedOrder.statusHistory.length > 0 && (
                 <div className="order-modal-section">
                   <h4 className="order-modal-section-title">
@@ -648,10 +638,6 @@ const AdminOrders = () => {
                     <span>Subtotal</span>
                     <span>₹{selectedOrder.subtotal}</span>
                   </div>
-                  {/* <div className="order-modal-billing-row">
-                    <span>Tax (5%)</span>
-                    <span>₹{selectedOrder.taxAmount}</span>
-                  </div> */}
                   {selectedOrder.discountAmount > 0 && (
                     <div className="order-modal-billing-row discount">
                       <span>Discount</span>

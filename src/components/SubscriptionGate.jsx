@@ -58,9 +58,9 @@ const SubscriptionGate = () => {
         return (
             <div className="subscription-overlay">
                 <div className="subscription-modal blocking">
-                    <IconClock size={40} className="sub-icon" />
-                    <h2>Aapka demo ya subscription khatam ho gaya hai</h2>
-                    <p>Dashboard access continue karne ke liye ek plan select karke payment karo.</p>
+                    <IconClock size={28} className="sub-icon" />
+                    <h2>Aapka demo ya subscription khatam ho gya hai</h2>
+                    <p>Dashboard access continue karne ke liye ek plan select karke payment karein</p>
 
                     <div className="plan-cards">
                         {plans &&
@@ -87,7 +87,7 @@ const SubscriptionGate = () => {
         return (
             <div className="subscription-overlay">
                 <div className="subscription-modal">
-                    <IconCrown size={36} className="sub-icon" />
+                    <IconCrown size={28} className="sub-icon" />
                     <h2>Demo mode active hai</h2>
                     <p>
                         Aapke paas <strong>{subscription.daysLeft} din</strong> bache hain free demo ke.

@@ -3,15 +3,14 @@ self.addEventListener("push", (event) => {
     try {
         data = event.data.json();
     } catch (e) {
-        // fall back to defaults above if payload isn't JSON
     }
 
     const options = {
         body: data.body,
-        icon: "/icon-192.png", // ⚠️ point this at an actual icon you have in /public, or remove
-        badge: "/icon-192.png",
-        vibrate: [200, 100, 200, 100, 200], // Android: buzzes even on silent mode
-        requireInteraction: true, // stays on screen until dismissed, doesn't auto-hide in a few seconds
+        icon: "/favicon.svg",
+        badge: "/favicon.svg",
+        vibrate: [200, 100, 200, 100, 200],
+        requireInteraction: true,
         tag: "scanserve-alert",
     };
 

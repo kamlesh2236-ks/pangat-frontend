@@ -185,7 +185,7 @@ const MenuManagement = () => {
             e.preventDefault();
 
     if (uploading) {
-        toast.error('Image abhi upload ho rahi hai, thoda wait karo');
+        toast.error('Image abhi upload ho rahi hai, thoda wait karein');
         return;
     }
 
@@ -390,6 +390,7 @@ const MenuManagement = () => {
                         : null,
                     isAvailable: parseBool(pick(row, ['available', 'isavailable']), true),
                     isOutOfStock: parseBool(pick(row, ['out of stock', 'isoutofstock']), false),
+                    isSpicyLevel: parseBool(pick(row, ['spicy', 'spicy off', 'isspicylevel']), false),
                     tags: tagsRaw ? tagsRaw.toString().split(',').map(t => t.trim()).filter(t => t) : [],
                     preparationTime: parseInt(pick(row, ['preparation time', 'preparationtime'], '15')) || 15,
                     rating: Math.min(5, Math.max(0, parseFloat(pick(row, ['rating'], '0')) || 0)),
@@ -428,14 +429,14 @@ const MenuManagement = () => {
             }
         } catch (error) {
             console.error('Error importing excel:', error);
-            toast.error('Excel file read nahi ho payi. Format check karke dobara try karo.');
+            toast.error('Excel file read nahi ho payi. Format check karke dobara try karein.');
         } finally {
             setImporting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
-    // 👇 Sample template download — user ko pata chale ki columns kaunse chahiye
+    // Sample template download — user ko pata chale ki columns kaunse chahiye
     const downloadMenuTemplate = () => {
         const sampleData = [
             {
@@ -447,6 +448,7 @@ const MenuManagement = () => {
                 'Quantity': 50,
                 'Available': 'Yes',
                 'Out Of Stock': 'No',
+                'Spicy' : 'Yes',
                 'Tags': 'Non-Veg Spicy',
                 'Preparation Time': 20,
                 'Rating': 4.5,

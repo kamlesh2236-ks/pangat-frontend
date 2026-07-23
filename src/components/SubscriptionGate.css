@@ -1,96 +1,280 @@
 .subscription-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 15, 20, 0.72);
-    backdrop-filter: blur(4px);
+    background: rgba(10, 10, 15, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    padding: 16px;
+    padding: 20px;
+    animation: overlayFadeIn 0.35s ease-out;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .subscription-modal {
-    background: var(--bg-card, #fff);
-    color: var(--text-primary, #1a1a1a);
-    border-radius: 16px;
-    padding: 32px 28px;
-    max-width: 460px;
+    position: relative;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-radius: 24px;
+    padding: 40px 32px 34px;
+    max-width: 440px;
     width: 100%;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        var(--shadow-glow),
+        0 30px 70px -15px rgba(0, 0, 0, 0.4),
+        0 0 0 1px var(--border-color);
+    overflow: hidden;
+    animation: modalPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .subscription-modal.blocking {
-    max-width: 640px;
+    max-width: 680px;
 }
 
+@keyframes modalPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(30px);
+        filter: blur(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+    }
+}
+
+
+/* Ambient glow orb */
+.subscription-modal::after {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    width: 280px;
+    height: 280px;
+    background: var(--gradient-primary);
+    filter: blur(70px);
+    opacity: 0.15;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Icon inside a soft glowing ring badge */
 .sub-icon {
-    color: #ff6b35;
-    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    margin: 0 auto 20px;
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--gradient-secondary);
+    box-shadow:
+        0 8px 24px rgba(255, 107, 53, 0.4),
+        0 0 0 6px rgba(255, 107, 53, 0.08);
+    animation: iconFloat 3s ease-in-out infinite;
+    padding: 0;
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-5px) scale(1.03); }
 }
 
 .subscription-modal h2 {
-    font-size: 1.25rem;
-    margin: 8px 0;
+    position: relative;
+    z-index: 1;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 6px 0 10px;
+    color: var(--text-primary);
+    animation: fadeSlideUp 0.5s ease-out 0.1s backwards;
 }
 
 .subscription-modal p {
-    color: var(--text-secondary, #666);
-    line-height: 1.5;
-    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    font-size: 0.96rem;
+    max-width: 380px;
+    margin: 0 auto 24px;
+    animation: fadeSlideUp 0.5s ease-out 0.18s backwards;
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.subscription-modal p strong {
+    color: var(--color-secondary);
+    font-weight: 700;
 }
 
 .sub-primary-btn {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: #ff6b35;
+    gap: 8px;
+    background: var(--gradient-secondary);
+    background-size: 200% auto;
     color: #fff;
     border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
-    font-weight: 600;
+    padding: 13px 28px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
     cursor: pointer;
+    transition: background-position 0.4s ease, transform 0.2s ease, box-shadow 0.25s ease;
+    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.35);
+}
+
+.sub-primary-btn:hover {
+    background-position: right center;
+    transform: translateY(-3px);
+    box-shadow: 0 14px 28px rgba(255, 107, 53, 0.45);
+}
+
+.sub-primary-btn:active {
+    transform: translateY(-1px);
 }
 
 .plan-cards {
+    position: relative;
+    z-index: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-top: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-top: 26px;
 }
 
 .plan-card {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 12px;
-    padding: 18px 12px;
+    position: relative;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 22px 16px 18px;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+    animation: cardRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.plan-card:nth-child(1) { animation-delay: 0.15s; }
+.plan-card:nth-child(2) { animation-delay: 0.26s; }
+.plan-card:nth-child(3) { animation-delay: 0.37s; }
+
+@keyframes cardRise {
+    from {
+        opacity: 0;
+        transform: translateY(22px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.plan-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--color-secondary);
+    box-shadow: var(--shadow-glow-hover);
+}
+
+/* Highlight the middle "monthly" plan as most popular */
+.plan-card:nth-child(2) {
+    border-color: var(--color-secondary);
+    background: linear-gradient(180deg, rgba(255, 107, 53, 0.06), var(--bg-surface) 40%);
+}
+
+.plan-card:nth-child(2)::before {
+    content: 'POPULAR';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gradient-warm);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(255, 107, 53, 0.4);
 }
 
 .plan-card h3 {
-    font-size: 0.95rem;
-    margin-bottom: 6px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    text-transform: capitalize;
 }
 
 .plan-price {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #ff6b35;
-    margin-bottom: 12px;
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: var(--gradient-warm);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
 }
 
 .plan-card button {
     width: 100%;
-    background: #1a1a1a;
+    background: var(--color-primary);
     color: #fff;
     border: none;
-    padding: 8px 10px;
-    border-radius: 8px;
+    padding: 10px 10px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 0.85rem;
+    font-weight: 700;
+    transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.plan-card button:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: scale(1.04);
+    box-shadow: 0 8px 18px rgba(124, 58, 237, 0.3);
 }
 
 .plan-card button:disabled {
-    opacity: 0.6;
+    opacity: 0.65;
     cursor: not-allowed;
+    animation: pulseProcessing 1.3s ease-in-out infinite;
+}
+
+@keyframes pulseProcessing {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 0.95; }
+}
+
+/* Expired state — slightly more urgent icon motion */
+.subscription-modal.blocking .sub-icon {
+    animation: iconShake 2.6s ease-in-out infinite;
+}
+
+@keyframes iconShake {
+    0%, 100% { transform: rotate(0deg) translateY(0); }
+    4% { transform: rotate(-7deg); }
+    8% { transform: rotate(7deg); }
+    12% { transform: rotate(-4deg); }
+    16% { transform: rotate(0deg); }
 }

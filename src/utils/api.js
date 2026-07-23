@@ -4,7 +4,6 @@ const getAPIBaseURL = () => {
     const VITE_API_URL = import.meta.env.VITE_API_URL;
 
     if (VITE_API_URL) {
-        console.log('Using VITE_API_URL:', VITE_API_URL);
         return `${VITE_API_URL}/api`;
     }
 
@@ -20,7 +19,6 @@ const getAPIBaseURL = () => {
 
 const API_BASE_URL = getAPIBaseURL();
 
-console.log('API Base URL:', API_BASE_URL);
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,

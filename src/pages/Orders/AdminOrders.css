@@ -60,27 +60,27 @@
 }
 
 .orders-stat-card {
-  background: linear-gradient(135deg, #ff6b35 0%, #ff914d 100%);
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
   color: white;
   padding: 20px;
   border-radius: 8px;
   text-align: center;
-  box-shadow: -6px 8px 20px rgba(231, 139, 19, 0.26), 6px 8px 20px rgba(180, 145, 31, 0.3);
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.28);
 }
 
 .orders-stat-card:nth-child(2) {
-  background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
-  box-shadow: -6px 8px 20px rgba(139, 231, 19, 0.26), 6px 8px 20px rgba(86, 180, 31, 0.3);
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.28)
 }
 
 .orders-stat-card:nth-child(3) {
-  background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%);
-  box-shadow: -6px 8px 20px rgba(19, 164, 231, 0.26), 6px 8px 20px rgba(75, 108, 255, 0.5);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.28);
 }
 
 .orders-stat-card:nth-child(4) {
-  background: linear-gradient(135deg, #FF9800 0%, #FFB74D 100%);
-  box-shadow: -6px 8px 20px rgba(231, 227, 19, 0.26), 6px 8px 20px rgba(180, 170, 31, 0.3);
+  background: linear-gradient(135deg, #ff914d, #ea580c);
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.28);
 }
 
 .orders-stat-value {

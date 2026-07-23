@@ -89,6 +89,7 @@ export const NotificationProvider = ({ children }) => {
           // ===== Naya order aaya =====
           knownOrderIds.current.add(o._id);
           knownOrderStatus.current.set(o._id, o.orderStatus);
+          if (o.source === 'Counter') return;
 
           pushNotification({
             type: 'new-order',
