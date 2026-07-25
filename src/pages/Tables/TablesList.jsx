@@ -12,6 +12,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { tablesAPI } from '../../utils/api';
 import './Tables.css';
 
+// Reusable gradient defs markup — injected into serialized SVGs
+// (download/print) since standalone <defs> outside the SVG element
+// won't travel with XMLSerializer output.
+const QR_GRADIENT_DEFS = `<defs><linearGradient id="qrOrangeGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff8c42"/><stop offset="50%" stop-color="#ff6b35"/><stop offset="100%" stop-color="#e6482e"/></linearGradient></defs>`;
+
+const injectGradientDefs = (svgString) =>
+    svgString.replace(/(<svg[^>]*>)/, `$1${QR_GRADIENT_DEFS}`);
+
 const TablesList = () => {
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -35,21 +43,32 @@ const TablesList = () => {
         try {
             setLoading(true);
             const response = await tablesAPI.getAll();
-            if (response.data.success) {
-                const fetchedTables = response.data.data;
-                setTables(fetchedTables);
 
-                // ✅ FIX: Table-list endpoint sirf qrCode flag deta hai, asli
-                // qrUrl nahi. Isliye jin tables ka QR pehle generate ho chuka
-                // hai unke liye yahin silently real qrUrl backfill kar lo,
-                // warna card grid ka QR galat/fake URL encode karta tha
-                // (bina modal khole scan karne par wrong destination aati thi).
-                const needsQrUrl = fetchedTables.filter((t) => t.qrCode && !t.qrUrl);
-                if (needsQrUrl.length > 0) {
-                    const results = await Promise.allSettled(
-                        needsQrUrl.map((t) => tablesAPI.generateQR(t.tableNumber))
-                    );
+            if (!response.data.success) {
+                setLoading(false);
+                return;
+            }
 
+            const fetchedTables = response.data.data;
+            setTables(fetchedTables);
+            // ✅ FIX: render the grid immediately, don't block loading
+            // state on the qrUrl backfill below — that used to make the
+            // whole page hang until every missing-qrUrl table finished
+            // its own network round trip.
+            setLoading(false);
+
+            // Table-list endpoint sirf qrCode flag deta hai, asli qrUrl
+            // nahi. Isliye jin tables ka QR pehle generate ho chuka hai
+            // unke liye yahin silently real qrUrl backfill kar lo, warna
+            // card grid ka QR galat/fake URL encode karta tha (bina modal
+            // khole scan karne par wrong destination aati thi).
+            const needsQrUrl = fetchedTables.filter((t) => t.qrCode && !t.qrUrl);
+            if (needsQrUrl.length > 0) {
+                // Background me chalne do — UI already ban chuki hai,
+                // isliye await karne ki zaroorat nahi.
+                Promise.allSettled(
+                    needsQrUrl.map((t) => tablesAPI.generateQR(t.tableNumber))
+                ).then((results) => {
                     setTables((prev) =>
                         prev.map((t) => {
                             const idx = needsQrUrl.findIndex((nt) => nt._id === t._id);
@@ -60,12 +79,11 @@ const TablesList = () => {
                             return { ...t, qrCode: data.qrCode, qrUrl: data.qrUrl };
                         })
                     );
-                }
+                });
             }
         } catch (error) {
             console.error('Error fetching tables:', error);
             toast.error('Failed to load tables');
-        } finally {
             setLoading(false);
         }
     };
@@ -230,7 +248,8 @@ const TablesList = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const img = new Image();
-            const svgData = new XMLSerializer().serializeToString(element);
+            let svgData = new XMLSerializer().serializeToString(element);
+            svgData = injectGradientDefs(svgData); // ✅ gradient carry over into export
             const svg = new Blob([svgData], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(svg);
 
@@ -270,50 +289,119 @@ const TablesList = () => {
         }
 
         const printWindow = window.open('', '', 'height=400,width=600');
-        const svgData = new XMLSerializer().serializeToString(element);
+        let svgData = new XMLSerializer().serializeToString(element);
+        svgData = injectGradientDefs(svgData); // ✅ gradient carry over into print
 
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Print QR - Table ${tableNumber}</title>
+                <title>Table ${tableNumber} QR</title>
                 <style>
+                    @page {
+                        size: auto;
+                        margin: 0;
+                    }
+                    * {
+                        box-sizing: border-box;
+                    }
+                    html, body {
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                        height: 100%;
+                    }
                     body {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
                         justify-content: center;
-                        padding: 20px;
+                        min-height: 100vh;
+                        padding: 16px;
                         font-family: Arial, sans-serif;
+                        text-align: center;
                     }
                     h2 {
-                        margin-bottom: 30px;
+                        margin: 0 0 18px;
+                        font-size: 16px;
                         color: #333;
                     }
                     svg {
-                        border: 2px solid #ddd;
+                        border: 2px solid #ffb37a;
+                        border-radius: 16px;
                         padding: 20px;
-                        background: white;
+                        background: linear-gradient(135deg, #fff3ea, #ffe4d1);
                         width: 260px;
                         height: 260px;
                     }
-                    p {
-                        margin-top: 20px;
+                    .scan-heading {
+                        margin-top: 22px;
                         font-size: 14px;
-                        color: #666;
-                        text-align: center;
+                        font-weight: 700;
+                        letter-spacing: 0.5px;
+                        text-transform: uppercase;
+                        color: #e6482e;
                     }
-                    @media print {
-                        body {
-                            padding: 0;
-                        }
+                    .scan-steps {
+                        margin-top: 12px;
+                        width: 320px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 9px;
+                    }
+                    .scan-step {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 10px;
+                        text-align: left;
+                    }
+                    .scan-step .num {
+                        flex-shrink: 0;
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, #ff8c42, #e6482e);
+                        color: #fff;
+                        font-size: 11px;
+                        font-weight: 700;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .scan-step .text {
+                        font-size: 12px;
+                        color: #444;
+                        line-height: 1.4;
                     }
                 </style>
             </head>
             <body>
-                <h2>Table ${tableNumber} - QR Code</h2>
+                <h2>Table ${tableNumber}</h2>
                 ${svgData}
-                <p>Scan this code to view menu and place order</p>
+
+                <div class="scan-heading">How to scan &amp; order</div>
+                <div class="scan-steps">
+                    <div class="scan-step">
+                        <span class="num">1</span>
+                        <span class="text">Open <strong>Google Camera</strong> (Or phone ka default Camera app).</span>
+                    </div>
+                    <div class="scan-step">
+                        <span class="num">2</span>
+                        <span class="text">QR code par camera point karke 1-2 second steady rakhein</span>
+                    </div>
+                    <div class="scan-step">
+                        <span class="num">3</span>
+                        <span class="text">Screen par aaye link/notification par tap karein</span>
+                    </div>
+                    <div class="scan-step">
+                        <span class="num">4</span>
+                        <span class="text">Menu khul jayega — browse karke order place karein</span>
+                    </div>
+                    <div class="scan-step">
+                        <span class="num">5</span>
+                        <span class="text">Agar purane phone me link nahi aata (sirf photo click hoti hai), to <strong>Google Camera</strong> ya <strong>Google Lens</strong> app install/use karein</span>
+                    </div>
+                </div>
             </body>
             </html>
         `);
@@ -334,7 +422,8 @@ const TablesList = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const img = new Image();
-            const svgData = new XMLSerializer().serializeToString(element);
+            let svgData = new XMLSerializer().serializeToString(element);
+            svgData = injectGradientDefs(svgData); // ✅ gradient carry over into export
             const svg = new Blob([svgData], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(svg);
 
@@ -375,6 +464,18 @@ const TablesList = () => {
 
     return (
         <div className="tables-container">
+            {/* Gradient definition — rendered once, referenced by every QR
+                via fgColor="url(#qrOrangeGradient)" */}
+            <svg width="0" height="0" style={{ position: 'absolute' }}>
+                <defs>
+                    <linearGradient id="qrOrangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ff8c42" />
+                        <stop offset="50%" stopColor="#ff6b35" />
+                        <stop offset="100%" stopColor="#e6482e" />
+                    </linearGradient>
+                </defs>
+            </svg>
+
             {/* Header */}
             <div className="section-header">
                 <div>
@@ -434,6 +535,8 @@ const TablesList = () => {
                                         size={120}
                                         level="H"
                                         includeMargin={true}
+                                        fgColor="url(#qrOrangeGradient)"
+                                        bgColor="#fff8f3"
                                     />
                                 ) : (
                                     <div className="qr-placeholder">No QR</div>
@@ -726,6 +829,8 @@ const TablesList = () => {
                                     size={300}
                                     level="H"
                                     includeMargin={true}
+                                    fgColor="url(#qrOrangeGradient)"
+                                    bgColor="#fff8f3"
                                 />
                             </div>
 
