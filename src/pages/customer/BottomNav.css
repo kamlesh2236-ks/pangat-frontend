@@ -1,0 +1,55 @@
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 130;
+    display: flex;
+    background: #ffffff;
+    border-top: 1px solid #f1e3d6;
+    box-shadow: 0 -6px 24px rgba(42, 33, 28, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+    transform: translateY(0);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-nav.hidden {
+    transform: translateY(100%);
+}
+
+.bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 9px 0 7px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #93816f;
+    font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.bottom-nav-item.active {
+    color: #ff6b35;
+}
+
+.bottom-nav-item:active {
+    transform: scale(0.95);
+}
+
+/* Keep floating mobile cart bar (menu page) above the bottom nav instead of overlapping it */
+.mobile-cart-bar {
+    z-index: 140;
+}
+
+/* When the bottom nav is present, give page content room so the last items
+   aren't hidden behind it. Add this class to the outer page wrapper if needed. */
+.has-bottom-nav {
+    padding-bottom: 64px;
+}

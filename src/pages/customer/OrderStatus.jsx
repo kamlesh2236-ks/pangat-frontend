@@ -3,7 +3,12 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { IconCheck, IconClock, IconChefHat, IconTruck, IconHome } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
+import { clearActiveOrder } from '../../utils/activeOrder';
 import CallWaiterButton from '../Callwaiterbutton';
+import BottomNav from './BottomNav';
+// NOTE: adjust these two import paths to match your actual folder layout —
+// this file assumes it lives alongside BottomNav.jsx, with utils/ two levels up
+// (same pattern as the existing "../../utils/api" import).
 import './OrderStatus.css';
 
 const OrderStatus = () => {
@@ -52,6 +57,12 @@ const OrderStatus = () => {
 
             if (response.data.success) {
                 setOrder(response.data.data);
+
+                // Order fully served -> stop treating it as "active" so the
+                // bottom Status tab disappears again (matches CustomerMenu's saveActiveOrder).
+                if (response.data.data.orderStatus === 'Served') {
+                    clearActiveOrder(orderId);
+                }
             }
         } catch (error) {
             console.error('❌ Error fetching order status:', error);
@@ -123,7 +134,7 @@ const OrderStatus = () => {
     }
 
     return (
-        <div className="order-status">
+        <div className="order-status has-bottom-nav">
             {/* Header */}
             <div className="status-header">
                 <h1>Order Status</h1>
@@ -275,6 +286,8 @@ const OrderStatus = () => {
                     🔄 Refresh Status
                 </button>
             </div>
+
+            <BottomNav />
         </div>
     );
 };

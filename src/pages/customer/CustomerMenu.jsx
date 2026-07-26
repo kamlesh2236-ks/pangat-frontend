@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     IconShoppingCart, IconMinus, IconPlus, IconX,
     IconLeaf, IconReceipt2, IconUser, IconPhone,
@@ -10,12 +10,17 @@ import {
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
 import { resolveIcon } from '../../utils/mainCategoryIcons';
+import { saveActiveOrder, getActiveOrder } from '../../utils/activeOrder';
+import BottomNav from './BottomNav';
+// NOTE: adjust the two import paths above to match your actual folder layout —
+// this file assumes it lives alongside BottomNav.jsx, with utils/ two levels up
+// (same pattern as the existing "../../utils/api" import).
 import './CustomerMenu.css';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-
 const SPICY_LEVELS = ['Low', 'Medium', 'High'];
+const CUSTOMER_DETAILS_KEY = 'pangat_customer_details';
 
 // Item ye check karta hai ki wo selected landing-category (tag) se match karta hai ya nahi
 const itemMatchesMainCategory = (item, mainCatTag) => {
@@ -77,10 +82,10 @@ const getRestaurantStatus = (restaurantInfo) => {
     };
 };
 
-
 const CustomerMenu = () => {
     const { restaurantId, tableNumber } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [menuItems, setMenuItems] = useState([]);
     const [banners, setBanners] = useState([]);
@@ -94,6 +99,7 @@ const CustomerMenu = () => {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [tableNotFound, setTableNotFound] = useState(false);
     const [checkoutStep, setCheckoutStep] = useState('cart');
@@ -106,6 +112,7 @@ const CustomerMenu = () => {
     const [sortBy, setSortBy] = useState('default');
     const [selectedMainCategory, setSelectedMainCategory] = useState(null);
     const [mainCategories, setMainCategories] = useState([]);
+    const [hasActiveOrder, setHasActiveOrder] = useState(() => !!getActiveOrder());
 
     const bannerTimerRef = useRef(null);
 
@@ -115,6 +122,10 @@ const CustomerMenu = () => {
     const menuPanelRef = useRef(null);
     const sidebarItemRefs = useRef({});
     const sidebarContainerRef = useRef(null);
+    const mainCategoryTabRefs = useRef({});
+    const mainCategoryTabsRef = useRef(null);
+    const categoryLayerPushedRef = useRef(false);
+
     const priceBuckets = [
         { label: 'All Prices', min: 0, max: Infinity },
         { label: 'Under ₹100', min: 0, max: 100 },
@@ -125,7 +136,22 @@ const CustomerMenu = () => {
 
     const filterTagOptions = ['Bestseller', 'New', 'Spicy', 'Trending'];
 
-    // restro har minute open/closed status refresh ho jaye
+    // Saved "remember me" customer details prefill (name/phone/email) so returning
+    // customers don't have to type everything again.
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(CUSTOMER_DETAILS_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.name) setCustomerName(parsed.name);
+                if (parsed.phone) setCustomerPhone(parsed.phone);
+                if (parsed.email) setCustomerEmail(parsed.email);
+            }
+        } catch (e) {
+            // ignore malformed/unavailable storage
+        }
+    }, []);
+
     // Landing category badalte hi active category/search reset
     useEffect(() => {
         setActiveCategory('');
@@ -140,7 +166,6 @@ const CustomerMenu = () => {
 
     const restaurantStatus = useMemo(
         () => getRestaurantStatus(restaurantInfo),
-
         [restaurantInfo, statusTick]
     );
 
@@ -159,6 +184,16 @@ const CustomerMenu = () => {
         container.scrollBy({ top: offset, behavior: 'smooth' });
     }, [activeCategory]);
 
+    // Main-category tab strip ko horizontally auto-scroll karo taaki active tab hamesha dikhe
+    useEffect(() => {
+        const container = mainCategoryTabsRef.current;
+        const key = selectedMainCategory || 'ALL';
+        const el = mainCategoryTabRefs.current[key];
+        if (!container || !el) return;
+
+        el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }, [selectedMainCategory]);
+
     useEffect(() => {
         if (showCart) {
             window.history.pushState({ menuLayer: 'cart' }, '');
@@ -171,9 +206,17 @@ const CustomerMenu = () => {
         }
     }, [checkoutStep]);
 
+    // Category-view ke liye history sirf ek baar push hoti hai (landing -> menu).
+    // Iske baad customer tabs se jitni bhi categories switch kare, wo sab isi
+    // history layer ke andar rehta hai — back button seedha landing pe le jayega,
+    // beech-beech mein nahi atkega.
     useEffect(() => {
-        if (selectedMainCategory) {
+        if (selectedMainCategory && !categoryLayerPushedRef.current) {
             window.history.pushState({ menuLayer: 'category' }, '');
+            categoryLayerPushedRef.current = true;
+        }
+        if (!selectedMainCategory) {
+            categoryLayerPushedRef.current = false;
         }
     }, [selectedMainCategory]);
 
@@ -219,7 +262,6 @@ const CustomerMenu = () => {
             }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
-
 
         return () => {
             clearInterval(pollInterval);
@@ -309,7 +351,6 @@ const CustomerMenu = () => {
     };
 
     const addToCart = (item) => {
-
         if (restaurantStatus.isOpen === false) {
             toast.error('Restaurant is currently closed. Please try again during business hours.');
             return;
@@ -420,6 +461,31 @@ const CustomerMenu = () => {
 
             if (response.data.success) {
                 toast.success('Order placed successfully! 🎉');
+
+                // Remember Me: save (or clear) customer details for next visit
+                try {
+                    if (rememberMe) {
+                        localStorage.setItem(CUSTOMER_DETAILS_KEY, JSON.stringify({
+                            name: customerName.trim(),
+                            phone: customerPhone.trim(),
+                            email: customerEmail.trim(),
+                        }));
+                    } else {
+                        localStorage.removeItem(CUSTOMER_DETAILS_KEY);
+                    }
+                } catch (e) {
+                    // ignore storage errors
+                }
+
+                // Track this as the active order so the Status tab can find it
+                // again even if the customer accidentally hits back or reloads.
+                saveActiveOrder({
+                    orderId: response.data.data.orderId,
+                    qrId,
+                    homePath: location.pathname,
+                });
+                setHasActiveOrder(true);
+
                 setCart([]);
                 setShowCart(false);
 
@@ -493,6 +559,12 @@ const CustomerMenu = () => {
         setSortBy('default');
     };
 
+    const toggleFilterTag = (tag) => {
+        setFilterTags(prev =>
+            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+        );
+    };
+
     // ---------- Main category (landing screen) filter ----------
     const mainCategoryItems = useMemo(
         () => menuItems.filter(item => itemMatchesMainCategory(item, selectedMainCategory)),
@@ -509,7 +581,6 @@ const CustomerMenu = () => {
     const goBackToLanding = () => {
         window.history.back();
     };
-
 
     const groupedMenu = useMemo(() => {
         return filteredMenuItems.reduce((groups, item) => {
@@ -658,6 +729,8 @@ const CustomerMenu = () => {
                         All menu dekhein <IconChevronRight size={16} stroke={2.5} />
                     </button>
                 </div>
+
+                {hasActiveOrder && <BottomNav homePath={location.pathname} />}
             </div>
         );
     }
@@ -710,7 +783,6 @@ const CustomerMenu = () => {
                         </div>
                     )}
 
-
                     {item.description && <p className="item-desc">{item.description}</p>}
 
                     {item.isSpicyLevel && (
@@ -729,7 +801,6 @@ const CustomerMenu = () => {
                             </select>
                         </div>
                     )}
-
 
                     {item.isCombo && item.comboItems?.length > 0 && (
                         <div className="combo-items-preview">
@@ -783,7 +854,7 @@ const CustomerMenu = () => {
     };
 
     return (
-        <div className="customer-menu">
+        <div className={`customer-menu ${hasActiveOrder && !showCart ? 'has-bottom-nav' : ''}`}>
             <div className="menu-header">
                 <div className="header-content">
                     <div className="restaurant-identity">
@@ -829,13 +900,32 @@ const CustomerMenu = () => {
                 </div>
             </div>
 
-            {selectedMainCategory && (
-                <div className="selected-category-bar">
-                    <button className="change-category-btn" onClick={goBackToLanding}>
-                        <IconArrowLeft size={15} stroke={2.5} /> Change
-                    </button>
-                    <span className="selected-category-label">
-                        Showing: <strong>{selectedMainCategory === 'ALL' ? 'Full Menu' : mainCategories.find(c => c.tag === selectedMainCategory)?.label}</strong>                    </span>
+            {/* ===== Inline main-category tab strip — switch category without leaving this page ===== */}
+            {mainCategories.length > 0 && (
+                <div className="main-category-tabs-wrapper">
+                    <div className="main-category-tabs" ref={mainCategoryTabsRef}>
+                        <button
+                            ref={(el) => { mainCategoryTabRefs.current['ALL'] = el; }}
+                            className={`main-category-tab ${selectedMainCategory === 'ALL' ? 'active' : ''}`}
+                            onClick={() => selectMainCategory('ALL')}
+                        >
+                            Full Menu
+                        </button>
+                        {mainCategories.map(cat => {
+                            const Icon = resolveIcon(cat.icon);
+                            return (
+                                <button
+                                    key={cat.tag}
+                                    ref={(el) => { mainCategoryTabRefs.current[cat.tag] = el; }}
+                                    className={`main-category-tab ${selectedMainCategory === cat.tag ? 'active' : ''}`}
+                                    onClick={() => selectMainCategory(cat.tag)}
+                                >
+                                    <Icon size={15} stroke={2} />
+                                    {cat.label}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 
@@ -1003,8 +1093,8 @@ const CustomerMenu = () => {
                     <div className="empty-menu">
                         <IconMoodEmpty size={48} stroke={1.5} />
                         <p>Is category mein abhi koi item nahi hai</p>
-                        <button className="category-landing-skip" onClick={goBackToLanding}>
-                            Category badlein
+                        <button className="category-landing-skip" onClick={() => selectMainCategory('ALL')}>
+                            Full menu dekhein
                         </button>
                     </div>
                 ) : isSearching ? (
@@ -1137,10 +1227,6 @@ const CustomerMenu = () => {
                                     <span>Subtotal</span>
                                     <span>₹{calculateTotal()}</span>
                                 </div>
-                                {/* <div className="summary-row">
-                                    <span>GST (5%)</span>
-                                    <span>₹{(calculateTotal() * 0.05).toFixed(2)}</span>
-                                </div> */}
                                 <div className="summary-row total">
                                     <span>Total</span>
                                     <span>₹{calculateTotal()}</span>
@@ -1185,6 +1271,15 @@ const CustomerMenu = () => {
                                         />
                                     </div>
 
+                                    <label className="remember-me-row">
+                                        <input
+                                            type="checkbox"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                        />
+                                        <span>Remember my details for next time</span>
+                                    </label>
+
                                     <div className="payment-method-group">
                                         <span className="payment-label">Payment Method</span>
                                         <div className="payment-options">
@@ -1214,10 +1309,6 @@ const CustomerMenu = () => {
                                     <span>Subtotal</span>
                                     <span>₹{calculateTotal()}</span>
                                 </div>
-                                {/* <div className="summary-row">
-                                    <span>GST (5%)</span>
-                                    <span>₹{(calculateTotal() * 0.05).toFixed(2)}</span>
-                                </div> */}
                                 <div className="summary-row total">
                                     <span>Total</span>
                                     <span>₹{calculateTotal()}</span>
@@ -1252,6 +1343,8 @@ const CustomerMenu = () => {
                     </span>
                 </button>
             )}
+
+            {hasActiveOrder && !showCart && <BottomNav homePath={location.pathname} />}
         </div>
     );
 };

@@ -214,6 +214,60 @@
 }
 
 /* ============================================================
+   Main-category tab strip (inline, replaces the old "Change" bar)
+   ============================================================ */
+.main-category-tabs-wrapper {
+    background: var(--orange-soft);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0px;
+    z-index: 95;
+}
+
+.main-category-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 10px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    scroll-behavior: smooth;
+}
+
+.main-category-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.main-category-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 100px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--charcoal);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.main-category-tab:hover {
+    border-color: var(--orange);
+}
+
+.main-category-tab.active {
+    background: linear-gradient(135deg, var(--orange), var(--orange-light));
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.28);
+}
+
+/* ============================================================
    Search Bar
    ============================================================ */
 .customer-search-bar {
@@ -439,7 +493,7 @@
 }
 
 /* ===== Sidebar category image ===== */
-.category-sidebar::-webkit-scrollbar{
+.category-sidebar::-webkit-scrollbar {
     display: none;
 }
 
@@ -678,49 +732,6 @@
 .category-landing-skip:hover {
     color: var(--orange);
     background: var(--orange-soft);
-}
-
-/* ===== Selected-category bar (menu ke andar, header ke turant neeche) ===== */
-.selected-category-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-    background: var(--orange-soft);
-    border-bottom: 1px solid var(--line);
-}
-
-.change-category-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: var(--paper);
-    border: 1.5px solid var(--line);
-    border-radius: 100px;
-    padding: 5px 12px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--charcoal);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.2s ease;
-}
-
-.change-category-btn:hover {
-    border-color: var(--orange);
-    color: var(--orange);
-}
-
-.selected-category-label {
-    font-size: 13px;
-    color: var(--charcoal);
-}
-
-.selected-category-label strong {
-    color: var(--orange);
 }
 
 @media (max-width: 640px) {
@@ -1584,6 +1595,27 @@
     font-family: inherit;
 }
 
+/* ===== Remember me ===== */
+.remember-me-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 2px 2px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.remember-me-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--orange);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
 .payment-method-group {
     margin-top: 4px;
 }
@@ -2089,4 +2121,12 @@
     .menu-grid {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     }
+}
+
+/* ============================================================
+   Bottom nav clearance — keep last menu items/cart bar clear of
+   the fixed Home/Status bar when it's showing
+   ============================================================ */
+.customer-menu.has-bottom-nav .menu-content {
+    padding-bottom: 74px;
 }

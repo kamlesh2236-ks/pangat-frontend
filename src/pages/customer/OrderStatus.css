@@ -32,6 +32,11 @@
     margin: 0 auto;
 }
 
+/* Room at the bottom for the fixed Home/Status nav */
+.order-status.has-bottom-nav {
+    padding-bottom: 84px;
+}
+
 /* ============ HEADER ============ */
 .status-header {
     background: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
