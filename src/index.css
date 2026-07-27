@@ -24,11 +24,13 @@
 
     --border-color: #e5e5e5;
     --shadow-color: rgba(27, 112, 224, 0.5);
-    --shadow-glow: -6px 8px 20px rgba(255, 145, 77, 0.3),
-        6px 8px 20px rgba(53, 174, 255, 0.685);
+    --shadow-glow: 0px 0px 20px rgba(255, 145, 77, 0.3),
+        0px 0px 25px rgba(53, 174, 255, 0.5);
 
-    --shadow-glow-hover: -10px 12px 30px rgba(255, 145, 77, 0.4),
-        10px 12px 30px rgba(255, 107, 53, 0.4);
+    --shadow-glow-hover: 0px 0px 25px 3px rgba(255, 145, 77, 0.4),
+        0px 0px 30px 3px rgba(255, 107, 53, 0.4);
+
+    --active-button: 3px 1px 20px 0px rgba(53, 174, 255, 0.5);
     --color-primary: #7c3aed;
     --color-secondary: #ff6b35;
     --color-secondary-light: #ff914d;
@@ -47,11 +49,13 @@
 
     --border-color: #333333;
     --shadow-color: rgba(94, 48, 16, 0.5);
-    --shadow-glow: -6px 8px 20px rgba(255, 145, 77, 0.3),
+    --shadow-glow: -6px 0px 20px rgba(255, 145, 77, 0.3),
         6px 8px 20px rgba(255, 107, 53, 0.3);
 
     --shadow-glow-hover: -10px 12px 30px rgba(255, 145, 77, 0.4),
         10px 12px 30px rgba(255, 107, 53, 0.4);
+
+    --active-button: 3px 1px 20px 0px rgba(255, 107, 53, .35);
     --color-primary: #a78bfa;
     --color-secondary: #ff8155;
     --color-secondary-light: #ffa668;
@@ -208,7 +212,7 @@ button:disabled {
         font-size: 20px;
     }
 
-    .main-content.sidebar-closed{
+    .main-content.sidebar-closed {
         margin-left: 0 !important;
     }
 }
@@ -237,5 +241,5 @@ button:disabled {
 }
 
 .modal-content::-webkit-scrollbar {
-  display: none;
+    display: none;
 }

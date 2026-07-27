@@ -4,16 +4,7 @@ import { IconHome2, IconReceipt2 } from '@tabler/icons-react';
 import { getActiveOrder } from '../../utils/activeOrder';
 import './BottomNav.css';
 
-/**
- * Bottom tab bar with Home + Status.
- * - Only renders once the customer has an active order saved (nothing to show otherwise).
- * - Auto-hides on scroll-down, reappears on scroll-up — same behaviour as the
- *   floating mobile cart bar / Big Basket's bottom nav.
- * - "Status" always routes to the last known active order, even if the
- *   customer navigated back or reloaded the page.
- * - `homePath` (optional) lets the page that renders it pin an exact "Home"
- *   destination; otherwise falls back to the homePath saved with the order.
- */
+
 const BottomNav = ({ homePath }) => {
     const navigate = useNavigate();
     const location = useLocation();

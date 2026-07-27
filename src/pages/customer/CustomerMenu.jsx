@@ -12,9 +12,7 @@ import { customerAPI } from '../../utils/api';
 import { resolveIcon } from '../../utils/mainCategoryIcons';
 import { saveActiveOrder, getActiveOrder } from '../../utils/activeOrder';
 import BottomNav from './BottomNav';
-// NOTE: adjust the two import paths above to match your actual folder layout —
-// this file assumes it lives alongside BottomNav.jsx, with utils/ two levels up
-// (same pattern as the existing "../../utils/api" import).
+
 import './CustomerMenu.css';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];

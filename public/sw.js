@@ -1,3 +1,11 @@
+self.addEventListener("install", () => {
+    self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+    event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("push", (event) => {
     let data = { title: "New notification", body: "" };
     try {
@@ -11,7 +19,8 @@ self.addEventListener("push", (event) => {
         badge: "/favicon.svg",
         vibrate: [200, 100, 200, 100, 200],
         requireInteraction: true,
-        tag: "scanserve-alert",
+        tag: "pangat-alert",
+        renotify: true,
     };
 
     event.waitUntil(self.registration.showNotification(data.title, options));

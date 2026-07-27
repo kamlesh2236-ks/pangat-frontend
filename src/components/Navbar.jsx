@@ -21,6 +21,7 @@ import {
   IconCategory,
   IconChefHat,
   IconTruck,
+  IconChevronDown,
 } from "@tabler/icons-react";
 import { NavbarContext } from "../context/NavbarContext";
 import LogoutConfirmModal from "./LogoutConfirmModal";
@@ -32,9 +33,15 @@ export const menuGroups = [
       { title: "Dashboard", icon: <IconLayoutDashboard size={20} />, path: "/dashboard" },
       { title: "Orders", icon: <IconShoppingCart size={20} />, path: "/orders" },
       { title: "Billing", icon: <IconReceipt size={20} />, path: "/billing" },
-      { title: "Menu", icon: <IconToolsKitchen2 size={20} />, path: "/menu" },
-      { title: "Main Category", icon: <IconCategory size={20} />, path: "/main_category" },
-      { title: "Combos", icon: <IconBox size={20} />, path: "/combos" },
+      {
+        title: "Menu",
+        icon: <IconToolsKitchen2 size={20} />,
+        children: [
+          { title: "All Items", path: "/menu" },
+          { title: "Main Category", path: "/main_category" },
+          { title: "Combos", path: "/combos" },
+        ],
+      },
       { title: "Tables", icon: <IconArmchair2 size={20} />, path: "/tables" },
       { title: "Kitchen", icon: <IconChefHat size={20} />, path: "/kitchen" },
       { title: "Waiter", icon: <IconTruck size={20} />, path: "/waiter" },
@@ -120,7 +127,6 @@ const Navbar = () => {
   const isKitchen = user?.role === "Kitchen";
   const isWaiter = user?.role === "Waiter";
 
-  // role ke hisaab se sidebar decide hota hai — owner/SuperAdmin ko sab dikhta hai
   let activeMenuGroups = menuGroups;
   if (isSuperAdmin) activeMenuGroups = superAdminMenuGroups;
   else if (isKitchen) activeMenuGroups = kitchenMenuGroups;
@@ -128,15 +134,41 @@ const Navbar = () => {
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  // Item-level submenu open/close (Menu -> All Items, Combos, etc.)
+  const [openMenus, setOpenMenus] = useState({});
+  const toggleMenu = (title) => {
+    setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
+
+  // Group-level (Workspace, Operations...) open/close — default sab open
+  const [openGroups, setOpenGroups] = useState(() =>
+    Object.fromEntries(activeMenuGroups.map((g) => [g.heading, true]))
+  );
+  const toggleGroup = (heading) => {
+    setOpenGroups((prev) => ({ ...prev, [heading]: !prev[heading] }));
+  };
+
+  const isChildActive = (item) =>
+    item.children?.some((child) => location.pathname === child.path);
+
+  // Group ke andar koi bhi item/child active hai kya (group ko highlight ke liye)
+  const isGroupActive = (group) =>
+    group.items.some(
+      (item) => location.pathname === item.path || isChildActive(item)
+    );
+
   const handleItemClick = (item) => {
     if (item.action === "logout") {
       setShowLogoutConfirm(true);
       return;
     }
+    if (item.children) {
+      toggleMenu(item.title);
+      return;
+    }
     navigate(item.path);
   };
 
-  // Modal ke "Yes, Logout" button pe ye chalega
   const confirmLogout = () => {
     setShowLogoutConfirm(false);
     logout();
@@ -150,23 +182,63 @@ const Navbar = () => {
         <h2 title={user?.name}>{user?.name}</h2>
       </div>
 
-      {activeMenuGroups.map((group) => (
-        <div className="menu-group" key={group.heading}>
-          <h4>{group.heading}</h4>
-          <ul>
-            {group.items.map((item) => (
-              <li
-                key={item.title}
-                className={location.pathname === item.path ? "active" : ""}
-                onClick={() => handleItemClick(item)}
-              >
-                {item.icon}
-                <span>{item.title}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      {activeMenuGroups.map((group) => {
+        const isOpen = openGroups[group.heading];
+        return (
+          <div className="menu-group" key={group.heading}>
+            <h4
+              className={isGroupActive(group) ? "group-active" : ""}
+              onClick={() => toggleGroup(group.heading)}
+            >
+              <span>{group.heading}</span>
+              <IconChevronDown
+                size={14}
+                className={`group-chevron ${isOpen ? "rotate" : ""}`}
+              />
+            </h4>
+
+            <ul className={`group-items ${isOpen ? "open" : ""}`}>
+              {group.items.map((item) => (
+                <React.Fragment key={item.title}>
+                  <li
+                    className={
+                      (location.pathname === item.path || isChildActive(item) ? "active " : "") +
+                      (item.children ? "has-dropdown" : "")
+                    }
+                    onClick={() => handleItemClick(item)}
+                  >
+                    {item.icon}
+                    <span>{item.title}</span>
+                    {item.children && (
+                      <IconChevronDown
+                        size={16}
+                        className={`chevron ${openMenus[item.title] ? "rotate" : ""}`}
+                      />
+                    )}
+                  </li>
+
+                  {item.children && (
+                    <ul className={`submenu ${openMenus[item.title] ? "open" : ""}`}>
+                      {item.children.map((child) => (
+                        <li
+                          key={child.title}
+                          className={location.pathname === child.path ? "active" : ""}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(child.path);
+                          }}
+                        >
+                          <span>{child.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </React.Fragment>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
 
       {showLogoutConfirm && (
         <LogoutConfirmModal

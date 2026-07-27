@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { IconCheck, IconClock, IconChefHat, IconTruck, IconHome } from '@tabler/icons-react';
+import { IconCheck, IconClock, IconChefHat, IconTruck, IconHome, IconStarFilled } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
-import { clearActiveOrder } from '../../utils/activeOrder';
 import CallWaiterButton from '../Callwaiterbutton';
 import BottomNav from './BottomNav';
-// NOTE: adjust these two import paths to match your actual folder layout —
-// this file assumes it lives alongside BottomNav.jsx, with utils/ two levels up
-// (same pattern as the existing "../../utils/api" import).
+
 import './OrderStatus.css';
 
 const OrderStatus = () => {
@@ -19,6 +16,14 @@ const OrderStatus = () => {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshInterval, setRefreshInterval] = useState(null);
+
+    // ---- Rating state ----
+    const [overallRating, setOverallRating] = useState(0);
+    const [overallHoverRating, setOverallHoverRating] = useState(0);
+    const [overallReview, setOverallReview] = useState('');
+    const [itemRatings, setItemRatings] = useState({}); // { itemId: rating }
+    const [ratingSubmitting, setRatingSubmitting] = useState(false);
+    const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
     // Get qrId from query params or location state
     const searchParams = new URLSearchParams(location.search);
@@ -57,12 +62,10 @@ const OrderStatus = () => {
 
             if (response.data.success) {
                 setOrder(response.data.data);
-
-                // Order fully served -> stop treating it as "active" so the
-                // bottom Status tab disappears again (matches CustomerMenu's saveActiveOrder).
-                if (response.data.data.orderStatus === 'Served') {
-                    clearActiveOrder(orderId);
+                if (response.data.data.reviewedAt) {
+                    setRatingSubmitted(true);
                 }
+
             }
         } catch (error) {
             console.error('❌ Error fetching order status:', error);
@@ -112,6 +115,45 @@ const OrderStatus = () => {
                 return '#2196F3';
             default:
                 return '#999';
+        }
+    };
+
+    const setItemRating = (itemId, value) => {
+        setItemRatings(prev => ({ ...prev, [itemId]: value }));
+    };
+
+    const handleSubmitRating = async () => {
+        const itemRatingsArray = Object.entries(itemRatings)
+            .filter(([, value]) => value > 0)
+            .map(([itemId, rating]) => ({ itemId, rating }));
+
+        if (overallRating === 0 && itemRatingsArray.length === 0) {
+            toast.error('Please give at least one rating before submitting');
+            return;
+        }
+
+        setRatingSubmitting(true);
+        try {
+            const response = await customerAPI.submitRating(orderId, {
+                qrId,
+                overallRating: overallRating || undefined,
+                overallReview: overallReview.trim() || undefined,
+                itemRatings: itemRatingsArray,
+            });
+
+            if (response.data.success) {
+                toast.success('Thanks for your feedback! 🙏');
+                setRatingSubmitted(true);
+            }
+        } catch (error) {
+            console.error('❌ Error submitting rating:', error);
+            const errorMsg =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                'Failed to submit rating';
+            toast.error(errorMsg);
+        } finally {
+            setRatingSubmitting(false);
         }
     };
 
@@ -265,6 +307,90 @@ const OrderStatus = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Rating — dikhta hai jab order Served ho chuka ho */}
+            {order.orderStatus === 'Served' && (
+                <div className="rating-card">
+                    {ratingSubmitted ? (
+                        <div className="rating-thanks">
+                            <IconStarFilled size={22} />
+                            <p>Thanks for rating your order!</p>
+                        </div>
+                    ) : (
+                        <>
+                            <h2>Kaisa laga aapka order?</h2>
+
+                            <div className="rating-overall">
+                                <span className="rating-overall-label">Overall Experience</span>
+                                <div className="rating-stars">
+                                    {[1, 2, 3, 4, 5].map(star => (
+                                        <button
+                                            type="button"
+                                            key={star}
+                                            className="rating-star-btn"
+                                            onMouseEnter={() => setOverallHoverRating(star)}
+                                            onMouseLeave={() => setOverallHoverRating(0)}
+                                            onClick={() => setOverallRating(star)}
+                                            aria-label={`Rate ${star} star`}
+                                        >
+                                            <IconStarFilled
+                                                size={26}
+                                                className={(overallHoverRating || overallRating) >= star ? 'star-filled' : 'star-empty'}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <textarea
+                                className="rating-review-input"
+                                placeholder="Kuch likhna chahenge? (optional)"
+                                value={overallReview}
+                                onChange={(e) => setOverallReview(e.target.value)}
+                                rows={2}
+                            />
+
+                            {order.items?.length > 0 && (
+                                <div className="rating-items">
+                                    <span className="rating-items-label">Rate individual dishes</span>
+                                    {order.items.map((item, idx) => {
+                                        const itemId = item.itemId || item._id || idx;
+                                        return (
+                                            <div key={itemId} className="rating-item-row">
+                                                <span className="rating-item-name">{item.itemName}</span>
+                                                <div className="rating-stars rating-stars-sm">
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <button
+                                                            type="button"
+                                                            key={star}
+                                                            className="rating-star-btn"
+                                                            onClick={() => setItemRating(itemId, star)}
+                                                            aria-label={`Rate ${item.itemName} ${star} star`}
+                                                        >
+                                                            <IconStarFilled
+                                                                size={18}
+                                                                className={(itemRatings[itemId] || 0) >= star ? 'star-filled' : 'star-empty'}
+                                                            />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            <button
+                                className="btn-submit-rating"
+                                onClick={handleSubmitRating}
+                                disabled={ratingSubmitting}
+                            >
+                                {ratingSubmitting ? 'Submitting...' : 'Submit Rating'}
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Current Status */}
             <div className="current-status">
