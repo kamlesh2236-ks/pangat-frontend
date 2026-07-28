@@ -184,12 +184,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-surface);
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 10px 14px;
     color: var(--text-muted);
-    max-width: 280px;
+    box-shadow: var(--active-button);
+    max-width: 500px;
 }
 
 .search-box input {

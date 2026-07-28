@@ -957,7 +957,7 @@ const CustomerMenu = () => {
             {/* ===== Filter Panel ===== */}
             {showFilters && (
                 <div className="filter-panel">
-                    <div className="filter-group">
+                    <div className="filter-groups">
                         <span className="filter-group-label">Sort by</span>
                         <div className="filter-chip-row">
                             {[
@@ -978,7 +978,7 @@ const CustomerMenu = () => {
                         </div>
                     </div>
 
-                    <div className="filter-group">
+                    <div className="filter-groups">
                         <span className="filter-group-label">Food type</span>
                         <div className="filter-chip-row">
                             {['All', 'Veg', 'Non-Veg'].map(opt => (
@@ -994,7 +994,7 @@ const CustomerMenu = () => {
                         </div>
                     </div>
 
-                    <div className="filter-group">
+                    <div className="filter-groups">
                         <span className="filter-group-label">Price</span>
                         <div className="filter-chip-row">
                             {priceBuckets.map((bucket, idx) => (
@@ -1010,7 +1010,7 @@ const CustomerMenu = () => {
                         </div>
                     </div>
 
-                    <div className="filter-group">
+                    <div className="filter-groups">
                         <span className="filter-group-label">Tags</span>
                         <div className="filter-chip-row">
                             {filterTagOptions.map(tag => (

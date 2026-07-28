@@ -405,11 +405,11 @@
     animation: fadeUp 0.2s ease;
 }
 
-.filter-group {
+.filter-groups {
     margin-bottom: 14px;
 }
 
-.filter-group:last-of-type {
+.filter-groups:last-of-type {
     margin-bottom: 0;
 }
 
