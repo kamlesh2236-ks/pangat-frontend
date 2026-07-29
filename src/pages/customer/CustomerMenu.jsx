@@ -403,6 +403,22 @@ const CustomerMenu = () => {
         return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     };
 
+    // 👇 GST — restaurant's own toggle + percentage, comes from the menu API response.
+    // This is only a live preview for the customer; the backend recalculates it
+    // independently (from the same restaurant record) when the order is placed,
+    // so this preview can never be tampered with to change what's actually charged.
+    const gstEnabled = restaurantInfo?.gstEnabled || false;
+    const gstPercentage = restaurantInfo?.gstPercentage || 0;
+
+    const calculateGST = () => {
+        if (!gstEnabled) return 0;
+        return Math.round(calculateTotal() * (gstPercentage / 100) * 100) / 100;
+    };
+
+    const calculateGrandTotal = () => {
+        return Math.round((calculateTotal() + calculateGST()) * 100) / 100;
+    };
+
     const getCartItemCount = () => {
         return cart.reduce((sum, item) => sum + item.quantity, 0);
     };
@@ -1225,9 +1241,15 @@ const CustomerMenu = () => {
                                     <span>Subtotal</span>
                                     <span>₹{calculateTotal()}</span>
                                 </div>
+                                {gstEnabled && (
+                                    <div className="summary-row">
+                                        <span>GST ({gstPercentage}%)</span>
+                                        <span>+₹{calculateGST().toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="summary-row total">
                                     <span>Total</span>
-                                    <span>₹{calculateTotal()}</span>
+                                    <span>₹{calculateGrandTotal().toFixed(2)}</span>
                                 </div>
                                 <button className="btn-place-order" onClick={goToDetailsStep}>
                                     Continue <IconChevronRight size={18} stroke={2.5} />
@@ -1307,9 +1329,15 @@ const CustomerMenu = () => {
                                     <span>Subtotal</span>
                                     <span>₹{calculateTotal()}</span>
                                 </div>
+                                {gstEnabled && (
+                                    <div className="summary-row">
+                                        <span>GST ({gstPercentage}%)</span>
+                                        <span>+₹{calculateGST().toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="summary-row total">
                                     <span>Total</span>
-                                    <span>₹{calculateTotal()}</span>
+                                    <span>₹{calculateGrandTotal().toFixed(2)}</span>
                                 </div>
                                 <button className="btn-place-order" onClick={placeOrder} disabled={orderPlacing}>
                                     {orderPlacing ? (
@@ -1333,7 +1361,7 @@ const CustomerMenu = () => {
                         </span>
                         <span className="mobile-cart-bar-info">
                             <strong>{getCartItemCount()} {getCartItemCount() > 1 ? 'items' : 'item'}</strong>
-                            <span>₹{calculateTotal()}</span>
+                            <span>₹{calculateGrandTotal().toFixed(2)}</span>
                         </span>
                     </span>
                     <span className="mobile-cart-bar-right">

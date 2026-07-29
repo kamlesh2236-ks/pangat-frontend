@@ -19,7 +19,7 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
-import { menuAPI, tablesAPI, ordersAPI } from '../../utils/api';
+import { menuAPI, tablesAPI, ordersAPI, profileAPI } from '../../utils/api';
 import BillPrint from '../Orders/BillPrint';
 import './Billing.css';
 
@@ -43,6 +43,13 @@ const Billing = () => {
   // how long the tables call takes.
   const [menuLoading, setMenuLoading] = useState(true);
   const [tablesLoading, setTablesLoading] = useState(true);
+
+  // 👇 GST settings — fetched once from the restaurant's profile.
+  // These only control what the cashier SEES as a live preview here;
+  // the actual, authoritative tax amount is calculated server-side
+  // inside createCounterBill (using the same restaurant record), so a
+  // stale/cached value here can never under- or over-charge the customer.
+  const [gstSettings, setGstSettings] = useState({ enabled: false, percentage: 0 });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
@@ -91,11 +98,29 @@ const Billing = () => {
     }
   };
 
+  // 👇 Restaurant's GST toggle + percentage, set on the Profile page.
+  const fetchGstSettings = async () => {
+    try {
+      const res = await profileAPI.getProfile();
+      if (res.data.success) {
+        const data = res.data.data;
+        setGstSettings({
+          enabled: Boolean(data.gstEnabled),
+          percentage: Number(data.gstPercentage) || 0,
+        });
+      }
+    } catch (error) {
+      // Silent fail — billing should still work without GST preview
+      console.error('Failed to load GST settings:', error);
+    }
+  };
+
   useEffect(() => {
     // Fired together but tracked independently — whichever comes back first
     // updates its own section without waiting for the other.
     fetchMenu();
     fetchTables();
+    fetchGstSettings();
   }, []);
 
   useEffect(() => {
@@ -205,7 +230,15 @@ const Billing = () => {
   );
 
   const discount = Number(discountAmount) || 0;
-  const cartTotal = Math.max(cartSubtotal - discount, 0);
+
+  // 👇 GST is applied on (subtotal - discount), not on raw subtotal —
+  // matches standard billing practice of taxing the discounted amount.
+  const taxableAmount = Math.max(cartSubtotal - discount, 0);
+  const gstAmount = gstSettings.enabled
+    ? Math.round(taxableAmount * (gstSettings.percentage / 100) * 100) / 100
+    : 0;
+
+  const cartTotal = Math.round((taxableAmount + gstAmount) * 100) / 100;
 
   const resetForm = () => {
     setCart([]);
@@ -247,6 +280,9 @@ const Billing = () => {
         paymentStatus,
         discountAmount: discount,
         discountReason: discount > 0 ? discountReason.trim() : undefined,
+        // Note: GST is NOT sent from the client — the backend recalculates
+        // it itself from the restaurant's saved gstEnabled/gstPercentage,
+        // so a tampered request body can never change the tax charged.
       };
 
       const response = await ordersAPI.createCounterBill(payload);
@@ -513,6 +549,12 @@ const Billing = () => {
             <div className="billing-summary-row discount">
               <span>Discount</span>
               <span>-₹{discount.toFixed(2)}</span>
+            </div>
+          )}
+          {gstSettings.enabled && (
+            <div className="billing-summary-row">
+              <span>GST ({gstSettings.percentage}%)</span>
+              <span>+₹{gstAmount.toFixed(2)}</span>
             </div>
           )}
           <div className="billing-summary-row total">
