@@ -182,17 +182,10 @@ const MenuManagement = () => {
 
     const handleAddItem = async (e) => {
         e.preventDefault();
-
         if (uploading) {
             toast.error('Image abhi upload ho rahi hai, thoda wait karein');
             return;
         }
-
-        if (!formData.name || !formData.price || !formData.category) {
-            toast.error('Please fill all required fields');
-            return;
-        }
-
         if (!formData.name || !formData.price || !formData.category) {
             toast.error('Please fill all required fields');
             return;
@@ -213,7 +206,7 @@ const MenuManagement = () => {
                 isSpicyLevel: formData.isSpicyLevel,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
-                rating: formData.rating ? Math.min(5, Math.max(0, parseFloat(formData.rating) || 0)) : 0,
+                // rating LINE REMOVED — customer ratings se hi banega ab
                 ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(i => i),
                 allergens: formData.allergens.split(',').map(a => a.trim()).filter(a => a),
                 isFeatured: formData.isFeatured,
@@ -221,9 +214,6 @@ const MenuManagement = () => {
             };
 
             const response = await menuAPI.create(data);
-            console.log('create response:', response.data.data);
-            console.log('full response:', JSON.stringify(response.data.data, null, 2));
-
             if (response.data.success) {
                 toast.success('Menu item added successfully');
                 setMenuItems([...menuItems, response.data.data]);
@@ -238,7 +228,6 @@ const MenuManagement = () => {
 
     const handleUpdateItem = async (e) => {
         e.preventDefault();
-
         try {
             const data = {
                 name: formData.name,
@@ -254,7 +243,7 @@ const MenuManagement = () => {
                 isSpicyLevel: formData.isSpicyLevel,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
-                rating: formData.rating ? Math.min(5, Math.max(0, parseFloat(formData.rating) || 0)) : 0,
+                // rating LINE REMOVED
                 ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(i => i),
                 allergens: formData.allergens.split(',').map(a => a.trim()).filter(a => a),
                 isFeatured: formData.isFeatured,
@@ -262,7 +251,6 @@ const MenuManagement = () => {
             };
 
             const response = await menuAPI.update(selectedItem._id, data);
-
             if (response.data.success) {
                 toast.success('Menu item updated successfully');
                 setMenuItems(
@@ -461,8 +449,7 @@ const MenuManagement = () => {
         XLSX.writeFile(wb, 'menu_items_template.xlsx');
     };
 
-    const handleEditClick = (item) => {
-        console.log('Item data:', item);
+    const handleEditClick = async (item) => {
         setSelectedItem(item);
         setFormData({
             name: item.name,
@@ -478,7 +465,6 @@ const MenuManagement = () => {
             isSpicyLevel: item.isSpicyLevel,
             tags: item.tags || [],
             preparationTime: item.preparationTime?.toString() || '15',
-            rating: item.rating?.toString() || '0',
             ingredients: item.ingredients?.join(', ') || '',
             allergens: item.allergens?.join(', ') || '',
             isFeatured: item.isFeatured,
@@ -486,6 +472,15 @@ const MenuManagement = () => {
         });
         setImagePreview(item.image || null);
         setShowEditModal(true);
+
+        try {
+            const response = await menuAPI.getById(item._id);
+            if (response.data.success) {
+                setSelectedItem(response.data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching latest item details:', error);
+        }
     };
 
     const resetForm = () => {
