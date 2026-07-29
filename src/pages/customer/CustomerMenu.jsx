@@ -204,10 +204,6 @@ const CustomerMenu = () => {
         }
     }, [checkoutStep]);
 
-    // Category-view ke liye history sirf ek baar push hoti hai (landing -> menu).
-    // Iske baad customer tabs se jitni bhi categories switch kare, wo sab isi
-    // history layer ke andar rehta hai — back button seedha landing pe le jayega,
-    // beech-beech mein nahi atkega.
     useEffect(() => {
         if (selectedMainCategory && !categoryLayerPushedRef.current) {
             window.history.pushState({ menuLayer: 'category' }, '');
@@ -403,10 +399,6 @@ const CustomerMenu = () => {
         return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     };
 
-    // 👇 GST — restaurant's own toggle + percentage, comes from the menu API response.
-    // This is only a live preview for the customer; the backend recalculates it
-    // independently (from the same restaurant record) when the order is placed,
-    // so this preview can never be tampered with to change what's actually charged.
     const gstEnabled = restaurantInfo?.gstEnabled || false;
     const gstPercentage = restaurantInfo?.gstPercentage || 0;
 
