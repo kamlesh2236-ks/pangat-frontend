@@ -24,6 +24,7 @@ import {
   IconToolsKitchen2,
   IconUserCircle,
   IconHistory,
+  IconStarFilled,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { ordersAPI } from '../../utils/api';
@@ -488,6 +489,12 @@ const AdminOrders = () => {
                               <IconUserCircle size={13} /> {lastActor.changedBy?.name || 'Staff'}
                             </span>
                           )}
+
+                          {order.rating > 0 && (
+                            <span className="rating-given-badge" title={order.review || 'No written review'}>
+                              <IconStarFilled size={13} /> {order.rating.toFixed(1)}
+                            </span>
+                          )}
                           <span
                             className="status-badge"
                             style={{ backgroundColor: getStatusColor(order.orderStatus) }}
@@ -620,6 +627,13 @@ const AdminOrders = () => {
                     <span><IconPhone size={13} /> {selectedOrder.customerPhone || '—'}</span>
                     <span><IconMail size={13} /> {selectedOrder.customerEmail || '—'}</span>
                   </div>
+                  {selectedOrder.rating > 0 && (
+                    <div className="order-modal-card-rating">
+                      <IconStarFilled size={15} />
+                      <span>{selectedOrder.rating}/5</span>
+                      {selectedOrder.review && <p className="order-modal-review-text">"{selectedOrder.review}"</p>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="order-modal-card">

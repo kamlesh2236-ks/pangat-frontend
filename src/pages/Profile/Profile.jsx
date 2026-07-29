@@ -17,6 +17,7 @@ import {
     IconCamera,
     IconDeviceFloppy,
     IconCopy,
+    IconReceiptTax,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { profileAPI, subscriptionAPI } from '../../utils/api';
@@ -90,6 +91,9 @@ const Profile = () => {
         operatingHours: emptyOperatingHours(),
         theme: 'orange',
         currency: 'INR',
+        // 👇 GST / Tax settings — restaurant-level, applies to all future orders
+        gstEnabled: false,
+        gstPercentage: '5',
     });
 
     const [customCuisine, setCustomCuisine] = useState('');
@@ -129,6 +133,11 @@ const Profile = () => {
                     operatingHours: data.operatingHours || emptyOperatingHours(),
                     theme: data.theme || 'orange',
                     currency: data.currency || 'INR',
+                    gstEnabled: data.gstEnabled || false,
+                    gstPercentage:
+                        data.gstPercentage !== undefined && data.gstPercentage !== null
+                            ? data.gstPercentage.toString()
+                            : '5',
                 });
             }
         } catch (error) {
@@ -198,9 +207,22 @@ const Profile = () => {
             return;
         }
 
+        // 👇 GST validation — sirf tab check karo jab GST on hai
+        if (formData.gstEnabled) {
+            const gstVal = parseFloat(formData.gstPercentage);
+            if (isNaN(gstVal) || gstVal < 0 || gstVal > 28) {
+                toast.error('GST percentage 0 se 28 ke beech honi chahiye');
+                return;
+            }
+        }
+
         try {
             setSaving(true);
-            const response = await profileAPI.updateProfile(formData);
+            const payload = {
+                ...formData,
+                gstPercentage: parseFloat(formData.gstPercentage) || 0,
+            };
+            const response = await profileAPI.updateProfile(payload);
             if (response.data.success) {
                 toast.success('Profile updated successfully');
                 setProfile(response.data.data);
@@ -558,6 +580,49 @@ const Profile = () => {
                             onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
                         />
                     </div>
+                </div>
+
+                {/* ===== Tax Settings (GST) ===== */}
+                <div className="profile-card">
+                    <h3><IconReceiptTax size={18} /> Tax Settings (GST)</h3>
+                    <p className="profile-card-sub">
+                        GST ON karne par, ye sabhi naye orders (QR order + Counter Billing) me automatically
+                        add ho jayega — bill aur order summary me alag se dikhega. OFF karne par naye orders
+                        me GST lagna band ho jayega (purane orders ka record nahi badlega).
+                    </p>
+
+                    <div className="Profile-form-group profile-gst-toggle-row">
+                        <label className="profile-switch">
+                            <input
+                                type="checkbox"
+                                checked={formData.gstEnabled}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, gstEnabled: e.target.checked })
+                                }
+                            />
+                            <span className="profile-switch-slider"></span>
+                        </label>
+                        <span className="profile-gst-toggle-label">
+                            {formData.gstEnabled ? 'GST Enabled' : 'GST Disabled'}
+                        </span>
+                    </div>
+
+                    {formData.gstEnabled && (
+                        <div className="Profile-form-group">
+                            <label>GST Percentage (%)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="28"
+                                step="0.1"
+                                value={formData.gstPercentage}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, gstPercentage: e.target.value })
+                                }
+                            />
+                            <small>Common slabs: 5%, 12%, 18%</small>
+                        </div>
+                    )}
                 </div>
 
                 {/* ===== Operating Hours ===== */}

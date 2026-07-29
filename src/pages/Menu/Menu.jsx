@@ -96,7 +96,6 @@ const MenuManagement = () => {
         isSpicyLevel: false,
         tags: [],
         preparationTime: '15',
-        rating: '0',
         ingredients: '',
         allergens: '',
         isFeatured: false,
@@ -182,17 +181,17 @@ const MenuManagement = () => {
     };
 
     const handleAddItem = async (e) => {
-            e.preventDefault();
+        e.preventDefault();
 
-    if (uploading) {
-        toast.error('Image abhi upload ho rahi hai, thoda wait karein');
-        return;
-    }
+        if (uploading) {
+            toast.error('Image abhi upload ho rahi hai, thoda wait karein');
+            return;
+        }
 
-    if (!formData.name || !formData.price || !formData.category) {
-        toast.error('Please fill all required fields');
-        return;
-    }
+        if (!formData.name || !formData.price || !formData.category) {
+            toast.error('Please fill all required fields');
+            return;
+        }
 
         if (!formData.name || !formData.price || !formData.category) {
             toast.error('Please fill all required fields');
@@ -393,7 +392,6 @@ const MenuManagement = () => {
                     isSpicyLevel: parseBool(pick(row, ['spicy', 'spicy off', 'isspicylevel']), false),
                     tags: tagsRaw ? tagsRaw.toString().split(',').map(t => t.trim()).filter(t => t) : [],
                     preparationTime: parseInt(pick(row, ['preparation time', 'preparationtime'], '15')) || 15,
-                    rating: Math.min(5, Math.max(0, parseFloat(pick(row, ['rating'], '0')) || 0)),
                     ingredients: ingredientsRaw ? ingredientsRaw.toString().split(',').map(i => i.trim()).filter(i => i) : [],
                     allergens: allergensRaw ? allergensRaw.toString().split(',').map(a => a.trim()).filter(a => a) : [],
                     isFeatured: parseBool(pick(row, ['featured', 'isfeatured']), false),
@@ -448,7 +446,7 @@ const MenuManagement = () => {
                 'Quantity': 50,
                 'Available': 'Yes',
                 'Out Of Stock': 'No',
-                'Spicy' : 'Yes',
+                'Spicy': 'Yes',
                 'Tags': 'Non-Veg Spicy',
                 'Preparation Time': 20,
                 'Rating': 4.5,
@@ -464,6 +462,7 @@ const MenuManagement = () => {
     };
 
     const handleEditClick = (item) => {
+        console.log('Item data:', item);
         setSelectedItem(item);
         setFormData({
             name: item.name,
@@ -697,7 +696,8 @@ const MenuManagement = () => {
                                     <td>
                                         <div className="rating">
                                             <IconStar size={16} />
-                                            <span>{item.rating ?? 0}</span>
+                                            <span>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</span>
+                                            {item.totalReviews > 0 && <small style={{ marginLeft: 4, color: '#888' }}>({item.totalReviews})</small>}
                                         </div>
                                     </td>
                                     <td>
@@ -1037,7 +1037,7 @@ const MenuManagement = () => {
                             <div className="form-section">
                                 <h3><IconInfoCircle size={17} stroke={2} /> Additional Information</h3>
 
-                                <div className="form-row">
+                                {/* <div className="form-row">
                                     <div className="menu-form-group">
                                         <label>Rating</label>
                                         <input
@@ -1049,7 +1049,7 @@ const MenuManagement = () => {
                                             step="0.1"
                                         />
                                     </div>
-                                </div>
+                                </div> */}
 
                                 <div className="menu-form-group">
                                     <label>Ingredients (comma separated)</label>
@@ -1071,6 +1071,19 @@ const MenuManagement = () => {
                                     />
                                 </div>
                             </div>
+
+                            {showEditModal && (
+                                <div className="form-section">
+                                    <h3><IconStar size={17} stroke={2} /> Customer Rating</h3>
+                                    <div className="menu-form-group">
+                                        <p style={{ margin: 0, color: '#666' }}>
+                                            {selectedItem?.totalReviews > 0
+                                                ? `⭐ ${selectedItem.rating?.toFixed(1)} average from ${selectedItem.totalReviews} customer rating(s)`
+                                                : 'Abhi tak koi customer rating nahi aayi hai'}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Form Actions */}
                             <div className="modal-actions">
