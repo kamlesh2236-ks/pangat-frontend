@@ -274,6 +274,12 @@ const OrderStatus = () => {
                             <span>Subtotal</span>
                             <span>₹{order.subtotal}</span>
                         </div>
+                        {order.taxAmount > 0 && (
+                            <div className="summary-row">
+                                <span>GST</span>
+                                <span>+₹{order.taxAmount}</span>
+                            </div>
+                        )}
                         <div className="summary-row total">
                             <span>Total</span>
                             <span>₹{order.totalAmount}</span>
