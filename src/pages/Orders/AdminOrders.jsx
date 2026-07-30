@@ -721,6 +721,12 @@ const AdminOrders = () => {
                       <span>-₹{selectedOrder.discountAmount}</span>
                     </div>
                   )}
+                  {selectedOrder.taxAmount > 0 && (
+                    <div className="order-modal-billing-row tax">
+                      <span>GST</span>
+                      <span>₹{selectedOrder.taxAmount}</span>
+                    </div>
+                  )}
                   <div className="order-modal-billing-row total">
                     <span>Total Amount</span>
                     <span>₹{selectedOrder.totalAmount}</span>

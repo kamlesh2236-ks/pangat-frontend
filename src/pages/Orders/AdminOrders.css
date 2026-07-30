@@ -1386,6 +1386,7 @@
 .skeleton-card {
   cursor: default;
   pointer-events: none;
+  height: fit-content;
 }
 
 .skeleton-line {
