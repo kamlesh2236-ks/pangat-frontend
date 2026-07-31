@@ -26,6 +26,9 @@ const itemMatchesMainCategory = (item, mainCatTag) => {
     return item.tags?.includes(mainCatTag);
 };
 
+// Cart me Half aur Full ko alag line item ke tarah track karne ke liye unique key
+const getCartKey = (itemId, portion) => portion ? `${itemId}::${portion}` : itemId;
+
 const getISTNow = () => {
     const istString = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
     return new Date(istString);
@@ -91,6 +94,7 @@ const CustomerMenu = () => {
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState([]);
     const [spicyLevelSelections, setSpicyLevelSelections] = useState({});
+    const [portionSelections, setPortionSelections] = useState({});
     const [showCart, setShowCart] = useState(false);
     const [orderPlacing, setOrderPlacing] = useState(false);
     const [restaurantInfo, setRestaurantInfo] = useState(null);
@@ -344,6 +348,10 @@ const CustomerMenu = () => {
         setSpicyLevelSelections(prev => ({ ...prev, [itemId]: level }));
     };
 
+    const selectPortion = (itemId, portion) => {
+        setPortionSelections(prev => ({ ...prev, [itemId]: portion }));
+    };
+
     const addToCart = (item) => {
         if (restaurantStatus.isOpen === false) {
             toast.error('Restaurant is currently closed. Please try again during business hours.');
@@ -359,39 +367,50 @@ const CustomerMenu = () => {
             return;
         }
 
-        const selectedSpicyLevel = item.isSpicyLevel ? spicyLevelSelections[item._id] : null;
+        if (item.hasHalfFull && !portionSelections[item._id]) {
+            toast.error('Please select Half or Full');
+            return;
+        }
 
-        const existingItem = cart.find(c => c._id === item._id);
+        const selectedSpicyLevel = item.isSpicyLevel ? spicyLevelSelections[item._id] : null;
+        const selectedPortion = item.hasHalfFull ? portionSelections[item._id] : null;
+        const effectivePrice = item.hasHalfFull
+            ? (selectedPortion === 'Half' ? item.halfPrice : item.price)
+            : item.price;
+
+        const cartKey = getCartKey(item._id, selectedPortion);
+        const existingItem = cart.find(c => c.cartKey === cartKey);
 
         if (existingItem) {
             setCart(cart.map(c =>
-                c._id === item._id
+                c.cartKey === cartKey
                     ? { ...c, quantity: c.quantity + 1 }
                     : c
             ));
         } else {
-            setCart([...cart, { ...item, quantity: 1, spicyLevel: selectedSpicyLevel }]);
+            setCart([...cart, { ...item, cartKey, quantity: 1, spicyLevel: selectedSpicyLevel, portion: selectedPortion, price: effectivePrice }]);
         }
-        toast.success(`${item.name} added to cart`);
+        toast.success(`${item.name}${selectedPortion ? ' (' + selectedPortion + ')' : ''} added to cart`);
     };
 
-    const updateQuantity = (itemId, quantity) => {
+    const updateQuantity = (cartKey, quantity) => {
         if (quantity <= 0) {
-            removeFromCart(itemId);
+            removeFromCart(cartKey);
             return;
         }
         setCart(cart.map(c =>
-            c._id === itemId ? { ...c, quantity } : c
+            c.cartKey === cartKey ? { ...c, quantity } : c
         ));
     };
 
-    const removeFromCart = (itemId) => {
-        setCart(cart.filter(c => c._id !== itemId));
+    const removeFromCart = (cartKey) => {
+        setCart(cart.filter(c => c.cartKey !== cartKey));
         toast.success('Item removed from cart');
     };
 
-    const getCartQuantity = (itemId) => {
-        const item = cart.find(c => c._id === itemId);
+    const getCartQuantity = (itemId, portion = null) => {
+        const cartKey = getCartKey(itemId, portion);
+        const item = cart.find(c => c.cartKey === cartKey);
         return item ? item.quantity : 0;
     };
 
@@ -456,9 +475,10 @@ const CustomerMenu = () => {
                 items: cart.map(item => ({
                     itemId: item._id,
                     quantity: item.quantity,
-                    specialInstructions: item.spicyLevel
-                        ? `Spicy Level: ${item.spicyLevel}`
-                        : (item.notes || ''),
+                    specialInstructions: [
+                        item.portion ? `Portion: ${item.portion}` : '',
+                        item.spicyLevel ? `Spicy Level: ${item.spicyLevel}` : '',
+                    ].filter(Boolean).join(', ') || (item.notes || ''),
                 })),
                 paymentMethod,
             };
@@ -743,8 +763,13 @@ const CustomerMenu = () => {
 
     const renderMenuItemCard = (item, idx) => {
         const outOfStock = item.isOutOfStock === true;
-        const qtyInCart = getCartQuantity(item._id);
+        const selectedPortion = item.hasHalfFull ? (portionSelections[item._id] || null) : null;
+        const cartKey = getCartKey(item._id, selectedPortion);
+        const qtyInCart = getCartQuantity(item._id, selectedPortion);
         const optionsCount = item.customizations?.length || 0;
+        const displayPrice = item.hasHalfFull
+            ? (selectedPortion ? (selectedPortion === 'Half' ? item.halfPrice : item.price) : null)
+            : item.price;
 
         return (
             <div
@@ -791,6 +816,25 @@ const CustomerMenu = () => {
 
                     {item.description && <p className="item-desc">{item.description}</p>}
 
+                    {item.hasHalfFull && (
+                        <div className="portion-selector">
+                            <button
+                                type="button"
+                                className={`portion-btn ${selectedPortion === 'Half' ? 'active' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); selectPortion(item._id, 'Half'); }}
+                            >
+                                Half ₹{item.halfPrice}
+                            </button>
+                            <button
+                                type="button"
+                                className={`portion-btn ${selectedPortion === 'Full' ? 'active' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); selectPortion(item._id, 'Full'); }}
+                            >
+                                Full ₹{item.price}
+                            </button>
+                        </div>
+                    )}
+
                     {item.isSpicyLevel && (
                         <div className="spicy-level-dropdown-wrapper">
                             <IconFlame size={13} stroke={2} className="spicy-dropdown-icon" />
@@ -822,7 +866,7 @@ const CustomerMenu = () => {
                             {item.isCombo && item.originalTotalPrice > item.price && (
                                 <span className="price-original">₹{item.originalTotalPrice}</span>
                             )}
-                            ₹{item.price}
+                            {displayPrice !== null ? `₹${displayPrice}` : `₹${item.halfPrice} - ₹${item.price}`}
                         </span>
 
                         <div className="item-add-zone">
@@ -831,14 +875,14 @@ const CustomerMenu = () => {
                             ) : qtyInCart > 0 ? (
                                 <div className="item-qty-control">
                                     <button
-                                        onClick={() => updateQuantity(item._id, qtyInCart - 1)}
+                                        onClick={() => updateQuantity(cartKey, qtyInCart - 1)}
                                         aria-label="Decrease quantity"
                                     >
                                         <IconMinus size={14} stroke={2.5} />
                                     </button>
                                     <span>{qtyInCart}</span>
                                     <button
-                                        onClick={() => updateQuantity(item._id, qtyInCart + 1)}
+                                        onClick={() => updateQuantity(cartKey, qtyInCart + 1)}
                                         aria-label="Increase quantity"
                                     >
                                         <IconPlus size={14} stroke={2.5} />
@@ -1202,25 +1246,28 @@ const CustomerMenu = () => {
                             <div className="cart-scrollable-body">
                                 <div className="cart-items">
                                     {cart.map(item => (
-                                        <div key={item._id} className="cart-item">
+                                        <div key={item.cartKey} className="cart-item">
                                             <div className="item-info">
                                                 <h4>{item.name}</h4>
+                                                {item.portion && (
+                                                    <p className="cart-item-spicy">🍽️ {item.portion} Portion</p>
+                                                )}
                                                 {item.spicyLevel && (
                                                     <p className="cart-item-spicy">🌶️ {item.spicyLevel} Spicy</p>
                                                 )}
                                                 <p>₹{item.price}</p>
                                             </div>
                                             <div className="quantity-control">
-                                                <button onClick={() => updateQuantity(item._id, item.quantity - 1)}>
+                                                <button onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}>
                                                     <IconMinus size={14} />
                                                 </button>
                                                 <span>{item.quantity}</span>
-                                                <button onClick={() => updateQuantity(item._id, item.quantity + 1)}>
+                                                <button onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}>
                                                     <IconPlus size={14} />
                                                 </button>
                                             </div>
                                             <div className="item-total">₹{item.price * item.quantity}</div>
-                                            <button className="remove-btn" onClick={() => removeFromCart(item._id)}>
+                                            <button className="remove-btn" onClick={() => removeFromCart(item.cartKey)}>
                                                 <IconX size={14} />
                                             </button>
                                         </div>

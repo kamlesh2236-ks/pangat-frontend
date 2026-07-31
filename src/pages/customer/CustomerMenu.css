@@ -2114,19 +2114,35 @@
     }
 }
 
-/* ============================================================
-   TABLET portrait (769px – 1024px) refinement
-   ============================================================ */
+
 @media (min-width: 769px) and (max-width: 1024px) {
     .menu-grid {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     }
 }
 
-/* ============================================================
-   Bottom nav clearance — keep last menu items/cart bar clear of
-   the fixed Home/Status bar when it's showing
-   ============================================================ */
+
 .customer-menu.has-bottom-nav .menu-content {
     padding-bottom: 74px;
+}
+
+.portion-selector {
+    display: flex;
+    gap: 6px;
+    margin: 4px 0;
+}
+
+.portion-btn {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.portion-btn.active {
+    border-color: var(--primary, #e63946);
+    background: var(--primary, #e63946);
+    color: #fff;
 }

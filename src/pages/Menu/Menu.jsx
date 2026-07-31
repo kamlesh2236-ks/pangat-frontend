@@ -94,6 +94,8 @@ const MenuManagement = () => {
         isAvailable: true,
         isOutOfStock: false,
         isSpicyLevel: false,
+        hasHalfFull: false,
+        halfPrice: '',
         tags: [],
         preparationTime: '15',
         ingredients: '',
@@ -190,6 +192,10 @@ const MenuManagement = () => {
             toast.error('Please fill all required fields');
             return;
         }
+        if (formData.hasHalfFull && !formData.halfPrice) {
+            toast.error('Please enter Half price');
+            return;
+        }
 
         try {
             const data = {
@@ -204,6 +210,8 @@ const MenuManagement = () => {
                 isAvailable: formData.isAvailable,
                 isOutOfStock: formData.isOutOfStock,
                 isSpicyLevel: formData.isSpicyLevel,
+                hasHalfFull: formData.hasHalfFull,
+                halfPrice: formData.hasHalfFull && formData.halfPrice ? parseFloat(formData.halfPrice) : null,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
                 // rating LINE REMOVED — customer ratings se hi banega ab
@@ -228,6 +236,10 @@ const MenuManagement = () => {
 
     const handleUpdateItem = async (e) => {
         e.preventDefault();
+        if (formData.hasHalfFull && !formData.halfPrice) {
+            toast.error('Please enter Half price');
+            return;
+        }
         try {
             const data = {
                 name: formData.name,
@@ -241,6 +253,8 @@ const MenuManagement = () => {
                 isAvailable: formData.isAvailable,
                 isOutOfStock: formData.isOutOfStock,
                 isSpicyLevel: formData.isSpicyLevel,
+                hasHalfFull: formData.hasHalfFull,
+                halfPrice: formData.hasHalfFull && formData.halfPrice ? parseFloat(formData.halfPrice) : null,
                 tags: formData.tags,
                 preparationTime: parseInt(formData.preparationTime),
                 // rating LINE REMOVED
@@ -362,6 +376,7 @@ const MenuManagement = () => {
                 const tagsRaw = pick(row, ['tags']);
                 const ingredientsRaw = pick(row, ['ingredients']);
                 const allergensRaw = pick(row, ['allergens']);
+                const halfPriceRaw = pick(row, ['half price', 'halfprice']);
 
                 const data = {
                     name: name.toString().trim(),
@@ -378,6 +393,10 @@ const MenuManagement = () => {
                     isAvailable: parseBool(pick(row, ['available', 'isavailable']), true),
                     isOutOfStock: parseBool(pick(row, ['out of stock', 'isoutofstock']), false),
                     isSpicyLevel: parseBool(pick(row, ['spicy', 'spicy off', 'isspicylevel']), false),
+                    hasHalfFull: halfPriceRaw !== '' && !isNaN(parseFloat(halfPriceRaw)),
+                    halfPrice: halfPriceRaw !== '' && !isNaN(parseFloat(halfPriceRaw))
+                        ? parseFloat(halfPriceRaw)
+                        : null,
                     tags: tagsRaw ? tagsRaw.toString().split(',').map(t => t.trim()).filter(t => t) : [],
                     preparationTime: parseInt(pick(row, ['preparation time', 'preparationtime'], '15')) || 15,
                     ingredients: ingredientsRaw ? ingredientsRaw.toString().split(',').map(i => i.trim()).filter(i => i) : [],
@@ -431,6 +450,7 @@ const MenuManagement = () => {
                 'Description': 'Aromatic basmati rice cooked with tender chicken and spices',
                 'Price': 250,
                 'Discount Price': 220,
+                'Half Price': 150,
                 'Quantity': 50,
                 'Available': 'Yes',
                 'Out Of Stock': 'No',
@@ -463,6 +483,8 @@ const MenuManagement = () => {
             isAvailable: item.isAvailable,
             isOutOfStock: item.isOutOfStock,
             isSpicyLevel: item.isSpicyLevel,
+            hasHalfFull: item.hasHalfFull || false,
+            halfPrice: item.halfPrice?.toString() || '',
             tags: item.tags || [],
             preparationTime: item.preparationTime?.toString() || '15',
             ingredients: item.ingredients?.join(', ') || '',
@@ -496,6 +518,8 @@ const MenuManagement = () => {
             isAvailable: true,
             isOutOfStock: false,
             isSpicyLevel: false,
+            hasHalfFull: false,
+            halfPrice: '',
             tags: [],
             preparationTime: '15',
             rating: '0',
@@ -660,6 +684,11 @@ const MenuManagement = () => {
                                             <span className="price">₹{item.price}</span>
                                             {!item.isCombo && item.discountPrice && (
                                                 <span className="discount">₹{item.discountPrice}</span>
+                                            )}
+                                            {item.hasHalfFull && item.halfPrice && (
+                                                <span className="badge category-badge" style={{ marginLeft: 4 }}>
+                                                    Half ₹{item.halfPrice}
+                                                </span>
                                             )}
                                         </div>
                                     </td>
@@ -917,6 +946,37 @@ const MenuManagement = () => {
                                 </div>
 
                                 <div className="form-row">
+                                    <div className="menu-form-group checkbox">
+                                        <input
+                                            type="checkbox"
+                                            id="hasHalfFull"
+                                            checked={formData.hasHalfFull}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, hasHalfFull: e.target.checked }))}
+                                        />
+                                        <label htmlFor="hasHalfFull">Half / Full Available</label>
+                                    </div>
+                                </div>
+
+                                {formData.hasHalfFull && (
+                                    <div className="menu-form-group">
+                                        <label>Half Price *</label>
+                                        <div className="input-with-prefix">
+                                            <span className="prefix">₹</span>
+                                            <input
+                                                type="number"
+                                                value={formData.halfPrice}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, halfPrice: e.target.value }))}
+                                                placeholder="150"
+                                                min="0"
+                                                step="0.01"
+                                                required={formData.hasHalfFull}
+                                            />
+                                        </div>
+                                        <small>Full price upar wala "Price" field se hi aayega</small>
+                                    </div>
+                                )}
+
+                                <div className="form-row">
                                     <div className="menu-form-group">
                                         <label>Quantity</label>
                                         <input
@@ -1031,20 +1091,6 @@ const MenuManagement = () => {
                             {/* Additional Info */}
                             <div className="form-section">
                                 <h3><IconInfoCircle size={17} stroke={2} /> Additional Information</h3>
-
-                                {/* <div className="form-row">
-                                    <div className="menu-form-group">
-                                        <label>Rating</label>
-                                        <input
-                                            type="number"
-                                            value={formData.rating}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, rating: e.target.value }))}
-                                            min="0"
-                                            max="5"
-                                            step="0.1"
-                                        />
-                                    </div>
-                                </div> */}
 
                                 <div className="menu-form-group">
                                     <label>Ingredients (comma separated)</label>

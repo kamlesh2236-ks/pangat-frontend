@@ -37,14 +37,20 @@ export const menuGroups = [
         title: "Menu",
         icon: <IconToolsKitchen2 size={20} />,
         children: [
-          { title: "All Items", path: "/menu" },
-          { title: "Main Category", path: "/main_category" },
-          { title: "Combos", path: "/combos" },
+          { title: "All Items", icon: <IconChefHat size={18} />, path: "/menu" },
+          { title: "Main Category", icon: <IconCategory size={18} />, path: "/main_category" },
+          { title: "Combos", icon: <IconToolsKitchen2 size={18} />, path: "/combos" },
         ],
       },
       { title: "Tables", icon: <IconArmchair2 size={20} />, path: "/tables" },
-      { title: "Kitchen", icon: <IconChefHat size={20} />, path: "/kitchen" },
-      { title: "Waiter", icon: <IconTruck size={20} />, path: "/waiter" },
+      {
+        title: "S Dashboard",
+        icon: <IconLayoutDashboard size={20} />,
+        children: [
+          { title: "Kitchen", icon: <IconChefHat size={18} />, path: "/kitchen" },
+          { title: "Waiter", icon: <IconTruck size={18} />, path: "/waiter" },
+        ]
+      }
     ],
   },
   {
@@ -228,6 +234,7 @@ const Navbar = () => {
                             navigate(child.path);
                           }}
                         >
+                          {child.icon}
                           <span>{child.title}</span>
                         </li>
                       ))}
