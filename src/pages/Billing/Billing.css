@@ -166,6 +166,7 @@
   color: #a89486;
   padding: 40px 0;
   font-size: 14px;
+  user-select: none;
 }
 
 .billing-menu-card {
@@ -577,4 +578,30 @@
   font-weight: 600;
   color: var(--text-secondary);
   font-family: 'JetBrains Mono', monospace;
+}
+
+
+.billing-menu-card-portion-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.billing-menu-card-portion-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 5px 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.billing-menu-card-portion-btn:hover {
+  border-color: var(--primary, #e63946);
+  color: var(--primary, #e63946);
 }

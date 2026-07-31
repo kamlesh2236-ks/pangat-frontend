@@ -474,6 +474,7 @@ const CustomerMenu = () => {
                 customerEmail: customerEmail.trim() || undefined,
                 items: cart.map(item => ({
                     itemId: item._id,
+                    portion: item.portion || undefined,
                     quantity: item.quantity,
                     specialInstructions: [
                         item.portion ? `Portion: ${item.portion}` : '',

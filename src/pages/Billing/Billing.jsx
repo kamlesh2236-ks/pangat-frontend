@@ -33,6 +33,8 @@ const PAYMENT_METHODS = [
 const ITEMS_PER_PAGE = 6;
 const SKELETON_CARDS = Array.from({ length: 6 });
 
+const getCartKey = (menuItemId, portion) => portion ? `${menuItemId}::${portion}` : menuItemId;
+
 const Billing = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [tables, setTables] = useState([]);
@@ -185,12 +187,15 @@ const Billing = () => {
   };
 
   // ---------- Cart logic ----------
-  const addToCart = (menuItem) => {
+  const addToCart = (menuItem, portion = null) => {
+    const effectivePrice = menuItem.hasHalfFull && portion === 'Half' ? menuItem.halfPrice : menuItem.price;
+    const cartKey = getCartKey(menuItem._id, portion);
+
     setCart((prev) => {
-      const existing = prev.find((i) => i.menuItemId === menuItem._id);
+      const existing = prev.find((i) => i.cartKey === cartKey);
       if (existing) {
         return prev.map((i) =>
-          i.menuItemId === menuItem._id
+          i.cartKey === cartKey
             ? { ...i, quantity: i.quantity + 1 }
             : i
         );
@@ -198,9 +203,11 @@ const Billing = () => {
       return [
         ...prev,
         {
+          cartKey,
           menuItemId: menuItem._id,
-          name: menuItem.name,
-          price: menuItem.price,
+          name: portion ? `${menuItem.name} (${portion})` : menuItem.name,
+          price: effectivePrice,
+          portion,
           quantity: 1,
           specialInstructions: '',
         },
@@ -208,11 +215,11 @@ const Billing = () => {
     });
   };
 
-  const changeQty = (menuItemId, delta) => {
+  const changeQty = (cartKey, delta) => {
     setCart((prev) =>
       prev
         .map((i) =>
-          i.menuItemId === menuItemId
+          i.cartKey === cartKey
             ? { ...i, quantity: i.quantity + delta }
             : i
         )
@@ -220,8 +227,8 @@ const Billing = () => {
     );
   };
 
-  const removeFromCart = (menuItemId) => {
-    setCart((prev) => prev.filter((i) => i.menuItemId !== menuItemId));
+  const removeFromCart = (cartKey) => {
+    setCart((prev) => prev.filter((i) => i.cartKey !== cartKey));
   };
 
   const cartSubtotal = useMemo(
@@ -273,6 +280,7 @@ const Billing = () => {
         customerPhone: customerPhone.trim() || undefined,
         items: cart.map((i) => ({
           menuItemId: i.menuItemId,
+          portion: i.portion || undefined,
           quantity: i.quantity,
           specialInstructions: i.specialInstructions,
         })),
@@ -366,7 +374,7 @@ const Billing = () => {
               <div
                 key={item._id}
                 className="billing-menu-card"
-                onClick={() => addToCart(item)}
+                onClick={() => { if (!item.hasHalfFull) addToCart(item); }}
               >
                 <div className="billing-menu-card-img-wrap">
                   {item.image ? (
@@ -392,12 +400,34 @@ const Billing = () => {
                 <div className="billing-menu-card-body">
                   <div className="billing-menu-card-top">
                     <span className="billing-menu-card-name">{item.name}</span>
-                    <span className="billing-menu-card-price">₹{item.price}</span>
+                    <span className="billing-menu-card-price">
+                      {item.hasHalfFull ? `₹${item.halfPrice} / ₹${item.price}` : `₹${item.price}`}
+                    </span>
                   </div>
                   <span className="billing-menu-card-category">{item.category}</span>
-                  <button className="billing-menu-card-add" tabIndex={-1}>
-                    <IconPlus size={16} /> Add
-                  </button>
+
+                  {item.hasHalfFull ? (
+                    <div className="billing-menu-card-portion-row" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="billing-menu-card-portion-btn"
+                        onClick={() => addToCart(item, 'Half')}
+                      >
+                        <IconPlus size={13} /> Half
+                      </button>
+                      <button
+                        type="button"
+                        className="billing-menu-card-portion-btn"
+                        onClick={() => addToCart(item, 'Full')}
+                      >
+                        <IconPlus size={13} /> Full
+                      </button>
+                    </div>
+                  ) : (
+                    <button className="billing-menu-card-add" tabIndex={-1}>
+                      <IconPlus size={16} /> Add
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -493,7 +523,7 @@ const Billing = () => {
             </div>
           ) : (
             cart.map((item) => (
-              <div key={item.menuItemId} className="billing-cart-row">
+              <div key={item.cartKey} className="billing-cart-row">
                 <div className="billing-cart-row-info">
                   <span className="billing-cart-row-name">{item.name}</span>
                   <span className="billing-cart-row-price">
@@ -502,16 +532,16 @@ const Billing = () => {
                   </span>
                 </div>
                 <div className="billing-cart-row-actions">
-                  <button onClick={() => changeQty(item.menuItemId, -1)}>
+                  <button onClick={() => changeQty(item.cartKey, -1)}>
                     <IconMinus size={14} />
                   </button>
                   <span>{item.quantity}</span>
-                  <button onClick={() => changeQty(item.menuItemId, 1)}>
+                  <button onClick={() => changeQty(item.cartKey, 1)}>
                     <IconPlus size={14} />
                   </button>
                   <button
                     className="billing-cart-remove"
-                    onClick={() => removeFromCart(item.menuItemId)}
+                    onClick={() => removeFromCart(item.cartKey)}
                   >
                     <IconTrash size={14} />
                   </button>
