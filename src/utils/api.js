@@ -172,7 +172,7 @@ export const customerAPI = {
 
     callWaiter: (orderId, qrId, reason) =>
         apiClient.patch(`/customer/orders/${orderId}/call-waiter`, { qrId, reason }),
-    
+
     submitRating: (orderId, data) => apiClient.post(`/customer/orders/${orderId}/rating`, data),
 };
 
@@ -200,7 +200,9 @@ export const profileAPI = {
 export const inventoryAPI = {
     getAll: (filters = {}) => apiClient.get('/admin/inventory', { params: filters }),
     getById: (id) => apiClient.get(`/admin/inventory/${id}`),
-    getStats: () => apiClient.get('/admin/inventory/stats/summary'),
+    // Accepts an optional axios config (e.g. { signal }) so callers can cancel
+    // an in-flight request (see Reports.js abort-on-unmount/remount usage).
+    getStats: (options = {}) => apiClient.get('/admin/inventory/stats/summary', { ...options }),
     create: (data) => apiClient.post('/admin/inventory', data),
     update: (id, data) => apiClient.put(`/admin/inventory/${id}`, data),
     delete: (id) => apiClient.delete(`/admin/inventory/${id}`),
@@ -234,8 +236,10 @@ export const staffAPI = {
     deleteSalaryTransaction: (transactionId) =>
         apiClient.delete(`/admin/staff/salary-transaction/${transactionId}`),
 
-    getPayrollSummary: (month) =>
-        apiClient.get('/admin/staff/payroll/summary', { params: { month } }),
+    // Accepts an optional axios config (e.g. { signal }) as a second arg so
+    // callers can cancel an in-flight request without it leaking into `params`.
+    getPayrollSummary: (month, options = {}) =>
+        apiClient.get('/admin/staff/payroll/summary', { params: { month }, ...options }),
 
     // Login Credentials
     setCredentials: (id, data) => apiClient.post(`/admin/staff/${id}/credentials`, data),
@@ -243,8 +247,11 @@ export const staffAPI = {
 };
 
 export const reportsAPI = {
-    getFull: (startDate, endDate) =>
-        apiClient.get('/admin/reports/full', { params: { startDate, endDate } }),
+    // Accepts an optional axios config (e.g. { signal }) as a third arg so
+    // callers can cancel an in-flight request when the date range changes
+    // quickly (see Reports.js).
+    getFull: (startDate, endDate, options = {}) =>
+        apiClient.get('/admin/reports/full', { params: { startDate, endDate }, ...options }),
 };
 
 export const mediaAPI = {
@@ -261,8 +268,14 @@ export const searchAPI = {
 };
 
 export const transactionsAPI = {
-    getAll: (filters = {}) => apiClient.get('/admin/transactions', { params: filters }),
-    getSummary: () => apiClient.get('/admin/transactions/summary'),
+    // `signal` is pulled out of filters before the rest goes into `params`,
+    // so an AbortController signal never accidentally ends up in the query
+    // string (see Transactions.js).
+    getAll: (filters = {}) => {
+        const { signal, ...params } = filters;
+        return apiClient.get('/admin/transactions', { params, signal });
+    },
+    getSummary: (options = {}) => apiClient.get('/admin/transactions/summary', { ...options }),
 };
 
 export const mainCategoriesAPI = {

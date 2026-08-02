@@ -70,6 +70,7 @@ const Reports = () => {
     const [inventoryStats, setInventoryStats] = useState(null);
     const [staffPayroll, setStaffPayroll] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [staticLoading, setStaticLoading] = useState(true);
 
     const activeRange = useMemo(() => {
         if (preset === 'custom') {
@@ -78,31 +79,63 @@ const Reports = () => {
         return getPresetRange(preset);
     }, [preset, customStart, customEnd]);
 
-    const fetchReport = useCallback(async () => {
-        if (preset === 'custom' && (!customStart || !customEnd)) return;
-
-        try {
-            setLoading(true);
-            const [reportRes, invRes, payrollRes] = await Promise.all([
-                reportsAPI.getFull(activeRange.start, activeRange.end),
-                inventoryAPI.getStats(),
-                staffAPI.getPayrollSummary(currentMonthStr()),
-            ]);
-            if (reportRes.data.success) setReport(reportRes.data.data);
-            if (invRes.data.success) setInventoryStats(invRes.data.data);
-            if (payrollRes.data.success) setStaffPayroll(payrollRes.data.data);
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-            toast.error('Failed to load reports');
-        } finally {
-            setLoading(false);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeRange.start, activeRange.end]);
-
+    // ===== Static data (inventory + staff payroll) — fetched ONCE on mount =====
+    // These don't depend on the date range, so they shouldn't refetch on every
+    // preset/custom-date change. This alone removes 2 redundant API calls per
+    // interaction.
     useEffect(() => {
-        fetchReport();
-    }, [fetchReport]);
+        const controller = new AbortController();
+
+        const fetchStaticData = async () => {
+            try {
+                setStaticLoading(true);
+                const [invRes, payrollRes] = await Promise.all([
+                    inventoryAPI.getStats({ signal: controller.signal }),
+                    staffAPI.getPayrollSummary(currentMonthStr(), { signal: controller.signal }),
+                ]);
+                if (invRes.data.success) setInventoryStats(invRes.data.data);
+                if (payrollRes.data.success) setStaffPayroll(payrollRes.data.data);
+            } catch (error) {
+                if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                    console.error('Error fetching static data:', error);
+                }
+            } finally {
+                if (!controller.signal.aborted) setStaticLoading(false);
+            }
+        };
+
+        fetchStaticData();
+        return () => controller.abort();
+    }, []); // mount only
+
+    // ===== Sales report — depends on date range =====
+    // AbortController cancels the in-flight request when the user quickly
+    // switches presets, so a slow, stale response can never overwrite fresh state.
+    useEffect(() => {
+        if (preset === 'custom' && (!customStart || !customEnd)) return undefined;
+
+        const controller = new AbortController();
+
+        const fetchSalesReport = async () => {
+            try {
+                setLoading(true);
+                const res = await reportsAPI.getFull(activeRange.start, activeRange.end, {
+                    signal: controller.signal,
+                });
+                if (res.data.success) setReport(res.data.data);
+            } catch (error) {
+                if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                    console.error('Error fetching reports:', error);
+                    toast.error('Failed to load reports');
+                }
+            } finally {
+                if (!controller.signal.aborted) setLoading(false);
+            }
+        };
+
+        fetchSalesReport();
+        return () => controller.abort();
+    }, [activeRange.start, activeRange.end, preset, customStart, customEnd]);
 
     const downloadCSV = () => {
         if (!report) return;
@@ -145,7 +178,7 @@ const Reports = () => {
         return Math.max(...report.topItems.map((i) => i.quantity), 1);
     }, [report]);
 
-    const renderBreakdownList = (list, valueKey) => {
+    const renderBreakdownList = useCallback((list, valueKey) => {
         if (!list || list.length === 0) return <p className="reports-empty-text">Koi data nahi hai</p>;
         const max = Math.max(...list.map((i) => i[valueKey]), 1);
         return (
@@ -171,7 +204,7 @@ const Reports = () => {
                 })}
             </div>
         );
-    };
+    }, []);
 
     if (loading && !report) {
         return (
@@ -323,44 +356,52 @@ const Reports = () => {
 
                     {/* ===== Inventory + Staff Snapshot ===== */}
                     <div className="reports-grid-2">
-                        {inventoryStats && (
+                        {staticLoading && !inventoryStats && !staffPayroll ? (
                             <div className="reports-card">
-                                <h3><IconBuildingWarehouse size={18} /> Inventory Snapshot</h3>
-                                <div className="reports-snapshot-grid">
-                                    <div>
-                                        <span className="reports-snapshot-value">{inventoryStats.totalItems}</span>
-                                        <span className="reports-snapshot-label">Total Items</span>
-                                    </div>
-                                    <div>
-                                        <span className="reports-snapshot-value warning">{inventoryStats.lowStockCount}</span>
-                                        <span className="reports-snapshot-label">Low Stock</span>
-                                    </div>
-                                    <div>
-                                        <span className="reports-snapshot-value">₹{inventoryStats.totalValue.toLocaleString()}</span>
-                                        <span className="reports-snapshot-label">Total Value</span>
-                                    </div>
-                                </div>
+                                <p className="reports-empty-text">Loading snapshot...</p>
                             </div>
-                        )}
+                        ) : (
+                            <>
+                                {inventoryStats && (
+                                    <div className="reports-card">
+                                        <h3><IconBuildingWarehouse size={18} /> Inventory Snapshot</h3>
+                                        <div className="reports-snapshot-grid">
+                                            <div>
+                                                <span className="reports-snapshot-value">{inventoryStats.totalItems}</span>
+                                                <span className="reports-snapshot-label">Total Items</span>
+                                            </div>
+                                            <div>
+                                                <span className="reports-snapshot-value warning">{inventoryStats.lowStockCount}</span>
+                                                <span className="reports-snapshot-label">Low Stock</span>
+                                            </div>
+                                            <div>
+                                                <span className="reports-snapshot-value">₹{inventoryStats.totalValue.toLocaleString()}</span>
+                                                <span className="reports-snapshot-label">Total Value</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
-                        {staffPayroll && (
-                            <div className="reports-card">
-                                <h3><IconUsers size={18} /> Staff Payroll (This Month)</h3>
-                                <div className="reports-snapshot-grid">
-                                    <div>
-                                        <span className="reports-snapshot-value">{staffPayroll.totals.staffCount}</span>
-                                        <span className="reports-snapshot-label">Active Staff</span>
+                                {staffPayroll && (
+                                    <div className="reports-card">
+                                        <h3><IconUsers size={18} /> Staff Payroll (This Month)</h3>
+                                        <div className="reports-snapshot-grid">
+                                            <div>
+                                                <span className="reports-snapshot-value">{staffPayroll.totals.staffCount}</span>
+                                                <span className="reports-snapshot-label">Active Staff</span>
+                                            </div>
+                                            <div>
+                                                <span className="reports-snapshot-value">₹{staffPayroll.totals.totalPayable.toLocaleString()}</span>
+                                                <span className="reports-snapshot-label">Payable</span>
+                                            </div>
+                                            <div>
+                                                <span className="reports-snapshot-value warning">₹{staffPayroll.totals.totalDue.toLocaleString()}</span>
+                                                <span className="reports-snapshot-label">Due</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span className="reports-snapshot-value">₹{staffPayroll.totals.totalPayable.toLocaleString()}</span>
-                                        <span className="reports-snapshot-label">Payable</span>
-                                    </div>
-                                    <div>
-                                        <span className="reports-snapshot-value warning">₹{staffPayroll.totals.totalDue.toLocaleString()}</span>
-                                        <span className="reports-snapshot-label">Due</span>
-                                    </div>
-                                </div>
-                            </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </>

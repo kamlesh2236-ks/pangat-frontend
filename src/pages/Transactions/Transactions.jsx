@@ -28,7 +28,7 @@ const CATEGORY_STYLES = {
     Payment: { color: '#22a06b', bg: 'rgba(34,160,107,0.12)' },
 };
 
-// Payment status  colors
+// Payment status colors
 const STATUS_STYLES = {
     Completed: { color: '#22a06b', bg: 'rgba(34,160,107,0.12)' },
     Pending: { color: '#e0a83a', bg: 'rgba(224,168,58,0.14)' },
@@ -36,13 +36,19 @@ const STATUS_STYLES = {
     Refunded: { color: '#667eea', bg: 'rgba(102,126,234,0.12)' },
 };
 
-
 const getRowStyle = (t) =>
     t.category === 'Payment' && STATUS_STYLES[t.status]
         ? STATUS_STYLES[t.status]
         : CATEGORY_STYLES[t.category];
 
-const OUTFLOW_STATUSES = ['Stock Out', 'Wastage', 'Advance', 'Payment', 'Deduction'];
+// Pure, module-level function (was being redefined on every render before).
+// Logic simplified: Inventory outflow only for Stock Out / Wastage, Salary is
+// always an outflow, Payment (money received) is always an inflow.
+const isOutflow = (t) => {
+    if (t.category === 'Inventory') return ['Stock Out', 'Wastage'].includes(t.status);
+    if (t.category === 'Salary') return true;
+    return false; // Payment
+};
 
 const formatDate = (d) => {
     if (!d) return '—';
@@ -55,6 +61,8 @@ const formatDate = (d) => {
     });
 };
 
+const LIMIT = 20;
+
 const Transactions = () => {
     const [activeTab, setActiveTab] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -63,19 +71,20 @@ const Transactions = () => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [total, setTotal] = useState(0);
-    const LIMIT = 20;
 
-    const fetchSummary = useCallback(async () => {
+    const fetchSummary = useCallback(async (signal) => {
         try {
-            const res = await transactionsAPI.getSummary();
+            const res = await transactionsAPI.getSummary({ signal });
             if (res.data.success) setSummary(res.data.data);
         } catch (error) {
-            console.error('Error fetching summary:', error);
+            if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                console.error('Error fetching summary:', error);
+            }
         }
     }, []);
 
     const fetchTransactions = useCallback(
-        async (skip = 0, append = false) => {
+        async (skip = 0, append = false, signal) => {
             try {
                 append ? setLoadingMore(true) : setLoading(true);
                 const res = await transactionsAPI.getAll({
@@ -83,6 +92,7 @@ const Transactions = () => {
                     search: searchTerm.trim() || undefined,
                     limit: LIMIT,
                     skip,
+                    signal,
                 });
                 if (res.data.success) {
                     setTransactions((prev) =>
@@ -91,8 +101,10 @@ const Transactions = () => {
                     setTotal(res.data.pagination.total);
                 }
             } catch (error) {
-                toast.error('Failed to load transactions');
-                console.error(error);
+                if (error.name !== 'CanceledError' && error.name !== 'AbortError') {
+                    toast.error('Failed to load transactions');
+                    console.error(error);
+                }
             } finally {
                 setLoading(false);
                 setLoadingMore(false);
@@ -101,15 +113,26 @@ const Transactions = () => {
         [activeTab, searchTerm]
     );
 
+    // Summary is independent of tab/search filters — fetch once on mount only.
     useEffect(() => {
-        fetchSummary();
+        const controller = new AbortController();
+        fetchSummary(controller.signal);
+        return () => controller.abort();
     }, [fetchSummary]);
 
+    // Transaction list — refetch on tab/search change, debounced for search,
+    // with the in-flight request aborted if the user changes filters again
+    // before it resolves (prevents stale responses overwriting fresh state).
     useEffect(() => {
+        const controller = new AbortController();
         const debounce = setTimeout(() => {
-            fetchTransactions(0, false);
+            fetchTransactions(0, false, controller.signal);
         }, searchTerm ? 350 : 0);
-        return () => clearTimeout(debounce);
+
+        return () => {
+            clearTimeout(debounce);
+            controller.abort();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, searchTerm]);
 
@@ -118,20 +141,15 @@ const Transactions = () => {
     };
 
     const handleRefresh = () => {
-        fetchSummary();
-        fetchTransactions(0, false);
+        const controller = new AbortController();
+        fetchSummary(controller.signal);
+        fetchTransactions(0, false, controller.signal);
     };
 
     const clearFilters = () => {
         setActiveTab('');
         setSearchTerm('');
     };
-
-    const isOutflow = (t) => OUTFLOW_STATUSES.includes(t.status) && t.category !== 'Payment'
-        ? true
-        : t.category === 'Inventory'
-            ? ['Stock Out', 'Wastage'].includes(t.status)
-            : t.category === 'Salary';
 
     return (
         <div className="txn-page">
