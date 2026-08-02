@@ -90,9 +90,11 @@ export const menuAPI = {
     toggleAvailability: (id, isAvailable) => apiClient.patch(`/admin/menu/${id}/availability`, { isAvailable }),
     toggleStock: (id, isOutOfStock) => apiClient.patch(`/admin/menu/${id}/stock`, { isOutOfStock }),
     toggleSpicyLevel: (id, isSpicyLevel) => apiClient.patch(`/admin/menu/${id}/spicy`, { isSpicyLevel }),
-    uploadImage: (formData) => apiClient.post('/admin/upload-image', formData, {
-        headers: { 'Content-Type': undefined },
-    }),
+    uploadImage: (formData) => {
+        const headers = { ...apiClient.defaults.headers.common };
+        delete headers['Content-Type'];
+        return apiClient.post('/admin/upload-image', formData, { headers });
+    },
 };
 
 
@@ -172,7 +174,7 @@ export const customerAPI = {
 
     callWaiter: (orderId, qrId, reason) =>
         apiClient.patch(`/customer/orders/${orderId}/call-waiter`, { qrId, reason }),
-
+    
     submitRating: (orderId, data) => apiClient.post(`/customer/orders/${orderId}/rating`, data),
 };
 
