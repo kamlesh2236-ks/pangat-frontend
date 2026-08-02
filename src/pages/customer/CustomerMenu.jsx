@@ -685,10 +685,59 @@ const CustomerMenu = () => {
 
     if (loading) {
         return (
-            <div className="customer-menu loading-state">
-                <div className="skeleton-header" />
-                <div className="skeleton-grid">
-                    {[...Array(6)].map((_, i) => <div key={i} className="skeleton-card" />)}
+            <div className="customer-menu skeleton-loading">
+                <div className="menu-header">
+                    <div className="header-content">
+                        <div className="restaurant-identity">
+                            <div className="skeleton-shimmer skeleton-logo" />
+                            <div className="restaurant-text">
+                                <div className="skeleton-shimmer skeleton-line skeleton-title" />
+                                <div className="skeleton-shimmer skeleton-line skeleton-meta" />
+                            </div>
+                        </div>
+                        <div className="skeleton-shimmer skeleton-cart-btn" />
+                    </div>
+                </div>
+
+                <div className="main-category-tabs-wrapper">
+                    <div className="main-category-tabs">
+                        {[...Array(5)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="skeleton-shimmer skeleton-pill"
+                                style={{ width: 64 + (i % 3) * 22 }}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                <div className="customer-search-bar">
+                    <div className="skeleton-shimmer skeleton-search" />
+                    <div className="skeleton-shimmer skeleton-filter-btn" />
+                </div>
+
+                <div className="skeleton-shimmer skeleton-banner" />
+
+                <div className="menu-content">
+                    <div className="menu-body">
+                        <div className="category-sidebar">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="skeleton-sidebar-item">
+                                    <div className="skeleton-shimmer skeleton-sidebar-icon" />
+                                    <div className="skeleton-shimmer skeleton-line skeleton-sidebar-label" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="menu-items-panel">
+                            <div className="skeleton-shimmer skeleton-line skeleton-category-heading" />
+                            <div className="skeleton-grid">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="skeleton-card" />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
