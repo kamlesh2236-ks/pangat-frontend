@@ -95,6 +95,7 @@ export const menuAPI = {
         delete headers['Content-Type'];
         return apiClient.post('/admin/upload-image', formData, { headers });
     },
+    generateDescription: (data) => apiClient.post('/admin/menu/generate-description', data),
 };
 
 
@@ -202,8 +203,6 @@ export const profileAPI = {
 export const inventoryAPI = {
     getAll: (filters = {}) => apiClient.get('/admin/inventory', { params: filters }),
     getById: (id) => apiClient.get(`/admin/inventory/${id}`),
-    // Accepts an optional axios config (e.g. { signal }) so callers can cancel
-    // an in-flight request (see Reports.js abort-on-unmount/remount usage).
     getStats: (options = {}) => apiClient.get('/admin/inventory/stats/summary', { ...options }),
     create: (data) => apiClient.post('/admin/inventory', data),
     update: (id, data) => apiClient.put(`/admin/inventory/${id}`, data),
@@ -238,8 +237,6 @@ export const staffAPI = {
     deleteSalaryTransaction: (transactionId) =>
         apiClient.delete(`/admin/staff/salary-transaction/${transactionId}`),
 
-    // Accepts an optional axios config (e.g. { signal }) as a second arg so
-    // callers can cancel an in-flight request without it leaking into `params`.
     getPayrollSummary: (month, options = {}) =>
         apiClient.get('/admin/staff/payroll/summary', { params: { month }, ...options }),
 
@@ -249,9 +246,6 @@ export const staffAPI = {
 };
 
 export const reportsAPI = {
-    // Accepts an optional axios config (e.g. { signal }) as a third arg so
-    // callers can cancel an in-flight request when the date range changes
-    // quickly (see Reports.js).
     getFull: (startDate, endDate, options = {}) =>
         apiClient.get('/admin/reports/full', { params: { startDate, endDate }, ...options }),
 };
@@ -270,9 +264,6 @@ export const searchAPI = {
 };
 
 export const transactionsAPI = {
-    // `signal` is pulled out of filters before the rest goes into `params`,
-    // so an AbortController signal never accidentally ends up in the query
-    // string (see Transactions.js).
     getAll: (filters = {}) => {
         const { signal, ...params } = filters;
         return apiClient.get('/admin/transactions', { params, signal });
@@ -296,5 +287,7 @@ export const superAdminAPI = {
     getRestaurantOrders: (id, filters = {}) => apiClient.get(`/superadmin/restaurants/${id}/orders`, { params: filters }),
     getRestaurantActivity: (id, filters = {}) => apiClient.get(`/superadmin/restaurants/${id}/activity`, { params: filters }),
 };
+
+
 
 export default apiClient;

@@ -22,6 +22,7 @@ import {
     IconTags,
     IconPhoto,
     IconInfoCircle,
+    IconSparkles,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -77,6 +78,9 @@ const MenuManagement = () => {
     //  Category filter auto-scroll ke liye
     const categoryFilterContainerRef = useRef(null);
     const filterBtnRefs = useRef({});
+
+    //  AI description generate ke liye
+    const [generatingDesc, setGeneratingDesc] = useState(false);
 
     const categories = ['All', ...new Set(menuItems.map(item => item.category).filter(Boolean))];
 
@@ -179,6 +183,31 @@ const MenuManagement = () => {
             setImagePreview(null);
         } finally {
             setUploading(false);
+        }
+    };
+
+    //  AI se description generate karta hai — name, category aur tags ke basis par
+    const handleGenerateDescription = async () => {
+        if (!formData.name) {
+            toast.error('Pehle item name daalein');
+            return;
+        }
+        setGeneratingDesc(true);
+        try {
+            const response = await menuAPI.generateDescription({
+                name: formData.name,
+                category: formData.category,
+                tags: formData.tags,
+            });
+            if (response.data.success) {
+                setFormData(prev => ({ ...prev, description: response.data.data.description }));
+                toast.success('Description generate ho gaya');
+            }
+        } catch (error) {
+            console.error('Error generating description:', error);
+            toast.error('AI se description generate nahi ho paya');
+        } finally {
+            setGeneratingDesc(false);
         }
     };
 
@@ -896,7 +925,23 @@ const MenuManagement = () => {
                                 </div>
 
                                 <div className="menu-form-group">
-                                    <label>Description</label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <label>Description</label>
+                                        <button
+                                            type="button"
+                                            className="btn-secondary ai-generate-btn"
+                                            onClick={handleGenerateDescription}
+                                            disabled={generatingDesc || !formData.name}
+                                            title={!formData.name ? 'Pehle item name daalein' : 'AI se description generate karein'}
+                                        >
+                                            {generatingDesc ? (
+                                                <IconLoader2 size={14} className="spin" />
+                                            ) : (
+                                                <IconSparkles size={14} />
+                                            )}
+                                            {generatingDesc ? ' Generating...' : ' Generate with AI'}
+                                        </button>
+                                    </div>
                                     <textarea
                                         value={formData.description}
                                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
