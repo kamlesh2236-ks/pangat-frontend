@@ -30,7 +30,7 @@ import {
     Legend,
 } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
-import { dashboardAPI, ordersAPI } from '../utils/api';
+import { dashboardAPI, ordersAPI, tablesAPI } from '../utils/api';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -52,10 +52,6 @@ const Dashboard = () => {
         activeTables: 0,
     });
 
-    // Growth % vs the previous period. If your backend already returns
-    // a `growth` field (recommended: compare current range vs the same
-    // length range immediately before it), it will be picked up
-    // automatically below. Until then it safely defaults to 0.
     const [growth, setGrowth] = useState({
         revenue: 0,
         orders: 0,
@@ -67,19 +63,17 @@ const Dashboard = () => {
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [chartLoading, setChartLoading] = useState(true);
+    const [table, setTable] = useState([]);
 
     useEffect(() => {
         fetchDashboardData();
         fetchChartData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startDate, endDate]);
 
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
 
-            // Pass the date range to the backend. Make sure
-            // dashboardAPI.getStats() forwards params -> GET /api/dashboard/stats?startDate=...&endDate=...
             const statsResponse = await dashboardAPI.getStats({ startDate, endDate });
             if (statsResponse.data.success) {
                 const d = statsResponse.data.data;
@@ -106,6 +100,11 @@ const Dashboard = () => {
             const ordersResponse = await ordersAPI.getAll({ limit: 5, sort: '-createdAt' });
             if (ordersResponse.data.success) {
                 setOrders(ordersResponse.data.data);
+            }
+
+            const tableRes = await tablesAPI.getAll();
+            if (tableRes.data.success) {
+                setTable(tableRes.data.data)
             }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -332,53 +331,7 @@ const Dashboard = () => {
                 )}
             </div>
 
-            {/* Payment / Revenue Trend Chart */}
-            <div className="chart-section">
-                <div className="chart-section-header">
-                    <h2>Payment Trend</h2>
-                    <span className="chart-subtitle">Daily income — peaks show high payment days</span>
-                </div>
 
-                {chartLoading ? (
-                    <div className="loading-state">
-                        <p>Loading chart...</p>
-                    </div>
-                ) : chartData.length === 0 ? (
-                    <div className="empty-state">
-                        <IconTrendingUp size={40} />
-                        <p>No payment data yet</p>
-                        <span>Chart will populate once payments come in</span>
-                    </div>
-                ) : (
-                    <ResponsiveContainer width="100%" height={280}>
-                        <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="paymentGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.45} />
-                                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                            <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#999' }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fontSize: 12, fill: '#999' }} axisLine={false} tickLine={false} />
-                            <Tooltip
-                                contentStyle={{ borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}
-                                formatter={(value) => [`₹${value}`, 'Payment']}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="revenue"
-                                name="Payment"
-                                stroke="#10b981"
-                                strokeWidth={3}
-                                fill="url(#paymentGradient)"
-                                dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }}
-                                activeDot={{ r: 6 }}
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                )}
-            </div>
 
             {/* Quick Actions */}
             <div className="quick-actions">
@@ -403,6 +356,53 @@ const Dashboard = () => {
                 </div>
             </div>
 
+            {/* table floor */}
+            <div className="table-map">
+                <div className="table-map-header">
+                    <h3>Table Floor</h3>
+                </div>
+
+                <div className="table-floor">
+                    {loading ? (
+                        <div className="loading-state">
+                            <p>Loading tables...</p>
+                        </div>
+                    ) : (
+                        table.map((t) => (
+                            <div
+                                className={`table-status ${t.status?.toLowerCase().replace(' ', '-')}`}
+                                key={t._id}
+                            >
+                                <h2>T{t.tableNumber}</h2>
+                                <p>{t.capacity} seats</p>
+                                <span className="table-badge">{t.status}</span>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                <div className="table-avl">
+                    <div className="table-check">
+                        <div className="table-avlstatusColor"></div>
+                        <div className="table-statusName">
+                            <h4>Available</h4>
+                        </div>
+                    </div>
+                    <div className="table-check">
+                        <div className="table-busystatusColor"></div>
+                        <div className="table-statusName">
+                            <h4>Busy</h4>
+                        </div>
+                    </div>
+                    <div className="table-check">
+                        <div className="table-nbstatusColor"></div>
+                        <div className="table-statusName">
+                            <h4>Needs Bill</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Recent Orders */}
             <div className="recent-orders">
                 <div className="chart-section-header">
@@ -412,7 +412,7 @@ const Dashboard = () => {
 
                 {loading ? (
                     <div className="loading-state">
-                        <p>Loading orders...</p>
+                        <p>Loading orders...</p>0
                     </div>
                 ) : orders.length === 0 ? (
                     <div className="empty-state">

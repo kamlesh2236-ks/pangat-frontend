@@ -177,6 +177,7 @@ export const customerAPI = {
         apiClient.patch(`/customer/orders/${orderId}/call-waiter`, { qrId, reason }),
     
     submitRating: (orderId, data) => apiClient.post(`/customer/orders/${orderId}/rating`, data),
+    suggestCombo: (data) => apiClient.post('/customer/suggest-combo', data),
 };
 
 export const restaurantAPI = {

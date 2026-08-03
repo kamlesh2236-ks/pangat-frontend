@@ -5,7 +5,8 @@ import {
     IconLeaf, IconReceipt2, IconUser, IconPhone,
     IconShoppingBagCheck, IconMoodEmpty, IconChevronUp, IconMail, IconCash, IconCreditCard,
     IconChevronRight, IconArrowLeft, IconStarFilled, IconSearch, IconClock, IconAdjustmentsHorizontal, IconCheck,
-    IconMeat, IconFlame, IconCoffee, IconGlassCocktail, IconSnowflake, IconIceCream, IconBurger
+    IconMeat, IconFlame, IconCoffee, IconGlassCocktail, IconSnowflake, IconIceCream, IconBurger,
+    IconSparkles
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { customerAPI } from '../../utils/api';
@@ -115,6 +116,11 @@ const CustomerMenu = () => {
     const [selectedMainCategory, setSelectedMainCategory] = useState(null);
     const [mainCategories, setMainCategories] = useState([]);
     const [hasActiveOrder, setHasActiveOrder] = useState(() => !!getActiveOrder());
+
+    //  AI combo suggestions ke liye
+    const [comboSuggestions, setComboSuggestions] = useState([]);
+    const [loadingCombo, setLoadingCombo] = useState(false);
+    const comboDebounceRef = useRef(null);
 
     const bannerTimerRef = useRef(null);
 
@@ -277,6 +283,51 @@ const CustomerMenu = () => {
 
         return () => clearInterval(bannerTimerRef.current);
     }, [banners]);
+
+    //  AI combo suggestions — cart me items ho aur cart step khula ho tabhi (debounced)
+    useEffect(() => {
+        if (!showCart || checkoutStep !== 'cart' || cart.length === 0) {
+            setComboSuggestions([]);
+            return;
+        }
+
+        clearTimeout(comboDebounceRef.current);
+        comboDebounceRef.current = setTimeout(() => {
+            fetchComboSuggestions();
+        }, 600);
+
+        return () => clearTimeout(comboDebounceRef.current);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cart, showCart, checkoutStep]);
+
+    const fetchComboSuggestions = async () => {
+        setLoadingCombo(true);
+        try {
+            const response = await customerAPI.suggestCombo({
+                qrId: restaurantId,
+                cartItems: cart.map(c => ({ name: c.name })),
+            });
+            if (response.data.success) {
+                setComboSuggestions(response.data.data.suggestions || []);
+            }
+        } catch (error) {
+            console.error('Error fetching combo suggestions:', error);
+            setComboSuggestions([]);
+        } finally {
+            setLoadingCombo(false);
+        }
+    };
+
+    // Suggested item ko seedha cart me add karta hai (full menu item object dhoondh ke)
+    const addSuggestedItemToCart = (suggestedItem) => {
+        const fullItem = menuItems.find(m => m._id === suggestedItem._id);
+        if (!fullItem) {
+            toast.error('Item abhi available nahi hai');
+            return;
+        }
+        addToCart(fullItem);
+        setComboSuggestions(prev => prev.filter(s => s.item._id !== suggestedItem._id));
+    };
 
     const fetchMenuItems = async (isSilent = false) => {
         try {
@@ -685,59 +736,32 @@ const CustomerMenu = () => {
 
     if (loading) {
         return (
-            <div className="customer-menu skeleton-loading">
-                <div className="menu-header">
-                    <div className="header-content">
-                        <div className="restaurant-identity">
-                            <div className="skeleton-shimmer skeleton-logo" />
-                            <div className="restaurant-text">
-                                <div className="skeleton-shimmer skeleton-line skeleton-title" />
-                                <div className="skeleton-shimmer skeleton-line skeleton-meta" />
-                            </div>
+            <div className="customer-menu category-landing-page skeleton-loading">
+                <div className="landing-mini-header">
+                    <div className="skeleton-shimmer skeleton-logo" />
+                    <div>
+                        <div className="skeleton-shimmer skeleton-line skeleton-title" />
+                        <div className="header-meta">
+                            <div className="skeleton-shimmer skeleton-badge" />
+                            <div className="skeleton-shimmer skeleton-badge-sm" />
                         </div>
-                        <div className="skeleton-shimmer skeleton-cart-btn" />
                     </div>
                 </div>
 
-                <div className="main-category-tabs-wrapper">
-                    <div className="main-category-tabs">
-                        {[...Array(5)].map((_, i) => (
-                            <div
-                                key={i}
-                                className="skeleton-shimmer skeleton-pill"
-                                style={{ width: 64 + (i % 3) * 22 }}
-                            />
+                <div className="category-landing">
+                    <div className="skeleton-shimmer skeleton-line skeleton-heading" />
+                    <div className="skeleton-shimmer skeleton-line skeleton-subheading" />
+
+                    <div className="category-landing-grid">
+                        {[...Array(9)].map((_, i) => (
+                            <div key={i} className="category-landing-card skeleton-card-plain">
+                                <div className="skeleton-shimmer skeleton-cat-icon" />
+                                <div className="skeleton-shimmer skeleton-line skeleton-cat-label" />
+                            </div>
                         ))}
                     </div>
-                </div>
 
-                <div className="customer-search-bar">
-                    <div className="skeleton-shimmer skeleton-search" />
-                    <div className="skeleton-shimmer skeleton-filter-btn" />
-                </div>
-
-                <div className="skeleton-shimmer skeleton-banner" />
-
-                <div className="menu-content">
-                    <div className="menu-body">
-                        <div className="category-sidebar">
-                            {[...Array(6)].map((_, i) => (
-                                <div key={i} className="skeleton-sidebar-item">
-                                    <div className="skeleton-shimmer skeleton-sidebar-icon" />
-                                    <div className="skeleton-shimmer skeleton-line skeleton-sidebar-label" />
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="menu-items-panel">
-                            <div className="skeleton-shimmer skeleton-line skeleton-category-heading" />
-                            <div className="skeleton-grid">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="skeleton-card" />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <div className="skeleton-shimmer skeleton-skip-link" />
                 </div>
             </div>
         );
@@ -1323,6 +1347,40 @@ const CustomerMenu = () => {
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* ===== AI Combo Suggestions ===== */}
+                                {(comboSuggestions.length > 0 || loadingCombo) && (
+                                    <div className="combo-suggestions">
+                                        <p className="combo-suggestions-heading">
+                                            <IconSparkles size={15} stroke={2} /> Goes great together
+                                        </p>
+
+                                        {loadingCombo && comboSuggestions.length === 0 ? (
+                                            <p className="combo-suggestions-loading">Finding perfect pairings...</p>
+                                        ) : (
+                                            <div className="combo-suggestions-list">
+                                                {comboSuggestions.map((s) => (
+                                                    <div key={s.item._id} className="combo-suggestion-card">
+                                                        <div className="combo-suggestion-info">
+                                                            <span className="combo-suggestion-name">{s.item.name}</span>
+                                                            {s.reason && (
+                                                                <span className="combo-suggestion-reason">{s.reason}</span>
+                                                            )}
+                                                            <span className="combo-suggestion-price">₹{s.item.price}</span>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            className="combo-suggestion-add"
+                                                            onClick={() => addSuggestedItemToCart(s.item)}
+                                                        >
+                                                            <IconPlus size={14} stroke={2.5} /> Add
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="cart-summary">
