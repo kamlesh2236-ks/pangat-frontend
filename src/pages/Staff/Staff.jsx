@@ -44,10 +44,6 @@ const Staff = () => {
     const [selectedMonth, setSelectedMonth] = useState(currentMonth());
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Split loading state: staff list is month-independent and should render as soon as it
-    // arrives. Payroll/attendance depend on selectedMonth and are usually the slower call
-    // (per-staff attendance aggregation on the backend), so they get their own flag and
-    // never block the staff table from showing.
     const [loading, setLoading] = useState(true);
     const [payrollLoading, setPayrollLoading] = useState(true);
 
@@ -64,9 +60,6 @@ const Staff = () => {
     const [detailLoading, setDetailLoading] = useState(false);
     const [txnForm, setTxnForm] = useState({ type: 'Payment', amount: '', notes: '' });
     const [addingTxn, setAddingTxn] = useState(false);
-
-    // markingId tracks which staff row's attendance button is currently being updated,
-    // so we can show a tiny inline spinner on just that button instead of reloading the page
     const [markingId, setMarkingId] = useState(null);
 
     // Login credentials modal state
@@ -74,8 +67,6 @@ const Staff = () => {
     const [credForm, setCredForm] = useState({ email: '', password: '' });
     const [savingCred, setSavingCred] = useState(false);
 
-    // ---------- Fetchers (decoupled) ----------
-    // Staff list — month independent, only needs to reload on add/edit/delete/credentials.
     const fetchStaff = useCallback(async (showLoader = true) => {
         try {
             if (showLoader) setLoading(true);
@@ -89,8 +80,7 @@ const Staff = () => {
         }
     }, []);
 
-    // Today's attendance + payroll summary — month dependent, and the slower of the two
-    // fetches. Kept separate so it never blocks the staff table from rendering.
+
     const fetchMonthData = useCallback(async (showLoader = true) => {
         try {
             if (showLoader) setPayrollLoading(true);
@@ -108,7 +98,7 @@ const Staff = () => {
         }
     }, [selectedMonth]);
 
-    // Convenience wrapper for places that used to call the old combined fetchAll()
+
     const refreshEverything = useCallback((showLoader = true) => {
         fetchStaff(showLoader);
         fetchMonthData(showLoader);

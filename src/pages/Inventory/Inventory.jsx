@@ -567,10 +567,10 @@ const Inventory = () => {
                                         <td>{item.supplierName || '—'}</td>
                                         <td className="inventory-actions">
                                             <button onClick={() => openStockModal(item, 'in')} title="Stock In" className="stock-in-btn">
-                                                <IconArrowUpRight size={16} />
+                                                <IconArrowDownRight size={16} />
                                             </button>
                                             <button onClick={() => openStockModal(item, 'out')} title="Stock Out" className="stock-out-btn">
-                                                <IconArrowDownRight size={16} />
+                                                <IconArrowUpRight size={16} />
                                             </button>
                                             <button onClick={() => openHistory(item)} title="History">
                                                 <IconHistory size={16} />
