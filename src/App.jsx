@@ -43,9 +43,7 @@ import SuperAdminDashboard from './pages/SuperAdmin/SuperAdminDashboard';
 import RestaurantDetail from './pages/SuperAdmin/RestaurantDetail';
 
 // ---- Role helpers ----
-// NOTE: agar normal restaurant owner/admin ka user.role backend se
-// 'Admin' ya 'Owner' string aata hai (undefined/null nahi), to
-// ADMIN_ROLES array mein wo exact value add/replace kar dena.
+
 const ADMIN_ROLES = [undefined, null, 'Admin', 'Owner'];
 
 const getUserFromStorage = () => {
@@ -71,9 +69,7 @@ const ProtectedRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" />;
 };
 
-// allowedRoles list ke hisaab se access deta hai — mismatch hone par
-// user ko uske apne sahi dashboard pe bhej deta hai (login pe nahi,
-// taaki logged-in user "logged out" jaisa feel na kare)
+
 const RoleProtectedRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('adminToken');
   if (!token) return <Navigate to="/login" />;

@@ -13,8 +13,13 @@
 }
 
 @keyframes overlayFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .subscription-modal {
@@ -44,6 +49,7 @@
         transform: scale(0.9) translateY(30px);
         filter: blur(4px);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -89,8 +95,15 @@
 }
 
 @keyframes iconFloat {
-    0%, 100% { transform: translateY(0) scale(1); }
-    50% { transform: translateY(-5px) scale(1.03); }
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-5px) scale(1.03);
+    }
 }
 
 .subscription-modal h2 {
@@ -116,8 +129,15 @@
 }
 
 @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .subscription-modal p strong {
@@ -174,15 +194,24 @@
     animation: cardRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-.plan-card:nth-child(1) { animation-delay: 0.15s; }
-.plan-card:nth-child(2) { animation-delay: 0.26s; }
-.plan-card:nth-child(3) { animation-delay: 0.37s; }
+.plan-card:nth-child(1) {
+    animation-delay: 0.15s;
+}
+
+.plan-card:nth-child(2) {
+    animation-delay: 0.26s;
+}
+
+.plan-card:nth-child(3) {
+    animation-delay: 0.37s;
+}
 
 @keyframes cardRise {
     from {
         opacity: 0;
         transform: translateY(22px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -262,8 +291,15 @@
 }
 
 @keyframes pulseProcessing {
-    0%, 100% { opacity: 0.65; }
-    50% { opacity: 0.95; }
+
+    0%,
+    100% {
+        opacity: 0.65;
+    }
+
+    50% {
+        opacity: 0.95;
+    }
 }
 
 /* Expired state — slightly more urgent icon motion */
@@ -272,9 +308,71 @@
 }
 
 @keyframes iconShake {
-    0%, 100% { transform: rotate(0deg) translateY(0); }
-    4% { transform: rotate(-7deg); }
-    8% { transform: rotate(7deg); }
-    12% { transform: rotate(-4deg); }
-    16% { transform: rotate(0deg); }
+
+    0%,
+    100% {
+        transform: rotate(0deg) translateY(0);
+    }
+
+    4% {
+        transform: rotate(-7deg);
+    }
+
+    8% {
+        transform: rotate(7deg);
+    }
+
+    12% {
+        transform: rotate(-4deg);
+    }
+
+    16% {
+        transform: rotate(0deg);
+    }
+}
+
+/* Logout button styling - add this to your SubscriptionGate.css */
+
+.sub-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #f5f5f5;
+    color: #d32f2f;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    justify-content: center;
+}
+
+.sub-logout-btn:hover {
+    background-color: #ffebee;
+    border-color: #d32f2f;
+    color: #b71c1c;
+}
+
+.sub-logout-btn:active {
+    transform: scale(0.98);
+}
+
+.sub-logout-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Trial modal specific - add space between buttons */
+.subscription-modal .sub-primary-btn+.sub-logout-btn {
+    margin-top: 12px;
+}
+
+/* Expired modal - logout button at bottom */
+.subscription-modal.blocking .sub-logout-btn {
+    margin-top: 24px;
+    position: relative;
 }

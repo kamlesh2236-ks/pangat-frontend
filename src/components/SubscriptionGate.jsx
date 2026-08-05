@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { IconCrown, IconClock, IconCheck } from '@tabler/icons-react';
+import { IconCrown, IconClock, IconCheck, IconLogout } from '@tabler/icons-react';
 import { subscriptionAPI } from '../utils/api';
 import { useSubscriptionPayment } from '../hooks/useSubscriptionPayment';
 import './SubscriptionGate.css';
+import LogoutConfirmModal from "./LogoutConfirmModal";
 
 const PLAN_ORDER = ['weekly', 'monthly', 'yearly'];
 
@@ -12,6 +13,19 @@ const SubscriptionGate = () => {
     const [trialPopupDismissed, setTrialPopupDismissed] = useState(
         sessionStorage.getItem('trialPopupSeen') === 'true'
     );
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+    const handleItemClick = (item) => {
+        if (item.action === "logout") {
+            setShowLogoutConfirm(true);
+            return;
+        }
+        if (item.children) {
+            toggleMenu(item.title);
+            return;
+        }
+        navigate(item.path);
+    };
 
     const fetchStatus = useCallback(async () => {
         try {
@@ -48,6 +62,16 @@ const SubscriptionGate = () => {
         setTrialPopupDismissed(true);
     };
 
+    const handleLogoutClick = () => {
+        setShowLogoutConfirm(true);
+    };
+
+    const confirmLogout = () => {
+        sessionStorage.clear();
+        localStorage.clear();
+        window.location.href = '/login'; 
+    };
+
     if (!subscription) return null;
 
     const isExpired = subscription.status === 'expired';
@@ -77,6 +101,21 @@ const SubscriptionGate = () => {
                                 </div>
                             ))}
                     </div>
+
+                    <button 
+                        className="sub-logout-btn"
+                        onClick={handleLogoutClick}
+                    >
+                        <IconLogout size={16} />
+                        Logout
+                    </button>
+
+                    {showLogoutConfirm && (
+                        <LogoutConfirmModal
+                            onConfirm={confirmLogout}
+                            onCancel={() => setShowLogoutConfirm(false)}
+                        />
+                    )}
                 </div>
             </div>
         );
