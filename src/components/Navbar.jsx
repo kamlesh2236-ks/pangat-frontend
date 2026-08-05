@@ -43,14 +43,14 @@ export const menuGroups = [
         ],
       },
       { title: "Tables", icon: <IconArmchair2 size={20} />, path: "/tables" },
-      {
-        title: "S Dashboard",
-        icon: <IconLayoutDashboard size={20} />,
-        children: [
-          { title: "Kitchen", icon: <IconChefHat size={18} />, path: "/kitchen" },
-          { title: "Waiter", icon: <IconTruck size={18} />, path: "/waiter" },
-        ]
-      }
+      // {
+      //   title: "S Dashboard",
+      //   icon: <IconLayoutDashboard size={20} />,
+      //   children: [
+      //     { title: "Kitchen", icon: <IconChefHat size={18} />, path: "/kitchen" },
+      //     { title: "Waiter", icon: <IconTruck size={18} />, path: "/waiter" },
+      //   ]
+      // }
     ],
   },
   {
