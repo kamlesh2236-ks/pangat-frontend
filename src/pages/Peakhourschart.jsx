@@ -11,7 +11,7 @@ import {
     Cell,
 } from 'recharts';
 import { peakHoursAPI } from '../utils/api';
-import './PeakHoursChart.css';
+import './Peakhourschart.css';
 
 // "11a", "12p", "1p" — matches the reference design's short axis labels
 const formatHourShort = (h) => {
