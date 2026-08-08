@@ -147,7 +147,7 @@ export const paymentsAPI = {
 export const dashboardAPI = {
     getStats: (params) => apiClient.get('/admin/dashboard/stats', { params }),
     getDailyStats: (date) => apiClient.get(`/admin/dashboard/daily-stats`, { params: { date } }),
-    getWeeklyStats: () => apiClient.get('/admin/dashboard/weekly-stats'),
+    getWeeklyStats: (params) => apiClient.get('/admin/dashboard/weekly-stats', { params }),
     getMonthlyStats: () => apiClient.get('/admin/dashboard/monthly-stats'),
     getRevenueData: (period) => apiClient.get(`/admin/dashboard/revenue`, { params: { period } }),
 };
@@ -175,7 +175,7 @@ export const customerAPI = {
 
     callWaiter: (orderId, qrId, reason) =>
         apiClient.patch(`/customer/orders/${orderId}/call-waiter`, { qrId, reason }),
-    
+
     submitRating: (orderId, data) => apiClient.post(`/customer/orders/${orderId}/rating`, data),
     suggestCombo: (data) => apiClient.post('/customer/suggest-combo', data),
 };
@@ -262,6 +262,14 @@ export const mediaAPI = {
 
 export const searchAPI = {
     global: (q) => apiClient.get('/admin/search', { params: { q } }),
+};
+
+export const activityAPI = {
+    getLive: (limit = 15) => apiClient.get(`/activity/live?limit=${limit}`),
+};
+
+export const peakHoursAPI = {
+    get: (days = 30) => apiClient.get(`/dashboard/peak-hours?days=${days}`),
 };
 
 export const transactionsAPI = {

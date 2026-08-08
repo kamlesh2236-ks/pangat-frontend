@@ -13,6 +13,7 @@ import {
   IconPrinter,
   IconClipboardList,
   IconVolume,
+  IconVolumeOff,
   IconPhone,
   IconMail,
   IconUsers,
@@ -25,6 +26,8 @@ import {
   IconUserCircle,
   IconHistory,
   IconStarFilled,
+  IconShoppingCart,
+  IconCurrencyRupee,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { ordersAPI } from '../../utils/api';
@@ -107,12 +110,18 @@ const AdminOrders = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [alertsEnabled, setAlertsEnabled] = useState(true);
 
   const [billOrder, setBillOrder] = useState(null);
   const [showBillPrint, setShowBillPrint] = useState(false);
 
   const knownOrderIdsRef = useRef(new Set());
   const isFirstLoadRef = useRef(true);
+  const alertsEnabledRef = useRef(true);
+
+  useEffect(() => {
+    alertsEnabledRef.current = alertsEnabled;
+  }, [alertsEnabled]);
 
   useEffect(() => {
     fetchOrders();
@@ -168,7 +177,7 @@ const AdminOrders = () => {
             (o) => !knownOrderIdsRef.current.has(o._id) && o.source !== 'Counter'
           );
 
-          if (newOrders.length > 0) {
+          if (newOrders.length > 0 && alertsEnabledRef.current) {
             playNewOrderSound();
             newOrders.forEach((o) => {
               toast.success(`🔔 New order #${o.orderNumber} received!`, {
@@ -343,16 +352,25 @@ const AdminOrders = () => {
     }
   }, [showBillPrint, billOrder]);
 
-  // NOTE: removed the old "full page spinner" early-return.
-  // Page shell (header, search, filters) now renders immediately.
-  // Only the stats + list area swaps to skeletons while `loading` is true.
-
   return (
     <div className="admin-orders">
       <div className="orders-header">
         <div className="header-top">
-          <h1>Orders Management</h1>
+          <div>
+            <p className="orders-header-eyebrow">Front of House</p>
+            <h1>Orders Management</h1>
+            <p className="orders-header-subtitle">
+              {filteredOrders.length} of {orders.length} tickets · auto-refresh every {POLL_INTERVAL_MS / 1000}s
+            </p>
+          </div>
           <div className="header-actions">
+            <button
+              className={`orderbtn-alerts ${alertsEnabled ? '' : 'muted'}`}
+              onClick={() => setAlertsEnabled((prev) => !prev)}
+            >
+              {alertsEnabled ? <IconVolume size={18} /> : <IconVolumeOff size={18} />}
+              Alerts {alertsEnabled ? 'on' : 'off'}
+            </button>
             <button className="orderbtn-refresh" onClick={fetchOrders}>
               <IconRefresh size={20} /> Refresh
             </button>
@@ -368,20 +386,32 @@ const AdminOrders = () => {
         ) : (
           <div className="orders-stats-grid">
             <div className="orders-stat-card">
+              <div className="orders-stat-top">
+                <span className="orders-stat-label">Total Orders</span>
+                <span className="orders-stat-icon"><IconShoppingCart size={16} /></span>
+              </div>
               <div className="orders-stat-value">{orders.length}</div>
-              <div className="orders-stat-label">Total Orders</div>
             </div>
             <div className="orders-stat-card">
+              <div className="orders-stat-top">
+                <span className="orders-stat-label">New Orders</span>
+                <span className="orders-stat-icon"><IconClipboardList size={16} /></span>
+              </div>
               <div className="orders-stat-value">{orders.filter(o => o.orderStatus === 'Placed').length}</div>
-              <div className="orders-stat-label">New Orders</div>
             </div>
             <div className="orders-stat-card">
+              <div className="orders-stat-top">
+                <span className="orders-stat-label">Total Revenue</span>
+                <span className="orders-stat-icon"><IconCurrencyRupee size={16} /></span>
+              </div>
               <div className="orders-stat-value">₹{orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}</div>
-              <div className="orders-stat-label">Total Revenue</div>
             </div>
             <div className="orders-stat-card">
+              <div className="orders-stat-top">
+                <span className="orders-stat-label">Pending Payments</span>
+                <span className="orders-stat-icon"><IconRefresh size={16} /></span>
+              </div>
               <div className="orders-stat-value">{orders.filter(o => o.paymentStatus === 'Pending').length}</div>
-              <div className="orders-stat-label">Pending Payments</div>
             </div>
           </div>
         )}
@@ -392,17 +422,20 @@ const AdminOrders = () => {
           <IconSearch size={20} />
           <input
             type="text"
-            placeholder="Search by order#, customer name, or phone..."
+            placeholder="Search by order number, guest name or phone…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className="filter-buttons">
+          <span className="filters-label">
+            <IconFilter size={14} /> Filters
+          </span>
+
           <div className="filter-group">
-            <label>Order Status:</label>
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="all">All Status</option>
+              <option value="all">All statuses</option>
               <option value="Placed">Placed</option>
               <option value="Confirmed">Confirmed</option>
               <option value="Preparing">Preparing</option>
@@ -413,9 +446,8 @@ const AdminOrders = () => {
           </div>
 
           <div className="filter-group">
-            <label>Payment Status:</label>
             <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)}>
-              <option value="all">All Payments</option>
+              <option value="all">All payments</option>
               <option value="Pending">Pending</option>
               <option value="Completed">Completed</option>
               <option value="Failed">Failed</option>
@@ -445,12 +477,18 @@ const AdminOrders = () => {
                     <div
                       key={order._id}
                       className="order-card"
+                      style={{ '--status-color': getStatusColor(order.orderStatus) }}
                       onClick={() => openModal(order)}
                     >
                       <div className="order-card-header">
                         <div className="order-number-section">
                           <h3>#{order.orderNumber}</h3>
                           <span className="table-badge">Table {order.tableNumber}</span>
+                          {order.guestCount > 0 && (
+                            <span className="guest-count-badge">
+                              <IconUsers size={13} /> {order.guestCount}
+                            </span>
+                          )}
                         </div>
                         <div className="order-time">
                           {new Date(order.placedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}

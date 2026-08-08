@@ -4,13 +4,10 @@ import {
     IconTrendingUp,
     IconUsers,
     IconClock,
-    IconCheck,
-    IconAlertCircle,
-    IconChefHat,
-    IconToolsKitchen2,
-    IconCurrencyRupee,
     IconCircleCheck,
     IconCircleX,
+    IconChefHat,
+    IconCurrencyRupee,
     IconArrowUpRight,
     IconArrowDownRight,
     IconRefresh,
@@ -19,8 +16,6 @@ import toast from 'react-hot-toast';
 import {
     ResponsiveContainer,
     ComposedChart,
-    AreaChart,
-    Area,
     Bar,
     Line,
     XAxis,
@@ -31,12 +26,14 @@ import {
 } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
 import { dashboardAPI, ordersAPI, tablesAPI } from '../utils/api';
+import LiveActivityTicker from './Liveactivityticker';
+import PeakHoursChart from './Peakhourschart';
 import './Dashboard.css';
 
 const Dashboard = () => {
     const { user } = useContext(AuthContext);
 
-    // ---- Date range (defaults to today, like the screenshot) ----
+    // ---- Date range (defaults to today) ----
     const todayStr = new Date().toISOString().split('T')[0];
     const [startDate, setStartDate] = useState(todayStr);
     const [endDate, setEndDate] = useState(todayStr);
@@ -63,7 +60,7 @@ const Dashboard = () => {
     const [chartData, setChartData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [chartLoading, setChartLoading] = useState(true);
-    const [table, setTable] = useState([]);
+    const [tables, setTables] = useState([]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -104,7 +101,7 @@ const Dashboard = () => {
 
             const tableRes = await tablesAPI.getAll();
             if (tableRes.data.success) {
-                setTable(tableRes.data.data)
+                setTables(tableRes.data.data);
             }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -143,11 +140,11 @@ const Dashboard = () => {
         ? Number(((stats.completedToday / stats.totalOrders) * 100).toFixed(1))
         : 0;
 
-    // ---- Small "growth" summary card (top row in screenshot) ----
     const GrowthCard = ({ icon: Icon, label, value, iconColor }) => {
         const isPositive = value >= 0;
         return (
             <div className="growth-card">
+
                 <div className="growth-card-text">
                     <p className="growth-label">{label}</p>
                     <span className={`growth-value ${isPositive ? 'up' : 'down'}`}>
@@ -162,7 +159,6 @@ const Dashboard = () => {
         );
     };
 
-    // ---- Big gradient stat card (main row in screenshot) ----
     const GradientStatCard = ({ icon: Icon, label, value, subtitle, growthValue, progress, variant }) => {
         const isPositive = growthValue >= 0;
         return (
@@ -215,8 +211,8 @@ const Dashboard = () => {
         <div className="dashboard-container">
             {/* Header */}
             <div className="dashboard-header">
-                <div className='head-text'>
-                    <h1>Dashboard</h1>
+                <div className="head-text">
+                    <h1>Control Room</h1>
                     <p>Welcome back, {user?.name}!</p>
                 </div>
 
@@ -228,6 +224,7 @@ const Dashboard = () => {
                             max={endDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
+                        <span style={{color:"var(--text-primary)"}}>-</span>
                         <input
                             type="date"
                             value={endDate}
@@ -236,11 +233,12 @@ const Dashboard = () => {
                         />
                     </div>
                     <button className="refresh-btn" onClick={handleRefresh} disabled={loading}>
-                        <IconRefresh size={17} stroke={2} className={loading ? 'icon-spin' : ''} /> {loading ? 'Refreshing...' : 'Refresh'}
+                        <IconRefresh size={17} stroke={2} className={loading ? 'icon-spin' : ''} />
+                        {loading ? 'Refreshing...' : 'Refresh'}
                     </button>
                 </div>
             </div>
-
+            <LiveActivityTicker />
             {/* Growth Summary Row */}
             <div className="growth-summary-grid">
                 <GrowthCard icon={IconCurrencyRupee} label="Revenue Growth" value={growth.revenue} iconColor="#10b981" />
@@ -290,73 +288,86 @@ const Dashboard = () => {
             </div>
 
             {/* Revenue & Orders Chart */}
-            <div className="chart-section">
-                <div className="chart-section-header">
-                    <h2>Weekly Performance</h2>
-                    <span className="chart-subtitle">Orders & Revenue — last 7 days</span>
+            <div className="charts-grid">
+                <div className="chart-section">
+                    <div className="chart-section-header">
+                        <h2>Weekly Performance</h2>
+                        <span className="chart-subtitle">Orders & Revenue — last 7 days</span>
+                    </div>
+
+                    {chartLoading ? (
+                        <div className="loading-state">
+                            <p>Loading chart...</p>
+                        </div>
+                    ) : chartData.length === 0 ? (
+                        <div className="empty-state">
+                            <IconTrendingUp size={40} />
+                            <p>No data yet</p>
+                            <span>Chart will populate once orders come in</span>
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height={320}>
+                            <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+                                <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                <YAxis yAxisId="left" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                <Tooltip
+                                    contentStyle={{
+                                        borderRadius: 12,
+                                        border: '1px solid var(--border-color)',
+                                        background: 'var(--bg-card)',
+                                        boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                                    }}
+                                    formatter={(value, name, props) => props.dataKey === 'revenue' ? [`₹${value}`, 'Revenue'] : [value, 'Orders']}
+                                />
+                                <Legend wrapperStyle={{ fontSize: 13 }} />
+                                <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#7c3aed" radius={[6, 6, 0, 0]} barSize={28} />
+                                <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#ff6b35" strokeWidth={3} dot={{ r: 4, fill: '#ff6b35' }} />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
 
-                {chartLoading ? (
-                    <div className="loading-state">
-                        <p>Loading chart...</p>
-                    </div>
-                ) : chartData.length === 0 ? (
-                    <div className="empty-state">
-                        <IconTrendingUp size={40} />
-                        <p>No data yet</p>
-                        <span>Chart will populate once orders come in</span>
-                    </div>
-                ) : (
-                    <ResponsiveContainer width="100%" height={320}>
-                        <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#ff6b35" stopOpacity={0.35} />
-                                    <stop offset="95%" stopColor="#ff6b35" stopOpacity={0.02} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                            <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#999' }} axisLine={false} tickLine={false} />
-                            <YAxis yAxisId="left" tick={{ fontSize: 12, fill: '#999' }} axisLine={false} tickLine={false} />
-                            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: '#999' }} axisLine={false} tickLine={false} />
-                            <Tooltip
-                                contentStyle={{ borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}
-                                formatter={(value, name, props) => props.dataKey === 'revenue' ? [`₹${value}`, 'Revenue'] : [value, 'Orders']}
-                            />
-                            <Legend wrapperStyle={{ fontSize: 13 }} />
-                            <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#7c3aed" radius={[6, 6, 0, 0]} barSize={28} />
-                            <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#ff6b35" strokeWidth={3} dot={{ r: 4, fill: '#ff6b35' }} />
-                        </ComposedChart>
-                    </ResponsiveContainer>
-                )}
+                <PeakHoursChart days={30} />
             </div>
-
-
 
             {/* Quick Actions */}
             <div className="quick-actions">
                 <h2>Quick Actions</h2>
                 <div className="action-buttons">
-                    <a href="/orders" className="action-btn">
-                        <IconShoppingCart size={20} />
-                        <span>View Orders</span>
+                    <a href="/orders" className="dashboardaction-btn gradient-stat-card orange">
+                        <div className="icon"><IconShoppingCart size={20} /></div>
+                        <div className="dashboardaction-btn-text">
+                            <span>View Orders</span>
+                            <p>Ordes queue & history</p>
+                        </div>
                     </a>
-                    <a href="/tables" className="action-btn">
-                        <IconChefHat size={20} />
-                        <span>Manage Tables</span>
+                    <a href="/tables" className="dashboardaction-btn gradient-stat-card blue">
+                        <div className="icon"><IconChefHat size={20} /></div>
+                        <div className="dashboardaction-btn-text">
+                            <span>Manage Tables</span>
+                            <p>Seating and reservations</p>
+                        </div>
                     </a>
-                    <a href="/menu" className="action-btn">
-                        <IconTrendingUp size={20} />
-                        <span>Manage Menu</span>
+                    <a href="/menu" className="dashboardaction-btn gradient-stat-card purple">
+                        <div className="icon"><IconTrendingUp size={20} /></div>
+                        <div className="dashboardaction-btn-text">
+                            <span>Manage Menu</span>
+                            <p>Dishes, price, stocks</p>
+                        </div>
                     </a>
-                    <a href="/reports" className="action-btn">
-                        <IconUsers size={20} />
-                        <span>View Reports</span>
+                    <a href="/reports" className="dashboardaction-btn gradient-stat-card green">
+                        <div className="icon"><IconUsers size={20} /></div>
+                        <div className="dashboardaction-btn-text">
+                            <span>View Reports</span>
+                            <p>Sales & staff insights</p>
+                        </div>
                     </a>
                 </div>
             </div>
 
-            {/* table floor */}
+            {/* Table floor */}
             <div className="table-map">
                 <div className="table-map-header">
                     <h3>Table Floor</h3>
@@ -368,7 +379,7 @@ const Dashboard = () => {
                             <p>Loading tables...</p>
                         </div>
                     ) : (
-                        table.map((t) => (
+                        tables.map((t) => (
                             <div
                                 className={`table-status ${t.status?.toLowerCase().replace(' ', '-')}`}
                                 key={t._id}
@@ -412,7 +423,7 @@ const Dashboard = () => {
 
                 {loading ? (
                     <div className="loading-state">
-                        <p>Loading orders...</p>0
+                        <p>Loading orders...</p>
                     </div>
                 ) : orders.length === 0 ? (
                     <div className="empty-state">
@@ -421,7 +432,7 @@ const Dashboard = () => {
                         <span>Orders will appear here once customers place them</span>
                     </div>
                 ) : (
-                    <div className="orders-table">
+                    <div className="dashorders-table">
                         <table>
                             <thead>
                                 <tr>
@@ -434,7 +445,7 @@ const Dashboard = () => {
                                     <th>Time</th>
                                 </tr>
                             </thead>
-                            <tbody className='dashboard-tbody'>
+                            <tbody className="dashboard-tbody">
                                 {orders.map((order) => (
                                     <OrderRow key={order._id} order={order} />
                                 ))}
