@@ -160,11 +160,11 @@ const PeakHoursChart = ({ days: initialDays = 1 }) => {
                             margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
                             barCategoryGap="28%"
                         >
-                            <CartesianGrid strokeDasharray="3 5" stroke="rgba(255,255,255,0.08)" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 5" stroke="rgba(68, 65, 65, 0.12)" vertical={false} />
                             <XAxis
                                 dataKey="hour"
                                 tickFormatter={formatHourShort}
-                                tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)' }}
+                                tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
                                 axisLine={false}
                                 tickLine={false}
                                 interval={0}
@@ -172,7 +172,7 @@ const PeakHoursChart = ({ days: initialDays = 1 }) => {
                             <YAxis
                                 domain={[0, niceMax(data.maxOrders)]}
                                 ticks={[0, niceMax(data.maxOrders) / 4, niceMax(data.maxOrders) / 2, (niceMax(data.maxOrders) * 3) / 4, niceMax(data.maxOrders)]}
-                                tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)' }}
+                                tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
                                 axisLine={false}
                                 tickLine={false}
                                 width={30}

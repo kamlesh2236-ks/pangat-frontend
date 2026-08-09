@@ -1,6 +1,6 @@
 .peak-hours-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 20px 20px 16px;
 }
@@ -16,13 +16,13 @@
 .peak-hours-header h2 {
     font-size: 15px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
     margin: 0 0 3px;
 }
 
 .peak-hours-subtitle {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-secondary);
 }
 
 .peak-hours-controls {
@@ -53,16 +53,16 @@
     width: 28px;
     height: 28px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
 
 .peak-refresh-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.09);
-    color: #fff;
+    background: var(--bg-base);
+    color: var(--text-primary);
 }
 
 .peak-refresh-btn:disabled {
@@ -90,9 +90,9 @@
 .peak-period-btn {
     font-size: 12px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.55);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 5px 12px;
     cursor: pointer;
@@ -100,14 +100,14 @@
 }
 
 .peak-period-btn:hover:not(:disabled) {
-    color: #fff;
+    color: var(--text-primary);
     background: rgba(255, 255, 255, 0.08);
 }
 
 .peak-period-btn.active {
     background: #ff6b35;
     border-color: #ff6b35;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .peak-period-btn:disabled {
@@ -127,8 +127,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     padding: 8px 12px;
     flex: 1;
@@ -146,7 +146,7 @@
 
 .peak-stat-label {
     font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.03em;
 }
@@ -154,7 +154,7 @@
 .peak-stat-value {
     font-size: 13px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 /* ---- Legend ---- */
@@ -164,7 +164,7 @@
     gap: 16px;
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--border-color);
 }
 
 .peak-legend-item {
@@ -172,7 +172,7 @@
     align-items: center;
     gap: 6px;
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-secondary);
 }
 
 .peak-legend-dot {
@@ -187,8 +187,8 @@
 /* ---- Tooltip ---- */
 
 .peak-tooltip {
-    background: #1b1826;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-base);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 8px 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -196,14 +196,14 @@
 
 .peak-tooltip-time {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-secondary);
     margin: 0 0 2px;
 }
 
 .peak-tooltip-orders {
     font-size: 13px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -220,7 +220,7 @@
     align-items: center;
     justify-content: center;
     height: 200px;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--text-secondary);
     font-size: 13px;
 }
 
