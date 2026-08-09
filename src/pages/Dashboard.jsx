@@ -17,6 +17,7 @@ import {
     ResponsiveContainer,
     ComposedChart,
     Bar,
+    Area,
     Line,
     XAxis,
     YAxis,
@@ -224,7 +225,7 @@ const Dashboard = () => {
                             max={endDate}
                             onChange={(e) => setStartDate(e.target.value)}
                         />
-                        <span style={{color:"var(--text-primary)"}}>-</span>
+                        <span style={{ color: "var(--text-primary)" }}>-</span>
                         <input
                             type="date"
                             value={endDate}
@@ -308,6 +309,13 @@ const Dashboard = () => {
                     ) : (
                         <ResponsiveContainer width="100%" height={320}>
                             <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#ff6b35" stopOpacity={0.35} />
+                                        <stop offset="95%" stopColor="#ff6b35" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
                                 <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
                                 <YAxis yAxisId="left" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
@@ -317,13 +325,23 @@ const Dashboard = () => {
                                         borderRadius: 12,
                                         border: '1px solid var(--border-color)',
                                         background: 'var(--bg-card)',
-                                        boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                                        boxShadow: '0 8px 20px var(--shadow-color)',
                                     }}
                                     formatter={(value, name, props) => props.dataKey === 'revenue' ? [`₹${value}`, 'Revenue'] : [value, 'Orders']}
                                 />
                                 <Legend wrapperStyle={{ fontSize: 13 }} />
                                 <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#7c3aed" radius={[6, 6, 0, 0]} barSize={28} />
-                                <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue" stroke="#ff6b35" strokeWidth={3} dot={{ r: 4, fill: '#ff6b35' }} />
+                                <Area
+                                    yAxisId="right"
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    name="Revenue"
+                                    stroke="#ff6b35"
+                                    strokeWidth={3}
+                                    fill="url(#revenueGradient)"
+                                    dot={{ r: 4, fill: '#ff6b35' }}
+                                    activeDot={{ r: 6 }}
+                                />
                             </ComposedChart>
                         </ResponsiveContainer>
                     )}

@@ -238,8 +238,8 @@
     flex: 1;
     background: linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.09),
-        rgba(255, 255, 255, 0.03)
+        var(--text-muted),
+        var(--text-muted)
     );
     border-radius: 4px 4px 0 0;
     animation: peak-pulse 1.4s ease-in-out infinite;
