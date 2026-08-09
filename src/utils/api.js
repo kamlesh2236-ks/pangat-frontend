@@ -269,7 +269,7 @@ export const activityAPI = {
 };
 
 export const peakHoursAPI = {
-    get: (days = 30) => apiClient.get(`/dashboard/peak-hours?days=${days}`),
+    get: (days = 30) => apiClient.get(`/admin/dashboard/peak-hours?days=${days}`),
 };
 
 export const transactionsAPI = {
