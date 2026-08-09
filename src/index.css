@@ -243,3 +243,40 @@ button:disabled {
 .modal-content::-webkit-scrollbar {
     display: none;
 }
+
+/* Add to a global CSS file (e.g. index.css / App.css) so it's available on every page */
+
+.pending-order-toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ff6b35;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    cursor: pointer;
+    animation: alertBlink 1s ease-in-out infinite;
+}
+
+.pending-order-toast-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+@keyframes alertBlink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.55;
+    }
+}

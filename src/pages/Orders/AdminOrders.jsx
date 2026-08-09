@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconSearch,
@@ -31,7 +31,7 @@ import {
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { ordersAPI } from '../../utils/api';
-import { playNewOrderSound, unlockAudio } from '../../utils/notificationSound';
+import { NotificationContext } from '../../context/NotificationContext';
 import BillPrint from './BillPrint';
 import './AdminOrders.css';
 
@@ -102,6 +102,11 @@ const OrdersSkeleton = () => (
 
 const AdminOrders = () => {
   const navigate = useNavigate();
+
+  // Alerts (on/off) + pending-order tracking now live globally in NotificationContext,
+  // so this toggle stays in sync no matter which page you're on.
+  const { alertsEnabled, setAlertsEnabled } = useContext(NotificationContext);
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -110,34 +115,44 @@ const AdminOrders = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [alertsEnabled, setAlertsEnabled] = useState(true);
 
   const [billOrder, setBillOrder] = useState(null);
   const [showBillPrint, setShowBillPrint] = useState(false);
 
-  const knownOrderIdsRef = useRef(new Set());
-  const isFirstLoadRef = useRef(true);
-  const alertsEnabledRef = useRef(true);
+  const fetchOrders = useCallback(async () => {
+    try {
+      const response = await ordersAPI.getAll();
+
+      if (response.data.success) {
+        const fetchedOrders = response.data.data;
+        setOrders(fetchedOrders);
+
+        // functional update -> no stale-closure issue, safe with an empty deps array
+        setSelectedOrder((prev) => {
+          if (!prev) return prev;
+          const updated = fetchedOrders.find((o) => o._id === prev._id);
+          return updated || prev;
+        });
+      } else {
+        toast.error(response.data.message || 'Failed to fetch orders');
+      }
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to fetch orders';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    alertsEnabledRef.current = alertsEnabled;
-  }, [alertsEnabled]);
-
-  useEffect(() => {
+    setLoading(true);
     fetchOrders();
-
-    const unlock = () => {
-      unlockAudio();
-      document.removeEventListener('click', unlock);
-    };
-    document.addEventListener('click', unlock);
-
     const intervalId = setInterval(fetchOrders, POLL_INTERVAL_MS);
-
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('click', unlock);
-    };
+    return () => clearInterval(intervalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -159,58 +174,6 @@ const AdminOrders = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus, filterPayment]);
-
-  const fetchOrders = useCallback(async () => {
-    try {
-      if (isFirstLoadRef.current) {
-        setLoading(true);
-      }
-
-      const response = await ordersAPI.getAll();
-
-      if (response.data.success) {
-        const fetchedOrders = response.data.data;
-        const currentIds = new Set(fetchedOrders.map((o) => o._id));
-
-        if (!isFirstLoadRef.current) {
-          const newOrders = fetchedOrders.filter(
-            (o) => !knownOrderIdsRef.current.has(o._id) && o.source !== 'Counter'
-          );
-
-          if (newOrders.length > 0 && alertsEnabledRef.current) {
-            playNewOrderSound();
-            newOrders.forEach((o) => {
-              toast.success(`🔔 New order #${o.orderNumber} received!`, {
-                duration: 5000,
-              });
-            });
-          }
-        }
-
-        knownOrderIdsRef.current = currentIds;
-        isFirstLoadRef.current = false;
-
-        setOrders(fetchedOrders);
-
-        if (showModal && selectedOrder) {
-          const updated = fetchedOrders.find((o) => o._id === selectedOrder._id);
-          if (updated) setSelectedOrder(updated);
-        }
-      } else {
-        toast.error(response.data.message || 'Failed to fetch orders');
-      }
-    } catch (error) {
-      const errorMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        'Failed to fetch orders';
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal, selectedOrder]);
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch =

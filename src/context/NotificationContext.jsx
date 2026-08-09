@@ -6,6 +6,7 @@ export const NotificationContext = createContext();
 const POLL_INTERVAL_MS = 15000;
 const MAX_NOTIFICATIONS = 50;
 const MAX_AUTH_FAILS = 2;
+const ALERTS_ENABLED_KEY = 'pangat_alerts_enabled';
 
 // "2m ago", "1h ago" jaisa relative time dikhane ke liye helper
 export const formatTimeAgo = (timestamp) => {
@@ -23,6 +24,23 @@ export const formatTimeAgo = (timestamp) => {
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+
+  // orders jo abhi "Placed" state me hain (confirm/reject/action pending)
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Alerts on/off — localStorage me persist, taaki page change/refresh pe reset na ho
+  const [alertsEnabled, setAlertsEnabledState] = useState(() => {
+    const saved = localStorage.getItem(ALERTS_ENABLED_KEY);
+    return saved === null ? true : saved === 'true';
+  });
+
+  const setAlertsEnabled = useCallback((value) => {
+    setAlertsEnabledState((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      localStorage.setItem(ALERTS_ENABLED_KEY, String(next));
+      return next;
+    });
+  }, []);
 
   // Poll ke beech state track karne ke liye — re-render trigger nahi karte isliye refs me
   const knownOrderIds = useRef(new Set());
@@ -72,6 +90,9 @@ export const NotificationProvider = ({ children }) => {
       authFailCountRef.current = 0;
 
       const orders = response.data.data || [];
+
+      // "Placed" = staff ne abhi tak confirm/reject nahi kiya — har poll par count refresh
+      setPendingCount(orders.filter((o) => o.orderStatus === 'Placed').length);
 
       // Pehli baar sirf baseline capture karo — purane orders ke liye
       // notifications nahi banani (warna page load hote hi dher sare aa jayenge)
@@ -149,6 +170,9 @@ export const NotificationProvider = ({ children }) => {
         markOneAsRead,
         clearAll,
         pushNotification, // aage kisi aur event (payment, table) ke liye bhi use ho sakta hai
+        pendingCount,
+        alertsEnabled,
+        setAlertsEnabled,
       }}
     >
       {children}

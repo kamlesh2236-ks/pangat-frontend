@@ -1524,3 +1524,41 @@
     background-position: 0 50%;
   }
 }
+
+.new-order-alert-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ff6b35;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  animation: alertBlink 1s ease-in-out infinite;
+}
+
+.new-order-alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+@keyframes alertBlink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
