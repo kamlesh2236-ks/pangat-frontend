@@ -65,8 +65,12 @@ apiClient.interceptors.response.use(
 
 export const authAPI = {
     login: (data) => apiClient.post('/auth/login', data),
+    loginVerifyOtp: (data) => apiClient.post('/auth/login/verify-otp', data),
+    loginResendOtp: (data) => apiClient.post('/auth/login/resend-otp', data),
     staffLogin: (data) => apiClient.post('/auth/admin/login', data),
-    restaurantSignup: (data) => apiClient.post('/auth/restaurant/signup', data),
+    restaurantSignupRequestOtp: (data) => apiClient.post('/auth/restaurant/signup/request-otp', data),
+    restaurantSignupVerifyOtp: (data) => apiClient.post('/auth/restaurant/signup/verify-otp', data),
+    restaurantSignupResendOtp: (data) => apiClient.post('/auth/restaurant/signup/resend-otp', data),
     restaurantLogin: (data) => apiClient.post('/auth/restaurant/login', data),
     adminLogin: (data) => apiClient.post('/auth/admin/login', data),
     forgotPassword: (data) => apiClient.post('/auth/forgot-password', data),
