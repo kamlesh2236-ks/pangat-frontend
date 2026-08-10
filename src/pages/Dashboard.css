@@ -887,8 +887,6 @@ body .sidebar.close~.dashboard-container {
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 20px;
-    margin-left: 75px;
-    margin-top: 70px;
   }
 
   .dashboard-header {

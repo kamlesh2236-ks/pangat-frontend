@@ -384,7 +384,6 @@ body .sidebar.close ~ .tables-container {
 @media (max-width: 768px) {
     .tables-container {
         padding: 20px;
-        margin-left: 75px;
     }
 
     .section-header {
