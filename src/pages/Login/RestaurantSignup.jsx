@@ -400,6 +400,8 @@ const RestaurantSignup = () => {
                                     {resending ? 'Resending...' : 'Resend OTP'}
                                 </button>
                                 <br />
+                                Didn't receive the OTP? Please check your Spam or Junk folder.
+                                <br />
                                 <button
                                     type="button"
                                     onClick={() => setStep('form')}
