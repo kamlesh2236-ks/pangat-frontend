@@ -69,7 +69,7 @@ const SubscriptionGate = () => {
     const confirmLogout = () => {
         sessionStorage.clear();
         localStorage.clear();
-        window.location.href = '/login'; 
+        window.location.href = '/login';
     };
 
     if (!subscription) return null;
@@ -83,8 +83,8 @@ const SubscriptionGate = () => {
             <div className="subscription-overlay">
                 <div className="subscription-modal blocking">
                     <IconClock size={28} className="sub-icon" />
-                    <h2>Aapka demo ya subscription khatam ho gya hai</h2>
-                    <p>Dashboard access continue karne ke liye ek plan select karke payment karein</p>
+                    <h2>Your demo or subscription has expired</h2>
+                    <p>To continue accessing the dashboard, select a plan and make the payment</p>
 
                     <div className="plan-cards">
                         {plans &&
@@ -102,7 +102,7 @@ const SubscriptionGate = () => {
                             ))}
                     </div>
 
-                    <button 
+                    <button
                         className="sub-logout-btn"
                         onClick={handleLogoutClick}
                     >
@@ -127,10 +127,10 @@ const SubscriptionGate = () => {
             <div className="subscription-overlay">
                 <div className="subscription-modal">
                     <IconCrown size={28} className="sub-icon" />
-                    <h2>Demo mode active hai</h2>
+                    <h2>Demo mode is active</h2>
                     <p>
-                        Aapke paas <strong>{subscription.daysLeft} din</strong> bache hain free demo ke.
-                        Uske baad continue karne ke liye subscription lena hoga.
+                        You have <strong>{subscription.daysLeft} days</strong> of the free demo remaining.
+                        After that, you will need to purchase a subscription to continue.
                     </p>
                     <button className="sub-primary-btn" onClick={dismissTrialPopup}>
                         <IconCheck size={16} />Continue

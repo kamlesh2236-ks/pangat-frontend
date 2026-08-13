@@ -351,7 +351,7 @@ const Profile = () => {
             <div className="profile-card readonly-card">
                 <h3>Login Details</h3>
                 <p className="profile-card-sub">
-                    Ye login email/phone hai — inhe yaha se change nahi kar sakte, security ke liye alag process hai.
+                    This is the login email/phone number; it cannot be changed here—there is a separate process for security reasons.
                 </p>
                 <div className="profile-readonly-grid">
                     <div className="profile-readonly-item" onClick={() => copyToClipboard(profile?.email, 'Email')}>
@@ -383,7 +383,7 @@ const Profile = () => {
                         </p>
                         {subscription.status === 'trial' && (
                             <p className="profile-card-sub">
-                                Demo ke <strong>{subscription.daysLeft} din</strong> bache hain.
+                                <strong>{subscription.daysLeft} days</strong> of the demo remain.
                             </p>
                         )}
                         {subscription.expiry && (
@@ -470,7 +470,7 @@ const Profile = () => {
                         <div className="profile-add-cuisine">
                             <input
                                 type="text"
-                                placeholder="Custom cuisine add karo..."
+                                placeholder="Add a Custom Cuisine..."
                                 value={customCuisine}
                                 onChange={(e) => setCustomCuisine(e.target.value)}
                                 onKeyDown={(e) => {
@@ -532,7 +532,7 @@ const Profile = () => {
                 <div className="profile-card">
                     <h3><IconPhone size={18} /> Contact Info</h3>
                     <p className="profile-card-sub">
-                        Ye customer-facing contact details hain (menu/bill par dikhengi) — login credentials se alag.
+                        These are customer-facing contact details (visible on the menu/bill)—distinct from the login credentials.
                     </p>
 
                     <div className="Profile-form-row">
@@ -569,7 +569,7 @@ const Profile = () => {
                 <div className="profile-card">
                     <h3><IconQrcode size={18} /> Payment (UPI)</h3>
                     <p className="profile-card-sub">
-                        Bill print pe QR code isi UPI ID se generate hota hai.
+                        The pay code on the printed bill is generated using this very UPI ID.
                     </p>
                     <div className="Profile-form-group">
                         <label>UPI ID</label>
@@ -586,9 +586,10 @@ const Profile = () => {
                 <div className="profile-card">
                     <h3><IconReceiptTax size={18} /> Tax Settings (GST)</h3>
                     <p className="profile-card-sub">
-                        GST ON karne par, ye sabhi naye orders (QR order + Counter Billing) me automatically
-                        add ho jayega — bill aur order summary me alag se dikhega. OFF karne par naye orders
-                        me GST lagna band ho jayega (purane orders ka record nahi badlega).
+                        When GST is enabled, it will be automatically added to all new orders
+                        (QR orders and counter billing) and will appear separately on the bill
+                        and order summary. If disabled, GST will no longer be applied to new orders
+                        (records of past orders will remain unchanged).
                     </p>
 
                     <div className="Profile-form-group profile-gst-toggle-row">

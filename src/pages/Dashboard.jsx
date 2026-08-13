@@ -232,7 +232,7 @@ const Dashboard = () => {
             {/* Header */}
             <div className="dashboard-header">
                 <div className="head-text">
-                    <h1>Control Room</h1>
+                    <h1>Dashboard</h1>
                     <p>Welcome back, {user?.name}!</p>
                 </div>
 

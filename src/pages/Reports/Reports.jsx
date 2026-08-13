@@ -220,7 +220,7 @@ const Reports = () => {
             <div className="section-header">
                 <div>
                     <h1><IconReportAnalytics size={24} /> Reports</h1>
-                    <p>Poore restaurant ka performance ek jagah</p>
+                    <p>The entire restaurant's performance in one place</p>
                 </div>
                 <button className="btn-primary" onClick={downloadCSV} disabled={!report}>
                     <IconDownload size={18} /> Export CSV
