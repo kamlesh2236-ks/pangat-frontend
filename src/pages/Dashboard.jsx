@@ -18,7 +18,6 @@ import {
     ComposedChart,
     Bar,
     Area,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -26,7 +25,7 @@ import {
     Legend,
 } from 'recharts';
 import { AuthContext } from '../context/AuthContext';
-import { dashboardAPI, ordersAPI, tablesAPI } from '../utils/api';
+import { dashboardAPI, ordersAPI, tablesAPI, staffAPI, peakHoursAPI } from '../utils/api';
 import LiveActivityTicker from './Liveactivityticker';
 import PeakHoursChart from './Peakhourschart';
 import './Dashboard.css';
@@ -62,6 +61,9 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [chartLoading, setChartLoading] = useState(true);
     const [tables, setTables] = useState([]);
+    const [staff, setStaff] = useState([]);
+    const [peakHours, setPeakHours] = useState([]);
+
 
     useEffect(() => {
         fetchDashboardData();
@@ -104,6 +106,19 @@ const Dashboard = () => {
             if (tableRes.data.success) {
                 setTables(tableRes.data.data);
             }
+
+            const staffRes = await staffAPI.getTodayAttendance();
+
+            if (staffRes.data.success) {
+                setStaff(staffRes.data.data);
+            }
+
+            const peakRes = await peakHoursAPI.get(1);
+            console.log(peakRes)
+            if (peakRes.data.success) {
+                setPeakHours(peakRes.data.data.peakRanges)
+            }
+
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
             toast.error('Failed to load dashboard data');
@@ -111,6 +126,10 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
+
+    const presentStaff = staff.filter(
+        (item) => item.attendance?.status === "Present"
+    );
 
     const fetchChartData = async () => {
         try {
@@ -307,19 +326,19 @@ const Dashboard = () => {
                             <span>Chart will populate once orders come in</span>
                         </div>
                     ) : (
-                        <ResponsiveContainer width="100%" height={320}>
-                            <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                        <ResponsiveContainer width="100%" height={430}>
+                            <ComposedChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#ff6b35" stopOpacity={0.35} />
-                                        <stop offset="95%" stopColor="#ff6b35" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.35} />
+                                        <stop offset="95%" stopColor="#ff6b35" stopOpacity={0.5} />
                                     </linearGradient>
                                 </defs>
 
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                                <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
-                                <YAxis yAxisId="left" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
-                                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                <XAxis dataKey="date" tick={{ fontSize: 13, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                <YAxis yAxisId="left" tick={{ fontSize: 13, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+                                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 13, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
                                 <Tooltip
                                     contentStyle={{
                                         borderRadius: 12,
@@ -347,87 +366,90 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                <PeakHoursChart days={30} />
-            </div>
+                {/* Table floor */}
+                <div className="table-map">
+                    <div className="table-map-header">
+                        <h3>Table Floor</h3>
+                    </div>
 
-            {/* Quick Actions */}
-            <div className="quick-actions">
-                <h2>Quick Actions</h2>
-                <div className="action-buttons">
-                    <a href="/orders" className="dashboardaction-btn gradient-stat-card orange">
-                        <div className="icon"><IconShoppingCart size={20} /></div>
-                        <div className="dashboardaction-btn-text">
-                            <span>View Orders</span>
-                            <p>Ordes queue & history</p>
-                        </div>
-                    </a>
-                    <a href="/tables" className="dashboardaction-btn gradient-stat-card blue">
-                        <div className="icon"><IconChefHat size={20} /></div>
-                        <div className="dashboardaction-btn-text">
-                            <span>Manage Tables</span>
-                            <p>Seating and reservations</p>
-                        </div>
-                    </a>
-                    <a href="/menu" className="dashboardaction-btn gradient-stat-card purple">
-                        <div className="icon"><IconTrendingUp size={20} /></div>
-                        <div className="dashboardaction-btn-text">
-                            <span>Manage Menu</span>
-                            <p>Dishes, price, stocks</p>
-                        </div>
-                    </a>
-                    <a href="/reports" className="dashboardaction-btn gradient-stat-card green">
-                        <div className="icon"><IconUsers size={20} /></div>
-                        <div className="dashboardaction-btn-text">
-                            <span>View Reports</span>
-                            <p>Sales & staff insights</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-
-            {/* Table floor */}
-            <div className="table-map">
-                <div className="table-map-header">
-                    <h3>Table Floor</h3>
-                </div>
-
-                <div className="table-floor">
-                    {loading ? (
-                        <div className="loading-state">
-                            <p>Loading tables...</p>
-                        </div>
-                    ) : (
-                        tables.map((t) => (
-                            <div
-                                className={`table-status ${t.status?.toLowerCase().replace(' ', '-')}`}
-                                key={t._id}
-                            >
-                                <h2>T{t.tableNumber}</h2>
-                                <p>{t.capacity} seats</p>
-                                <span className="table-badge">{t.status}</span>
+                    <div className="table-floor">
+                        {loading ? (
+                            <div className="loading-state">
+                                <p>Loading tables...</p>
                             </div>
-                        ))
-                    )}
+                        ) : (
+                            tables.map((t) => (
+                                <div
+                                    className={`table-status ${t.status?.toLowerCase().replace(' ', '-')}`}
+                                    key={t._id}
+                                >
+                                    <h2>T{t.tableNumber}</h2>
+                                    <p>{t.capacity} seats</p>
+                                    <span className="table-badge">{t.status}</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="table-avl">
+                        <div className="table-check">
+                            <div className="table-avlstatusColor"></div>
+                            <div className="table-statusName">
+                                <h4>Available</h4>
+                            </div>
+                        </div>
+                        <div className="table-check">
+                            <div className="table-busystatusColor"></div>
+                            <div className="table-statusName">
+                                <h4>Busy</h4>
+                            </div>
+                        </div>
+                        <div className="table-check">
+                            <div className="table-nbstatusColor"></div>
+                            <div className="table-statusName">
+                                <h4>Needs Bill</h4>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="table-avl">
-                    <div className="table-check">
-                        <div className="table-avlstatusColor"></div>
-                        <div className="table-statusName">
-                            <h4>Available</h4>
+            </div>
+            <div className="peakChart-staff">
+                <PeakHoursChart days={30} />
+                <div className="staff-duty">
+                    <div className="chart-section-header">
+                        <div>
+                            <h2>Staff on Duty</h2>
+                            <p>Currently active staff members</p>
                         </div>
+
+                        <span className="staff-count">{presentStaff.length}</span>
                     </div>
-                    <div className="table-check">
-                        <div className="table-busystatusColor"></div>
-                        <div className="table-statusName">
-                            <h4>Busy</h4>
-                        </div>
-                    </div>
-                    <div className="table-check">
-                        <div className="table-nbstatusColor"></div>
-                        <div className="table-statusName">
-                            <h4>Needs Bill</h4>
-                        </div>
+
+                    <div className="staff-list">
+                        {presentStaff.map((item) => (
+                            <div className="pr" key={item.staff._id}>
+                                <div className="pr-logo">
+                                    <h1>{item.staff.name.charAt(0).toUpperCase()}</h1>
+                                    {item.attendance.status === "Present" && (
+                                        <div className="active"></div>
+                                    )}
+                                </div>
+
+                                <div className="pr-details">
+                                    <div className="pr-name">
+                                        <h3>{item.staff.name}</h3>
+                                        <p>{item.staff.role}</p>
+                                    </div>
+
+                                    <div className="rate">
+                                        <p>
+                                            9<span>/10</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -471,6 +493,7 @@ const Dashboard = () => {
                         </table>
                     </div>
                 )}
+
             </div>
 
             {/* Info Boxes */}
@@ -479,7 +502,16 @@ const Dashboard = () => {
                     <IconClock size={24} />
                     <div>
                         <h3>Peak Hours</h3>
-                        <p>12:00 PM - 2:00 PM, 7:00 PM - 9:00 PM</p>
+                        <p>
+                            {peakHours.length > 0
+                                ? peakHours.map((peak, index) => (
+                                    <React.Fragment key={index}>
+                                        {peak.label}
+                                        {index < peakHours.length - 1 && ", "}
+                                    </React.Fragment>
+                                ))
+                                : "No peak hours available"}
+                        </p>
                     </div>
                 </div>
 

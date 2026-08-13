@@ -23,6 +23,7 @@
     --placeholder-color: #ccc;
 
     --border-color: #e5e5e5;
+    --simple-shadow: rgba(0, 0, 0, 0.08);
     --shadow-color: rgba(27, 112, 224, 0.5);
     --shadow-glow: 0px 0px 20px rgba(255, 145, 77, 0.3),
         0px 0px 25px rgba(53, 174, 255, 0.5);
@@ -48,6 +49,7 @@
     --placeholder-color: #666;
 
     --border-color: #333333;
+    --simple-shadow: rgba(182, 181, 181, 0.08);
     --shadow-color: rgba(94, 48, 16, 0.5);
     --shadow-glow: -6px 0px 20px rgba(255, 145, 77, 0.3),
         6px 8px 20px rgba(255, 107, 53, 0.3);
